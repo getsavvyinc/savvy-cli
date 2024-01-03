@@ -1,0 +1,6 @@
+*.txt
+bin/*
+.direnv 
+/savvy
+/savvy-dev 
+*.log
