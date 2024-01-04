@@ -8,8 +8,8 @@ import (
 // whoamiCmd represents the whoami command
 var whoamiCmd = &cobra.Command{
 	Use:   "whoami",
-	Short: "whoami is a command to show the current user",
-	Long:  `whoami is a command to show the current user`,
+	Short: "whoami prints information about the current user",
+	Long:  "whoami prints information about the current user",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cl, err := client.New()
 		if err != nil {
