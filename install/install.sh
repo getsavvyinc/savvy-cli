@@ -25,7 +25,7 @@ else
 	savvy_uri="https://github.com/getsavvyinc/savvy-cli/releases/download/${1}/savvy_${os}_${arch}"
 fi
 
-savvy_install="${SAVVY_INSTALL:-/usr/local}"
+savvy_install="${SAVVY_INSTALL:-$HOME}"
 bin_dir="${savvy_install}/bin"
 exe="${bin_dir}/savvy"
 
@@ -33,10 +33,19 @@ if [ ! -d "${bin_dir}" ]; then
 	mkdir -p "${bin_dir}"
 fi
 
-curl --silent --show-error --location --fail --location --output "${exe}" "$savvy_uri"
+curl --silent --show-error --fail --location --output "${exe}" "$savvy_uri"
 chmod +x "${exe}"
 
+echo
 echo "savvy was installed successfully to ${exe}"
+echo
+
+case :$PATH:
+  in *:$HOME/bin:*) ;; # do nothing
+     *) echo 'Run export PATH="$HOME/bin:$PATH" to use savvy' >&2;;
+esac
+
+
 if command -v savvy >/dev/null; then
 	echo "Run 'savvy help' to get started"
 fi
