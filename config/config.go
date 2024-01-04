@@ -3,10 +3,14 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
+const DefaultConfigFileName = "config.json"
+
 var (
-	DefaultConfigPath = os.ExpandEnv("$HOME/.config/savvy/config.json")
+	DefaultConfigDir      = os.ExpandEnv("$HOME/.config/savvy")
+	DefaultConfigFilePath = filepath.Join(DefaultConfigDir, DefaultConfigFileName)
 )
 
 type Config struct {
@@ -14,7 +18,13 @@ type Config struct {
 }
 
 func (c *Config) Save() error {
-	f, err := os.Create(DefaultConfigPath)
+	if _, err := os.Stat(DefaultConfigDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(DefaultConfigDir, 0755); err != nil {
+			return err
+		}
+	}
+
+	f, err := os.Create(DefaultConfigFilePath)
 	if err != nil {
 		return err
 	}
@@ -26,7 +36,7 @@ func (c *Config) Save() error {
 }
 
 func LoadFromFile() (*Config, error) {
-	f, err := os.Open(DefaultConfigPath)
+	f, err := os.Open(DefaultConfigFilePath)
 	if err != nil {
 		return nil, err
 	}
