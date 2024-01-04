@@ -15,9 +15,10 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 
+project_name: savvy
 builds:
-  - id: "savvy"
-    binary: "savvy"
+  - id: savvy
+    binary: savvy
     env:
       - CGO_ENABLED=0
     goos:
@@ -25,7 +26,7 @@ builds:
       - darwin
 
 archives:
-  - format: tar.gz
+  - format: binary
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
