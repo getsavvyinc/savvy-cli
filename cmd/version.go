@@ -13,8 +13,8 @@ var version string
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "prints cli version",
-	Long:  "prints cli version",
+	Short: "Shows the savvy cli version",
+	Long:  "Shows the savvy cli version",
 	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("version:", version)
 	},
