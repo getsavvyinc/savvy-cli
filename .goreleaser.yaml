@@ -19,6 +19,8 @@ project_name: savvy
 builds:
   - id: savvy
     binary: savvy
+    ldflags:
+      - -s -w -X github.com/getsavvyinc/savvy-cli/cmd.version={{.Version}}
     env:
       - CGO_ENABLED=0
     goos:
