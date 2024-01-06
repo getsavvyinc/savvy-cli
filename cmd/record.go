@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
+	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 	"github.com/getsavvyinc/savvy-cli/shell"
 
 	"github.com/getsavvyinc/savvy-cli/server"
@@ -31,14 +33,14 @@ var recordCmd = &cobra.Command{
 }
 
 func runRecordCmd(cmd *cobra.Command, args []string) {
-	commands, err := startRecording()
-	if err != nil {
-		panic(err)
+	client, err := client.New()
+	if err != nil && errors.Is(err, savvy_errors.ErrInvalidToken) {
+		savvy_errors.Display(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
+		os.Exit(1)
 	}
 
-	client, err := client.New()
+	commands, err := startRecording()
 	if err != nil {
-		// TODO: handle this error
 		panic(err)
 	}
 
