@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 )
 
 type Client interface {
@@ -37,6 +39,11 @@ func New() (Client, error) {
 		},
 		apiHost: config.APIHost(),
 	}
+
+	if _, err := c.WhoAmI(context.Background()); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
@@ -75,6 +82,10 @@ func (c *client) WhoAmI(ctx context.Context) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode < 500 && resp.StatusCode >= 400 {
+		return "", fmt.Errorf("failed to create client: %w", savvy_errors.ErrInvalidToken)
+	}
 
 	whoami, err := io.ReadAll(resp.Body)
 	if err != nil {
