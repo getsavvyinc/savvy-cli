@@ -33,8 +33,8 @@ var recordCmd = &cobra.Command{
 }
 
 func runRecordCmd(cmd *cobra.Command, args []string) {
-	client, err := client.New()
-	if err != nil && errors.Is(err, savvy_errors.ErrInvalidToken) {
+	cl, err := client.New()
+	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		savvy_errors.Display(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
 		os.Exit(1)
 	}
@@ -44,7 +44,7 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 
-	gm := component.NewGenerateRunbookModel(commands, client)
+	gm := component.NewGenerateRunbookModel(commands, cl)
 	p := tea.NewProgram(gm)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("could not run program: %s\n", err)
