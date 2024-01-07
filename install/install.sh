@@ -49,7 +49,7 @@ esac
 if command -v savvy >/dev/null; then
   echo
   echo "Run the following to finish setting up savvy:"
-  echo 'echo "eval $(savvy init zsh)" >> ~/.zshrc'
+  echo "echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc"
   echo
 	echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 fi
