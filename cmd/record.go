@@ -41,12 +41,14 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 
 	commands, err := startRecording()
 	if err != nil {
-		panic(err)
+		savvy_errors.DisplayWithSupportCTA(err)
+		os.Exit(1)
 	}
 
 	gm := component.NewGenerateRunbookModel(commands, cl)
 	p := tea.NewProgram(gm)
 	if _, err := p.Run(); err != nil {
+		// TODO: fail gracefully. Provider users either a link to view the runbook or a list of their saved commands
 		fmt.Printf("could not run program: %s\n", err)
 		os.Exit(1)
 	}
@@ -55,6 +57,7 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 	m := newDisplayCommandsModel(runbook)
 	p = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
+		// TODO: fail gracefully and provide users a link to view the runbook
 		fmt.Printf("could not run program: %s\n", err)
 		os.Exit(1)
 	}
@@ -65,7 +68,7 @@ func startRecording() ([]string, error) {
 	socketPath := "/tmp/savvy-socket"
 	ss, err := server.NewUnixSocketServer(socketPath)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	// TODO: kill this goroutine when the shell exits
 	go ss.ListenAndServe()
