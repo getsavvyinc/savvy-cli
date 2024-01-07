@@ -36,7 +36,8 @@ func New() (Client, error) {
 	c := &client{
 		cl: &http.Client{
 			Transport: &AuthorizedRoundTripper{
-				token: cfg.Token,
+				token:        cfg.Token,
+				savvyVersion: config.Version(),
 			},
 		},
 		apiHost: config.APIHost(),
@@ -50,13 +51,15 @@ func New() (Client, error) {
 }
 
 type AuthorizedRoundTripper struct {
-	token string
+	token        string
+	savvyVersion string
 }
 
 func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone the request to ensure thread safety
 	clonedReq := req.Clone(req.Context())
 	clonedReq.Header.Set("Authorization", "Bearer "+a.token)
+	clonedReq.Header.Set("X-Savvy-Version", a.savvyVersion)
 
 	// Use the embedded Transport to perform the actual request
 	res, err := http.DefaultTransport.RoundTrip(clonedReq)
