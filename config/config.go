@@ -14,7 +14,7 @@ var (
 )
 
 type Config struct {
-	Token string
+	Token string `json:"token"`
 }
 
 func (c *Config) Save() error {
