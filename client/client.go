@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/config"
-	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 )
 
 type Client interface {
@@ -25,10 +25,12 @@ type client struct {
 
 var _ Client = (*client)(nil)
 
+var ErrInvalidClient = errors.New("invalid client")
+
 func New() (Client, error) {
 	cfg, err := config.LoadFromFile()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: failed to load config", ErrInvalidClient)
 	}
 
 	c := &client{
@@ -40,10 +42,10 @@ func New() (Client, error) {
 		apiHost: config.APIHost(),
 	}
 
-	if _, err := c.WhoAmI(context.Background()); err != nil {
+	// validate token as early as possible
+	if _, err := c.WhoAmI(context.Background()); err != nil && errors.Is(err, ErrInvalidClient) {
 		return nil, err
 	}
-
 	return c, nil
 }
 
@@ -57,7 +59,14 @@ func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 	clonedReq.Header.Set("Authorization", "Bearer "+a.token)
 
 	// Use the embedded Transport to perform the actual request
-	return http.DefaultTransport.RoundTrip(clonedReq)
+	res, err := http.DefaultTransport.RoundTrip(clonedReq)
+
+	// If we get a 401 Unauthorized, then the token is expired
+	// and we need to refresh it
+	if res.StatusCode == http.StatusUnauthorized {
+		return nil, fmt.Errorf("%w: invalid token", ErrInvalidClient)
+	}
+	return res, err
 }
 
 // apiURL returns the full url to the api endpoint
@@ -72,7 +81,6 @@ func (c *client) apiURL(path string) string {
 
 func (c *client) WhoAmI(ctx context.Context) (string, error) {
 	cl := c.cl
-	// TODO: remove hardcoded url
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/whoami"), nil)
 	if err != nil {
 		return "", err
@@ -82,10 +90,6 @@ func (c *client) WhoAmI(ctx context.Context) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode < 500 && resp.StatusCode >= 400 {
-		return "", fmt.Errorf("failed to create client: %w", savvy_errors.ErrInvalidToken)
-	}
 
 	whoami, err := io.ReadAll(resp.Body)
 	if err != nil {
