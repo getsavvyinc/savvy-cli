@@ -78,7 +78,8 @@ func startRecording() ([]string, error) {
 	ctx := context.Background()
 	c, err := sh.Spawn(ctx)
 	if err != nil {
-		panic(err)
+		err := fmt.Errorf("failed to start recording: %w", err)
+		return nil, err
 	}
 
 	// Start the command with a pty.
