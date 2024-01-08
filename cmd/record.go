@@ -54,11 +54,16 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 	}
 
 	runbook := <-gm.RunbookCh()
-	m := newDisplayCommandsModel(runbook)
+	m, err := newDisplayCommandsModel(runbook)
+	if err != nil {
+		savvy_errors.DisplayWithSupportCTA(err)
+		os.Exit(1)
+	}
 	p = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		// TODO: fail gracefully and provide users a link to view the runbook
 		fmt.Printf("could not run program: %s\n", err)
+		savvy_errors.DisplayWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 		os.Exit(1)
 	}
 }
@@ -122,7 +127,8 @@ func startRecording() ([]string, error) {
 	}
 	// close the shell
 	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
-		panic(err)
+		// intentionally display the error and continue
+		savvy_errors.Display(err)
 	}
 
 	return ss.Commands(), nil
@@ -143,16 +149,16 @@ func toListItems(steps []component.RunbookStep) []component.ListItem {
 	return items
 }
 
-func newDisplayCommandsModel(runbook *component.Runbook) displayCommands {
+func newDisplayCommandsModel(runbook *component.Runbook) (*displayCommands, error) {
 	if runbook == nil {
-		panic("runbook cannot be nil")
+		return nil, errors.New("runbook is empty")
 	}
 
 	l := component.NewListModel(toListItems(runbook.Steps), runbook.Title, runbook.URL)
-	return displayCommands{l: l}
+	return &displayCommands{l: l}, nil
 }
 
-func (dc displayCommands) Init() tea.Cmd {
+func (dc *displayCommands) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
 	if err := dc.l.Init(); err != nil {
 		fmt.Printf("Error initializing list: %v", err)
@@ -161,11 +167,11 @@ func (dc displayCommands) Init() tea.Cmd {
 	return nil
 }
 
-func (dc displayCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (dc *displayCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return dc.l.Update(msg)
 }
 
-func (dc displayCommands) View() string {
+func (dc *displayCommands) View() string {
 	return dc.l.View()
 }
 
