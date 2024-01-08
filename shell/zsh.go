@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"text/template"
 )
 
@@ -119,7 +120,7 @@ unset _SAVVY_USER_ZDOTDIR
 func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	// Referenced: https://github.com/sbstp/kubie/blob/master/src/shell/zsh.rs
 	tmp := os.TempDir()
-	zshrcPath := tmp + string(os.PathSeparator) + ".zshrc"
+	zshrcPath := filepath.Join(tmp, ".zshrc")
 	zshrc, err := os.Create(zshrcPath)
 	if err != nil {
 		return nil, err
