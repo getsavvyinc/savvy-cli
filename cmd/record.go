@@ -106,7 +106,7 @@ func startRecording() ([]string, error) {
 	// Set stdin in raw mode.
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to set stdin to raw mode: %w", err)
 	}
 	defer func() {
 		err = term.Restore(int(os.Stdin.Fd()), oldState)
