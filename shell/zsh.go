@@ -129,7 +129,10 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 
 	t := template.Must(template.New("zshrc").Parse(script))
 
-	t.Execute(zshrc, z)
+	if err := t.Execute(zshrc, z); err != nil {
+		return nil, err
+	}
+
 	cmd := exec.CommandContext(ctx, z.shellCmd)
 	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=1")
 	return cmd, nil
