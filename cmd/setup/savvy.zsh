@@ -4,10 +4,11 @@ SAVVY_INPUT_FILE=/tmp/savvy-socket
 autoload -Uz add-zsh-hook
 
 # This function fixes the prompt via a precmd hook.
-# function __savvy_cmd_pre_cmd__() {
-#  local status=$?
-#  echo "exit_status: ${status}</command>" > $SAVVY_STATUS_FILE
-# }
+ function __savvy_cmd_pre_cmd__() {
+  if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'*  ]] ; then
+      PS1+=$'%F{red}recording%f \U1f60e '
+  fi
+ }
 
 function __savvy_cmd_pre_exec__() {
   # $2 is the command with all the aliases expanded
@@ -17,3 +18,4 @@ function __savvy_cmd_pre_exec__() {
   fi
 }
 add-zsh-hook preexec __savvy_cmd_pre_exec__
+add-zsh-hook precmd __savvy_cmd_pre_cmd__
