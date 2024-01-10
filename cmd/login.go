@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -90,7 +91,11 @@ func runLogin(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 		// Handle the token here (e.g., store it)
-		cfg := config.Config{Token: model.textInput.Value()}
+		tok := model.textInput.Value()
+		// Remove quotes and braces and spaces from token
+		tok = strings.Trim(tok, "\"{} ")
+
+		cfg := config.Config{Token: tok}
 		if err := cfg.Save(); err != nil {
 			err = fmt.Errorf("Error saving config: %w", err)
 			display.ErrorWithSupportCTA(err)
