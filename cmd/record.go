@@ -14,7 +14,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
-	"github.com/getsavvyinc/savvy-cli/savvy_errors"
+	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/shell"
 
 	"github.com/getsavvyinc/savvy-cli/server"
@@ -35,13 +35,13 @@ var recordCmd = &cobra.Command{
 func runRecordCmd(cmd *cobra.Command, args []string) {
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
-		savvy_errors.Display(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
+		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
 		os.Exit(1)
 	}
 
 	commands, err := startRecording()
 	if err != nil {
-		savvy_errors.DisplayWithSupportCTA(err)
+		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
 
@@ -56,14 +56,14 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 	runbook := <-gm.RunbookCh()
 	m, err := newDisplayCommandsModel(runbook)
 	if err != nil {
-		savvy_errors.DisplayWithSupportCTA(err)
+		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
 	p = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		// TODO: fail gracefully and provide users a link to view the runbook
 		fmt.Printf("could not run program: %s\n", err)
-		savvy_errors.DisplayWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
+		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 		os.Exit(1)
 	}
 }
@@ -128,7 +128,7 @@ func startRecording() ([]string, error) {
 	// close the shell
 	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
 		// intentionally display the error and continue
-		savvy_errors.Display(err)
+		display.Error(err)
 	}
 
 	return ss.Commands(), nil
