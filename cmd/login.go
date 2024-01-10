@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/display"
@@ -18,6 +19,13 @@ var loginCmd = &cobra.Command{
 	Short: "Login to savvy",
 	Long:  `Login allows users to use Google SSO to login to savvy.`,
 	Run:   runLogin,
+	PostRun: func(cmd *cobra.Command, args []string) {
+		if err := verifyLogin(); err != nil {
+			display.ErrorWithSupportCTA(fmt.Errorf("login failed: %w", err))
+			os.Exit(1)
+		}
+		display.Success("Login successful!")
+	},
 }
 
 var savvyLoginURL string = config.APIHost() + "/login"
@@ -101,8 +109,12 @@ func runLogin(cmd *cobra.Command, args []string) {
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
-		display.Success("Login successful!")
 	}
+}
+
+func verifyLogin() error {
+	_, err := client.New()
+	return err
 }
 
 func init() {
