@@ -30,7 +30,7 @@ var ErrInvalidClient = errors.New("invalid client")
 func New() (Client, error) {
 	cfg, err := config.LoadFromFile()
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to load config", ErrInvalidClient)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidClient, err)
 	}
 
 	c := &client{
