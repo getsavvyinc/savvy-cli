@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
+	"github.com/getsavvyinc/savvy-cli/cmd/display"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 	"github.com/spf13/cobra"
@@ -67,25 +68,26 @@ func (lm loginModel) View() string {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
+	var browserOpenError = fmt.Errorf("Couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
+	display.Info(fmt.Sprintf("Opening your default browser to %s", savvyLoginURL))
 	browserCmd := browser.Open(savvyLoginURL)
 	if browserCmd == nil {
-		fmt.Printf("\nVisit %s in your browser\n", savvyLoginURL)
+		display.Error(browserOpenError)
 	} else {
 		if err := browserCmd.Start(); err != nil {
-			fmt.Printf("Error opening browser: %v\n", err)
-			os.Exit(1)
+			display.Error(browserOpenError)
 		}
 	}
 	p := tea.NewProgram(initialModel())
 
 	m, err := p.Run()
 	if err != nil {
-		fmt.Printf("Error running program: %v\n", err)
+		display.ErrorWithSupportCTA(fmt.Errorf("login error: %v\n", err))
 		os.Exit(1)
 	} else {
 		model := m.(loginModel)
 		if model.err != nil {
-			fmt.Printf("Error exchanging token: %v\n", model.err)
+			display.ErrorWithSupportCTA(fmt.Errorf("login failed: %w", model.err))
 			os.Exit(1)
 		}
 		// Handle the token here (e.g., store it)
@@ -95,7 +97,7 @@ func runLogin(cmd *cobra.Command, args []string) {
 			savvy_errors.DisplayWithSupportCTA(err)
 			os.Exit(1)
 		}
-		fmt.Println("Login successful!")
+		display.Success("Login successful!")
 	}
 }
 
