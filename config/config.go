@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 )
@@ -46,5 +47,19 @@ func LoadFromFile() (*Config, error) {
 	if err := json.NewDecoder(f).Decode(&c); err != nil {
 		return nil, err
 	}
+
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+
 	return &c, nil
+}
+
+var ErrMissingToken = errors.New("missing or empty token")
+
+func (c *Config) validate() error {
+	if c.Token == "" {
+		return ErrMissingToken
+	}
+	return nil
 }
