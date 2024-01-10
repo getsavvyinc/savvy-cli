@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 	"github.com/spf13/cobra"
 )
 
@@ -90,7 +91,8 @@ func runLogin(cmd *cobra.Command, args []string) {
 		// Handle the token here (e.g., store it)
 		cfg := config.Config{Token: model.textInput.Value()}
 		if err := cfg.Save(); err != nil {
-			fmt.Printf("Error saving config: %v\n", err)
+			err = fmt.Errorf("Error saving config: %w", err)
+			savvy_errors.DisplayWithSupportCTA(err)
 			os.Exit(1)
 		}
 		fmt.Println("Login successful!")
