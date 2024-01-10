@@ -14,7 +14,6 @@
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pkgs.go
-              pkgs.vhs
               pkgs.gotools
               pkgs.gopls
               pkgs.go-outline
