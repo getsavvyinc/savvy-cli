@@ -9,7 +9,6 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/display"
-	"github.com/getsavvyinc/savvy-cli/savvy_errors"
 	"github.com/spf13/cobra"
 )
 
@@ -94,7 +93,7 @@ func runLogin(cmd *cobra.Command, args []string) {
 		cfg := config.Config{Token: model.textInput.Value()}
 		if err := cfg.Save(); err != nil {
 			err = fmt.Errorf("Error saving config: %w", err)
-			savvy_errors.DisplayWithSupportCTA(err)
+			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
 		display.Success("Login successful!")
