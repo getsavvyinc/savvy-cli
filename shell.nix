@@ -2,6 +2,7 @@
 pkgs.mkShell {
   packages = [ 
     pkgs.go
+    pkgs.vhs
     pkgs.gotools
     pkgs.gopls
     pkgs.go-outline
@@ -13,6 +14,7 @@ pkgs.mkShell {
     pkgs.goose
     pkgs.cobra-cli
     pkgs.cowsay
+    pkgs.git
   ];
 
   inputsFrom = [];
