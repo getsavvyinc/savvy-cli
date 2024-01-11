@@ -40,15 +40,17 @@ echo
 echo "savvy was installed successfully to ${exe}"
 echo
 
-case :$PATH:
-  in *:$HOME/bin:*) ;; # do nothing
-     *) echo 'Run export PATH="$HOME/bin:$PATH" to use savvy' >&2;;
-esac
 
 
 echo
-echo "Run the following to finish setting up savvy:"
-echo "echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc"
+echo "Run the following command(s) to finish setting up savvy:"
+
+case :$PATH:
+  in *:$HOME/bin/foo:*) ;; # do nothing
+     *) echo "> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc";;
+esac
+
+echo "> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
