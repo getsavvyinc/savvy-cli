@@ -6,4 +6,9 @@ bin/*
 /savvy-dev 
 *.log
 
+*.prof 
+*.out
+
+.vscode/
+
 dist/
