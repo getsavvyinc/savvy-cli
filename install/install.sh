@@ -43,7 +43,7 @@ echo
 
 
 echo
-echo "Run the following command(s) to finish setting up savvy:"
+echo "Run the following commands to finish setting up savvy:"
 
 case :$PATH:
   in *:$HOME/bin/foo:*) ;; # do nothing
@@ -51,6 +51,7 @@ case :$PATH:
 esac
 
 echo "> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc"
+echo "> source ~/.zshrc # to pick up the new changes"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
