@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"text/template"
+	"time"
 )
 
 type Shell interface {
@@ -133,8 +134,9 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, z.shellCmd)
+	cmd := exec.Command(z.shellCmd)
 	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=1")
+	cmd.WaitDelay = 2 * time.Second
 	return cmd, nil
 }
 
