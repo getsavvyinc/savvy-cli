@@ -6,6 +6,8 @@ cli:
 cli_dev:
 	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -tags dev -o savvy-dev .
 
+cli_dev_debug:
+	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -gcflags="-N -l" -tags dev -o savvy-dev .
 release:
 	goreleaser release --clean
 
