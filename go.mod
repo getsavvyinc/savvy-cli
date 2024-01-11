@@ -1,6 +1,6 @@
 module github.com/getsavvyinc/savvy-cli
 
-go 1.21.4
+go 1.21.6
 
 require (
 	github.com/charmbracelet/bubbles v0.17.1
