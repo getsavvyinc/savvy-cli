@@ -75,7 +75,6 @@ func startRecording() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: kill this goroutine when the shell exits
 	go ss.ListenAndServe()
 	defer ss.Close()
 	// Create arbitrary command.
