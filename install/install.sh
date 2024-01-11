@@ -55,5 +55,5 @@ echo "> source ~/.zshrc # to pick up the new changes"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
-echo "Stuck? Join our Discord https://getsavvy.so/discord"
+echo "Stuck? We'd love to help. Just join our Discord https://getsavvy.so/discord"
 
