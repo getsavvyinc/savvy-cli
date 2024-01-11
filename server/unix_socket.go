@@ -28,8 +28,15 @@ func NewUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet.", ErrStartingRecordingSession)
 	}
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create listener: %w", err)
+	}
 
-	return &UnixSocketServer{socketPath: socketPath}, nil
+	return &UnixSocketServer{
+		socketPath: socketPath,
+		listener:   listener,
+	}, nil
 }
 
 func (s *UnixSocketServer) Commands() []string {
@@ -47,20 +54,14 @@ func (s *UnixSocketServer) Close() error {
 }
 
 func (s *UnixSocketServer) ListenAndServe() {
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		fmt.Printf("Failed to listen on Unix socket: %s\n", err)
-		return
-	}
-	s.listener = listener
-
 	for {
 		// Accept new connections
 		conn, err := s.listener.Accept()
 		if err != nil {
-			if !s.closed.Load() {
-				fmt.Printf("Failed to accept connection: %s\n", err)
+			if s.closed.Load() {
+				return
 			}
+			fmt.Printf("Failed to accept connection: %s\n", err)
 			continue
 		}
 
