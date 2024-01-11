@@ -124,7 +124,6 @@ func startRecording() ([]string, error) {
 	if err := c.Wait(); err != nil {
 		// TODO: inspect the error and determine if we exited due to ctrl-c or exit or something else.
 	}
-	// close the shell
 	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
 		// intentionally display the error and continue
 		display.Error(err)
