@@ -13,7 +13,7 @@
         {
           devShells.default = pkgs.mkShell {
             buildInputs = [
-              pkgs.go
+              #pkgs.go (doesn't install 1.21.6 yet)
               pkgs.gotools
               pkgs.gopls
               pkgs.go-outline
