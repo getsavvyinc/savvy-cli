@@ -69,7 +69,13 @@ func (lm loginModel) View() string {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
-	if err := verifyLogin(); err == nil {
+	force, err := cmd.Flags().GetBool(forceLoginFlag)
+	if err != nil {
+		display.ErrorWithSupportCTA(fmt.Errorf("error parsing flags: %w", err))
+		os.Exit(1)
+	}
+
+	if err := verifyLogin(); err == nil && !force {
 		display.Info("You are already logged in!")
 		display.Info("Run `savvy login --force` to get a new token")
 		return
@@ -124,6 +130,10 @@ func verifyLogin() error {
 	return err
 }
 
+const forceLoginFlag = "force"
+const forceLoginFlagShort = "f"
+
 func init() {
+	loginCmd.Flags().BoolP(forceLoginFlag, forceLoginFlagShort, false, "Force new login flow")
 	rootCmd.AddCommand(loginCmd)
 }
