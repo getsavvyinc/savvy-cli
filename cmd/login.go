@@ -76,7 +76,7 @@ func (lm loginModel) View() string {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
-	var browserOpenError = fmt.Errorf("Couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
+	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
 	display.Info(fmt.Sprintf("Opening your default browser to %s", savvyLoginURL))
 	browserCmd := browser.Open(savvyLoginURL)
 	if browserCmd == nil {
@@ -90,7 +90,7 @@ func runLogin(cmd *cobra.Command, args []string) {
 
 	m, err := p.Run()
 	if err != nil {
-		display.ErrorWithSupportCTA(fmt.Errorf("login error: %v\n", err))
+		display.ErrorWithSupportCTA(fmt.Errorf("login error: %w\n", err))
 		os.Exit(1)
 	} else {
 		model := m.(loginModel)
@@ -105,7 +105,7 @@ func runLogin(cmd *cobra.Command, args []string) {
 
 		cfg := config.Config{Token: tok}
 		if err := cfg.Save(); err != nil {
-			err = fmt.Errorf("Error saving config: %w", err)
+			err = fmt.Errorf("error saving config: %w", err)
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
