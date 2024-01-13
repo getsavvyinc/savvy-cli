@@ -97,26 +97,6 @@ if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zlogin" && "$SAVVY_LOGIN_SHELL" == "1" 
 fi
 
 unset _SAVVY_USER_ZDOTDIR
-
-# autoload -Uz add-zsh-hook
-#
-# This function fixes the prompt via a precmd hook.
-# function __savvy_cmd_pre_cmd__() {
-#  local status=$?
-#  echo "exit_status: ${status}</command>" > $SAVVY_STATUS_FILE
-# }
-
-# function __savvy_cmd_pre_exec__() {
-#   # $2 is the command with all the aliases expanded
-#   local cmd=$3
-#   echo "${cmd}" | nc -U $SAVVY_INPUT_FILE
-# }
-# add-zsh-hook preexec __savvy_cmd_pre_exec__
-
-# When promptinit is activated, a precmd hook which updates PS1 is installed.
-# In order to inject the kubie PS1 when promptinit is activated, we must
-# also add our own precmd hook which modifies PS1 after promptinit themes.
-# add-zsh-hook precmd __savvy_cmd_pre_cmd__
 `
 
 func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
