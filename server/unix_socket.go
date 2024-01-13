@@ -26,7 +26,7 @@ var ErrStartingRecordingSession = errors.New("failed to start recording session"
 
 func NewUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
-		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet.", ErrStartingRecordingSession)
+		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet", ErrStartingRecordingSession)
 	}
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
