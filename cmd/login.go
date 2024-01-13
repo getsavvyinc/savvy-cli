@@ -19,13 +19,6 @@ var loginCmd = &cobra.Command{
 	Short: "Login to savvy",
 	Long:  `Login allows users to use Google SSO to login to savvy.`,
 	Run:   runLogin,
-	PostRun: func(cmd *cobra.Command, args []string) {
-		if err := verifyLogin(); err != nil {
-			display.ErrorWithSupportCTA(fmt.Errorf("login failed: %w", err))
-			os.Exit(1)
-		}
-		display.Success("Login successful!")
-	},
 }
 
 var savvyLoginURL string = config.APIHost() + "/login"
@@ -102,6 +95,14 @@ func runLogin(cmd *cobra.Command, args []string) {
 		tok := model.textInput.Value()
 		// Remove quotes and braces and spaces from token
 		tok = strings.Trim(tok, "\"{} ")
+
+		defer func() {
+			if err := verifyLogin(); err != nil {
+				display.ErrorWithSupportCTA(fmt.Errorf("login failed: %w", err))
+				os.Exit(1)
+			}
+			display.Success("Login successful!")
+		}()
 
 		cfg := config.Config{Token: tok}
 		if err := cfg.Save(); err != nil {
