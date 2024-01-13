@@ -63,9 +63,17 @@ if [[ -f "$HOME/.zsh_history" ]] ; then
 fi
 
 SAVVY_LOGIN_SHELL=0
-if [[ "$OSTYPE" == "darwin"* ]] ; then
-    SAVVY_LOGIN_SHELL=1
-fi
+
+case "$OSTYPE" in
+  solaris*) SAVVY_LOGIN_SHELL=1;;
+  darwin*)  SAVVY_LOGIN_SHELL=1;;
+  linux*)   SAVVY_LOGIN_SHELL=1;;
+  bsd*)     SAVVY_LOGIN_SHELL=1;;
+  msys*)    echo "windows os is not supported" ;;
+  cygwin*)  echo "windows os is not supported" ;;
+  *)        echo "unknown: $OSTYPE" ;;
+esac
+
 if [[ -f "/etc/zprofile" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
     source "/etc/zprofile"
 elif [[ -f "/etc/zsh/zprofile" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
