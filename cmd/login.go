@@ -69,6 +69,12 @@ func (lm loginModel) View() string {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
+	if err := verifyLogin(); err == nil {
+		display.Info("You are already logged in!")
+		display.Info("Run `savvy login --force` to get a new token")
+		return
+	}
+
 	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
 	display.Info(fmt.Sprintf("Opening your default browser to %s", savvyLoginURL))
 	browserCmd := browser.Open(savvyLoginURL)
