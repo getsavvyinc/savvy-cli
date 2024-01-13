@@ -105,6 +105,9 @@ if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zlogin" && "$SAVVY_LOGIN_SHELL" == "1" 
 fi
 
 unset _SAVVY_USER_ZDOTDIR
+
+echo
+echo "Type 'exit' or press 'ctrl+d' when you done recording."
 `
 
 func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
@@ -132,5 +135,5 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 type todo struct{}
 
 func (t *todo) Spawn(ctx context.Context) (*exec.Cmd, error) {
-	return nil, errors.New("Not implemented")
+	return nil, errors.New("not implemented")
 }
