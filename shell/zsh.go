@@ -107,7 +107,7 @@ fi
 unset _SAVVY_USER_ZDOTDIR
 
 echo
-echo "Type 'exit' or press 'ctrl+d' when you done recording."
+echo "Type 'exit' or press 'ctrl+d' to stop recording."
 `
 
 func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
