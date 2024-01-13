@@ -66,6 +66,9 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 		os.Exit(1)
 	}
+	if runbook.URL != "" {
+		display.Success("View and edit your runbook online at: " + runbook.URL)
+	}
 }
 
 func startRecording() ([]string, error) {
