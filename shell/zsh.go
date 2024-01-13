@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -15,8 +16,8 @@ type Shell interface {
 }
 
 func New(logTarget string) Shell {
-	switch shell := os.Getenv("SHELL"); shell {
-	case "/bin/zsh":
+	switch shell := os.Getenv("SHELL"); {
+	case strings.HasSuffix(shell, "/zsh"):
 		return &zsh{
 			shellCmd:   shell,
 			SocketPath: logTarget,
