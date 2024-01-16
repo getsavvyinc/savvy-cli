@@ -12,6 +12,14 @@
 
 set -e
 
+# source: colors.sh file on render managed envs
+# source: https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+BLUE=$(tput setaf 4)
+CYAN=$(tput setaf 6)
+BOLD=$(tput bold)
+RED=$(tput setaf 1)
+RESET=$(tput sgr0)
+
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
 
@@ -43,17 +51,18 @@ echo
 
 
 echo
-echo "Run the following commands to finish setting up savvy:"
+echo "${BLUE}${BOLD}Run the following commands to finish setting up savvy:${RESET}"
+echo
 
 case :$PATH:
   in *:$HOME/bin/foo:*) ;; # do nothing
-     *) echo "> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc";;
+     *) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc${RESET}";;
 esac
 
-echo "> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc"
-echo "> source ~/.zshrc # to pick up the new changes"
+echo "${BLUE}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}"
+echo "${BLUE}> source ~/.zshrc # to pick up the new changes${RESET}"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
-echo "Stuck? We'd love to help. Just join our Discord https://getsavvy.so/discord"
+echo "${RED}${BOLD}Stuck?${RESET} ${RED}We'd love to help. Just join our Discord https://getsavvy.so/discord${RESET}"
 
