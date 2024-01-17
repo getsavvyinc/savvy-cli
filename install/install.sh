@@ -55,7 +55,7 @@ echo "${BLUE}${BOLD}Run the following commands to finish setting up savvy:${RESE
 echo
 
 case :$PATH:
-  in *:$HOME/bin/foo:*) ;; # do nothing
+  in *:${bin_dir}*) ;; # do nothing
      *) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc${RESET}";;
 esac
 
