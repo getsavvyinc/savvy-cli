@@ -63,6 +63,10 @@ func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 
 	// Use the embedded Transport to perform the actual request
 	res, err := http.DefaultTransport.RoundTrip(clonedReq)
+	if err != nil {
+		err = fmt.Errorf("%w: %v", ErrInvalidClient, err)
+		return nil, err
+	}
 
 	// If we get a 401 Unauthorized, then the token is expired
 	// and we need to refresh it
