@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/spf13/cobra"
 )
@@ -10,17 +12,17 @@ var whoamiCmd = &cobra.Command{
 	Use:   "whoami",
 	Short: "Shows information about the current user",
 	Long:  "Shows information about the current user",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cl, err := client.New()
 		if err != nil {
-			return err
+			fmt.Println(err)
+			return
 		}
 		whoami, err := cl.WhoAmI(cmd.Context())
 		if err != nil {
-			return err
+			cmd.PrintErrln(err)
 		}
 		cmd.Println(whoami)
-		return nil
 	},
 }
 
