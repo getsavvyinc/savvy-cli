@@ -129,7 +129,6 @@ func startRecording() ([]string, error) {
 
 	if err := c.Wait(); err != nil {
 		// TODO: inspect the error and determine if we exited due to ctrl-c or exit or something else.
-		log.Println("error waiting for command to exit", err)
 		return nil, err
 	}
 	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
