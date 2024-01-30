@@ -83,6 +83,7 @@ func startRecording() ([]string, error) {
 	// Create arbitrary command.
 	sh := shell.New(socketPath)
 	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer func() { cancelCtx() }()
 	c, err := sh.Spawn(ctx)
 	if err != nil {
 		err := fmt.Errorf("failed to start recording: %w", err)
@@ -125,12 +126,11 @@ func startRecording() ([]string, error) {
 		_, _ = io.Copy(os.Stdout, ptmx)
 		// cancelCtx ensures c.Wait() returns after ptmx close when the user types exit or ctrl-d
 		cancelCtx()
+		_ = ptmx.Close()
 	}()
 
-	if err := c.Wait(); err != nil {
-		// TODO: inspect the error and determine if we exited due to ctrl-c or exit or something else.
-		return nil, err
-	}
+	_ = c.Wait()
+
 	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
 		// intentionally display the error and continue
 		display.Error(err)
