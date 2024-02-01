@@ -1,6 +1,8 @@
 package fetch
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -13,15 +15,25 @@ type Model struct {
 	done bool
 }
 
+var spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
+
 // New creates a new fetch model.
 // waitMsg is the message to display while waiting for the fetch to complete.
 func New(waitMsg string) Model {
 	m := Model{
-		spinner: spinner.New(spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("69")))),
+		spinner: newSpinner(),
 		waitMsg: waitMsg,
 		done:    false,
 	}
 	return m
+}
+
+func newSpinner() spinner.Model {
+	sp := spinner.New(spinner.WithSpinner(spinner.MiniDot), spinner.WithStyle(spinnerStyle))
+	mySpinner := new(spinner.Model)
+	*mySpinner = sp
+	mySpinner.Spinner.FPS = time.Second / 20
+	return *mySpinner
 }
 
 type DoneMsg struct{}
@@ -60,5 +72,5 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 // The pointer receiver is important here!
 func (m *Model) resetSpinner() {
-	m.spinner = spinner.New(spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("69"))))
+	m.spinner = newSpinner()
 }
