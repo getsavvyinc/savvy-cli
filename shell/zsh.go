@@ -128,7 +128,7 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 
 	cmd := exec.CommandContext(ctx, z.shellCmd)
 	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=1")
-	cmd.WaitDelay = 2 * time.Second
+	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
 
