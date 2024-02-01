@@ -35,8 +35,10 @@ func NewListModel(items []ListItem, title string, url string) ListModel {
 	for _, i := range items {
 		listItems = append(listItems, i)
 	}
+
+	delegate := list.NewDefaultDelegate()
 	m := ListModel{
-		list: list.New(listItems, list.NewDefaultDelegate(), 0, 0),
+		list: list.New(listItems, delegate, 0, 0),
 	}
 	m.list.Title = title
 
