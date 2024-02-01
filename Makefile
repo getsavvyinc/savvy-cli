@@ -3,14 +3,16 @@ version := $(shell git rev-parse HEAD)
 cli:
 	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -o savvy .
 
+cli_race:
+	go build -race -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -o savvy .
 cli_dev:
-	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -tags dev -o savvy-dev .
+	go build -race -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -tags dev -o savvy-dev .
 
 cli_dev_debug:
-	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -gcflags="-N -l" -tags dev -o savvy-dev .
+	go build -race -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -gcflags="-N -l" -tags dev -o savvy-dev .
 
 cli_debug:
-	go build -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -gcflags="-N -l" -o savvy .
+	go build -race -ldflags "-X github.com/getsavvyinc/savvy-cli/config.version=$(version)" -gcflags="-N -l" -o savvy .
 
 release:
 	goreleaser release --clean
