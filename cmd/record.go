@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,6 +17,8 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/shell"
+	"github.com/muesli/cancelreader"
+	"github.com/muesli/termenv"
 
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/spf13/cobra"
@@ -31,6 +34,7 @@ var recordCmd = &cobra.Command{
   Type 'exit' to exit the sub shell and view the runbook.`,
 	Run: runRecordCmd,
 }
+var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
 func runRecordCmd(cmd *cobra.Command, args []string) {
 	cl, err := client.New()
@@ -45,13 +49,20 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+	gctx, cancel := context.WithCancel(ctx)
+
 	gm := component.NewGenerateRunbookModel(commands, cl)
-	p := tea.NewProgram(gm)
+	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
-		// TODO: fail gracefully. Provider users either a link to view the runbook or a list of their saved commands
-		fmt.Printf("could not run program: %s\n", err)
+		err = fmt.Errorf("failed to generate runbook: %w", err)
+		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
+
+	// ensure the bubble tea program is finished before we start the next one
+	cancel()
+	p.Wait()
 
 	runbook := <-gm.RunbookCh()
 	m, err := newDisplayCommandsModel(runbook)
@@ -59,10 +70,10 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
-	p = tea.NewProgram(m, tea.WithAltScreen())
+
+	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		// TODO: fail gracefully and provide users a link to view the runbook
-		fmt.Printf("could not run program: %s\n", err)
 		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 		os.Exit(1)
 	}
@@ -79,11 +90,15 @@ func startRecording() ([]string, error) {
 		return nil, err
 	}
 	go ss.ListenAndServe()
-	defer ss.Close()
+	defer func() {
+		ss.Close()
+	}()
 	// Create arbitrary command.
 	sh := shell.New(socketPath)
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer func() { cancelCtx() }()
+	defer func() {
+		cancelCtx()
+	}()
 	c, err := sh.Spawn(ctx)
 	if err != nil {
 		err := fmt.Errorf("failed to start recording: %w", err)
@@ -96,7 +111,9 @@ func startRecording() ([]string, error) {
 		return nil, err
 	}
 	// Make sure to close the pty at the end.
-	defer func() { _ = ptmx.Close() }() // Best effort.
+	defer func() {
+		_ = ptmx.Close()
+	}() // Best effort.
 
 	// Handle pty size.
 	ch := make(chan os.Signal, 1)
@@ -116,25 +133,42 @@ func startRecording() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to set stdin to raw mode: %w", err)
 	}
-	defer func() {
-		term.Restore(int(os.Stdin.Fd()), oldState)
-	}() // Best effort.
 
-	// Copy stdin to the pty and the pty to stdout.
-	go func() { _, _ = io.Copy(ptmx, os.Stdin) }()
-	go func() {
-		_, _ = io.Copy(os.Stdout, ptmx)
-		// cancelCtx ensures c.Wait() returns after ptmx close when the user types exit or ctrl-d
-		cancelCtx()
-		_ = ptmx.Close()
+	// Restore the terminal to its original state when we're done.
+	defer func() {
+		if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
+			// intentionally display the error and continue without exiting
+			display.Error(err)
+		}
 	}()
 
-	_ = c.Wait()
-
-	if err := term.Restore(int(os.Stdin.Fd()), oldState); err != nil {
-		// intentionally display the error and continue
+	// Create a cancelable reader
+	// This is used to cancel the reader when the user types 'exit' or 'ctrl+d' to exit the subshell
+	// Without this, the io.Copy blocks until the _next_ read that conflicts with bubbletea attempting to read from os.Stdin later on.
+	cancelReader, err := cancelreader.NewReader(os.Stdin)
+	if err != nil {
 		display.Error(err)
 	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		io.Copy(ptmx, cancelReader)
+	}()
+
+	// io.Copy blocks till ptmx is closed.
+	io.Copy(os.Stdout, ptmx)
+
+	// cleanup
+	//// cancel ctx and wait for the underlying shell command to finish
+	cancelCtx()
+	c.Wait()
+
+	//// cancel the cancelReader and wait for it's go routine to finish
+	cancelReader.Cancel()
+	wg.Wait()
 
 	return ss.Commands(), nil
 }
@@ -159,16 +193,14 @@ func newDisplayCommandsModel(runbook *component.Runbook) (*displayCommands, erro
 		return nil, errors.New("runbook is empty")
 	}
 
-	l := component.NewListModel(toListItems(runbook.Steps), runbook.Title, runbook.URL)
+	listItems := toListItems(runbook.Steps)
+	l := component.NewListModel(listItems, runbook.Title, runbook.URL)
 	return &displayCommands{l: l}, nil
 }
 
 func (dc *displayCommands) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	if err := dc.l.Init(); err != nil {
-		fmt.Printf("Error initializing list: %v", err)
-		return nil
-	}
+	dc.l.Init()
 	return nil
 }
 
