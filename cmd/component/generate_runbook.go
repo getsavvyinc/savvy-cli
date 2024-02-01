@@ -14,6 +14,7 @@ type GenerateRunbookModel struct {
 
 	commands  []string
 	runbookCh chan *Runbook
+	done      bool
 }
 
 func (m GenerateRunbookModel) RunbookCh() chan *Runbook {
@@ -38,6 +39,10 @@ type GenerateRunbookDoneMsg struct {
 	Err              error
 }
 
+func (m *GenerateRunbookModel) IsDone() bool {
+	return m.done
+}
+
 func (m *GenerateRunbookModel) Generate() tea.Msg {
 
 	generatedRunbook, err := m.cl.GenerateRunbook(context.Background(), m.commands)
@@ -60,8 +65,8 @@ func (m GenerateRunbookModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case GenerateRunbookDoneMsg:
-		m.Model, _ = m.Model.Update(m.Done())
 		m.runbookCh <- toRunbook(msg.GeneratedRunbook)
+		m.done = true
 		return m, tea.Quit
 	}
 	m.Model, cmd = m.Model.Update(msg)
@@ -107,5 +112,8 @@ func toStep(step client.Step) RunbookStep {
 }
 
 func (m GenerateRunbookModel) View() string {
+	if m.done {
+		return ""
+	}
 	return m.Model.View()
 }
