@@ -26,8 +26,9 @@ func (i ListItem) FilterValue() string {
 }
 
 type ListModel struct {
-	list list.Model
-	url  string
+	list        list.Model
+	url         string
+	editBinding key.Binding
 }
 
 func NewListModel(items []ListItem, title string, url string) ListModel {
@@ -42,13 +43,13 @@ func NewListModel(items []ListItem, title string, url string) ListModel {
 	}
 	m.list.Title = title
 
-	editBinding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online"))
+	m.editBinding = key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online"))
 	m.list.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{editBinding}
+		return []key.Binding{m.editBinding}
 	}
 
 	m.list.AdditionalShortHelpKeys = func() []key.Binding {
-		return []key.Binding{editBinding}
+		return []key.Binding{m.editBinding}
 	}
 
 	m.url = url
@@ -89,7 +90,7 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		if msg.String() == "e" {
+		if msg.String() == "e" && m.list.FilterState() == list.Unfiltered {
 			return m, OpenBrowser(m.url, NopMsg{}, NopMsg{})
 		}
 
