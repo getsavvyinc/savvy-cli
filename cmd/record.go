@@ -111,9 +111,7 @@ func startRecording() ([]string, error) {
 		return nil, err
 	}
 	// Make sure to close the pty at the end.
-	defer func() {
-		_ = ptmx.Close()
-	}() // Best effort.
+	defer ptmx.Close()
 
 	// Handle pty size.
 	ch := make(chan os.Signal, 1)
