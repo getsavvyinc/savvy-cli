@@ -21,7 +21,7 @@ var loginCmd = &cobra.Command{
 	Run:   runLogin,
 }
 
-var savvyLoginURL string = config.APIHost() + "/login"
+var savvyLoginURL string = config.DashboardHost() + "/cli_login"
 
 type loginModel struct {
 	textInput textinput.Model
