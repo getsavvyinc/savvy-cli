@@ -1,5 +1,11 @@
 # Savvy
 
+<h3 align="left">
+  | <a href="https://getsavvy.so/discord">Discord</a> |
+  <a href="https://twitter.com/savvyoncall">Twitter</a> |
+  <a href="https://www.getsavvy.so/">Website</a> |
+</h3>
+
 Savvy helps your create and share runbooks directly from your terminal.
 
 ## Demo
