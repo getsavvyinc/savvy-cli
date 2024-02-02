@@ -55,5 +55,5 @@ Currently, Savvy does not support the following:
 
 If you need assistance or have questions:
 
-* **Create an Issue**: [Create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) on our GitHub repository.
-* **Join Our Discord**: Connect with the community on [Discord](https://getsavvy.so/discord)
+* [Create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) on our GitHub repository.
+* Join our [Discord](https://getsavvy.so/discord) server
