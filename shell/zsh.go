@@ -135,5 +135,5 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 type todo struct{}
 
 func (t *todo) Spawn(ctx context.Context) (*exec.Cmd, error) {
-	return nil, errors.New("not implemented")
+	return nil, errors.New("savvy doesn't support your current shell")
 }
