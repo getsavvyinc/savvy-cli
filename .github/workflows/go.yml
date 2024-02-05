@@ -25,3 +25,6 @@ jobs:
 
     - name: Build
       run: make cli
+
+    - name: Test
+      run: go test -v -count=1 ./...
