@@ -2,7 +2,6 @@ package shell
 
 import (
 	"context"
-	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,35 +9,13 @@ import (
 	"time"
 )
 
-type Shell interface {
-	Spawn(ctx context.Context) (*exec.Cmd, error)
-}
-
-func New(logTarget string) Shell {
-	shell := detectWithDefault()
-	switch shell {
-	case Zsh:
-		return &zsh{
-			shellCmd:   "zsh",
-			SocketPath: logTarget,
-		}
-	case Dash:
-		fallthrough
-	case Bash:
-		return &bash{
-			shellCmd:   "bash",
-			SocketPath: logTarget,
-		}
-	default:
-		return &todo{}
-	}
-}
-
 type zsh struct {
 	shellCmd string
 	// Exported to use in template
 	SocketPath string
 }
+
+var _ Shell = (*zsh)(nil)
 
 const script = `
   # Reference for loading behavior
@@ -137,10 +114,4 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=1")
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
-}
-
-type todo struct{}
-
-func (t *todo) Spawn(ctx context.Context) (*exec.Cmd, error) {
-	return nil, errors.New("savvy doesn't support your current shell")
 }
