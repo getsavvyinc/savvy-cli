@@ -54,13 +54,25 @@ echo
 echo "${BLUE}${BOLD}Run the following commands to finish setting up savvy:${RESET}"
 echo
 
+# defaults to zsh
+shell="zsh"
+if [ -n "$ZSH_VERSION" ]; then
+  shell="zsh"
+elif [ -n "$BASH_VERSION" ]; then
+  shell="bash"
+fi
+
 case :$PATH:
   in *:${bin_dir}*) ;; # do nothing
-     *) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc${RESET}";;
+     *) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.${shell}rc${RESET}";;
 esac
 
-echo "${BLUE}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}"
-echo "${BLUE}> source ~/.zshrc # to pick up the new changes${RESET}"
+case :$shell:
+  in  *zsh*) echo "${BLUE}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}";;
+      *bash*) echo "${BLUE}> echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}";;
+esac
+
+echo "${BLUE}> source ~/.${shell}rc # to pick up the new changes${RESET}"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
