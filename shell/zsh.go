@@ -22,6 +22,13 @@ func New(logTarget string) Shell {
 			shellCmd:   "zsh",
 			SocketPath: logTarget,
 		}
+	case Dash:
+		fallthrough
+	case Bash:
+		return &bash{
+			shellCmd:   "bash",
+			SocketPath: logTarget,
+		}
 	default:
 		return &todo{}
 	}
