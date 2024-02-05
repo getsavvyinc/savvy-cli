@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var SupportedShells = []string{"zsh", "bash", "dash"}
-
 //go:embed savvy.zsh
 var zshSetupScript embed.FS
 

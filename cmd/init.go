@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"github.com/getsavvyinc/savvy-cli/cmd/setup"
+	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ var initCmd = &cobra.Command{
 	Short: "Output shell setup",
 	Long:  `Output shell setup`,
 
-	ValidArgs: setup.SupportedShells,
+	ValidArgs: shell.SupportedShells(),
 	Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 
 	Run: func(cmd *cobra.Command, args []string) {

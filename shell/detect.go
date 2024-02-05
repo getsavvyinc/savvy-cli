@@ -24,6 +24,10 @@ const (
 	Fish Kind = "fish"
 )
 
+func SupportedShells() []string {
+	return []string{string(Bash), string(Zsh), string(Dash)}
+}
+
 func runPS(args []string) (string, error) {
 	out, err := exec.Command("ps", args...).CombinedOutput()
 	if err != nil {
