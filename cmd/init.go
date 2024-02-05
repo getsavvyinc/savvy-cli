@@ -26,4 +26,6 @@ var initCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.AddCommand(setup.ZshCmd)
+	initCmd.AddCommand(setup.BashCmd)
+	initCmd.AddCommand(setup.DashCmd)
 }
