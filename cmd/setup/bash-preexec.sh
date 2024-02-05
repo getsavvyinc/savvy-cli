@@ -43,14 +43,34 @@ if [ -z "${BASH_VERSION-}" ]; then
     return 1;
 fi
 
+
 # We only support Bash 3.1+.
 # Note: BASH_VERSINFO is first available in Bash-2.0.
 if [[ -z "${BASH_VERSINFO-}" ]] || (( BASH_VERSINFO[0] < 3 || (BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] < 1) )); then
     return 1
 fi
 
+# Enable experimental subshell support
+export __bp_enable_subshells="true"
+
+savvy_cmd_pre_exec() {
+  #TODO: expand aliases
+  local cmd=$1
+  if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
+    nc -w0 -U $SAVVY_INPUT_FILE <<< "$cmd"
+  fi
+}
+
+savvy_cmd_pre_cmd() {
+  if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'* ]]; then
+  PS1+="\[\e[31m\]recording\[\e[0m\] 😎 "
+  fi
+}
+
 # Avoid duplicate inclusion
 if [[ -n "${bash_preexec_imported:-}" || -n "${__bp_imported:-}" ]]; then
+    preexec_functions+=(savvy_cmd_pre_exec)
+    precmd_functions+=(savvy_cmd_pre_cmd)
     return 0
 fi
 bash_preexec_imported="defined"
@@ -381,17 +401,6 @@ if [[ -z "${__bp_delay_install:-}" ]]; then
     __bp_install_after_session_init
 fi;
 
-savvy_cmd_pre_exec() {
-  echo "savvy-pre-exec: $1"
-  echo "total num of args: $#"
-  echo "all args: $@"
-}
 
-savvy_cmd_pre_cmd() {
-  if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'* ]]; then
-  PS1+="\[\e[31m\]recording\[\e[0m\] 😎 "
-  fi
-}
-
-pre_exec_functions+=(savvy_cmd_pre_exec)
+preexec_functions+=(savvy_cmd_pre_exec)
 precmd_functions+=(savvy_cmd_pre_cmd)
