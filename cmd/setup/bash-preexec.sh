@@ -53,6 +53,8 @@ fi
 # Enable experimental subshell support
 export __bp_enable_subshells="true"
 
+SAVVY_INPUT_FILE=/tmp/savvy-socket
+
 savvy_cmd_pre_exec() {
   #TODO: expand aliases
   local cmd=$1
