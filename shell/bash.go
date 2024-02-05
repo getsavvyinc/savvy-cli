@@ -56,6 +56,9 @@ else
         source "$HOME/.bashrc"
     fi
 fi
+
+echo
+echo "Type 'exit' or press 'ctrl+d' to stop recording."
 `
 
 var bashTemplate *template.Template
