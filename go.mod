@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/creack/pty v1.1.21
+	github.com/getsavvyinc/upgrade-cli v0.0.0-20240209024206-9961e839ae4d
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.2
 	github.com/spf13/cobra v1.8.0
@@ -17,7 +18,6 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
-	github.com/getsavvyinc/upgrade-cli v0.0.0-20240209024206-9961e839ae4d // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
