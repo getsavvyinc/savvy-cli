@@ -55,12 +55,7 @@ echo "${BLUE}${BOLD}Run the following commands to finish setting up savvy:${RESE
 echo
 
 # defaults to zsh
-shell="zsh"
-if [ -n "$ZSH_VERSION" ]; then
-  shell="zsh"
-elif [ -n "$BASH_VERSION" ]; then
-  shell="bash"
-fi
+shell="${SHELL:-'zsh'}"
 
 case :$PATH:
   in *:${bin_dir}*) ;; # do nothing
