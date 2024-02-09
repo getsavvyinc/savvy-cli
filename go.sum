@@ -13,8 +13,8 @@ github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81/go.mod h1:Yyn
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/creack/pty v1.1.21 h1:1/QdRyBaHHJP61QkWMXlOIBfsgdDeeKfK8SYVUWJKf0=
 github.com/creack/pty v1.1.21/go.mod h1:MOBLtS5ELjhRRrroQr9kyvTxUAFNvYEK993ew/Vr4O4=
-github.com/getsavvyinc/upgrade-cli v0.0.0-20240209024206-9961e839ae4d h1:DUmBB3ZVzcHK7aHaSiRX+yhoXB+CGZiVkIJWxhnVAFI=
-github.com/getsavvyinc/upgrade-cli v0.0.0-20240209024206-9961e839ae4d/go.mod h1:K30H1jPz2+7o/ssdrBZUTONSXy/zJR7/XOe7/Wnjv2A=
+github.com/getsavvyinc/upgrade-cli v0.0.0-20240209035634-2a9ac6e365a5 h1:Dy5zaY/xnq5NDvSeQlZ/ZL0a0jSwEwqQkZj8vBgCB0Q=
+github.com/getsavvyinc/upgrade-cli v0.0.0-20240209035634-2a9ac6e365a5/go.mod h1:K30H1jPz2+7o/ssdrBZUTONSXy/zJR7/XOe7/Wnjv2A=
 github.com/hashicorp/go-version v1.6.0 h1:feTTfFNnjP967rlCxM/I9g701jU+RN74YKx2mOkIeek=
 github.com/hashicorp/go-version v1.6.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
