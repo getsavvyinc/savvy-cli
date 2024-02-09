@@ -48,7 +48,7 @@ Perform the tasks you wish to record in your terminal. When you're done, you can
 
 Currently, Savvy does not support the following:
 
-* Windows OS
+* Windows
 * Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support another shell.
 
 ## Getting Help
