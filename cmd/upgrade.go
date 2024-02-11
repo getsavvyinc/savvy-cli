@@ -28,8 +28,11 @@ var upgradeCmd = &cobra.Command{
 
 		upgrader := upgrade.NewUpgrader(owner, repo, executablePath)
 
-		if ok, err := upgrader.IsNewVersionAvailable(context.Background(), version); err != nil || !ok {
-			display.Info("You are already on the latest version of savvy.")
+		if ok, err := upgrader.IsNewVersionAvailable(context.Background(), version); err != nil {
+			display.Error(err)
+			return
+		} else if !ok {
+			display.Info("Savvy is already up to date")
 			return
 		}
 
