@@ -67,6 +67,23 @@ case :$shell:
       *bash*) echo "${BLUE}> echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}";;
 esac
 
+
+## for bash check if .bash_profile exists and if the user has sourced bashrc inside it
+BASHRC="$HOME/.bashrc"
+BASH_PROFILE="$HOME/.bash_profile"
+if [ "$shell" = "bash" ]; then
+  if [ -f "$BASH_PROFILE" ]; then
+    # Look for lines that either use source /path/to/.bashrc or . /path/to/.bashrc, accounting for potential spaces.
+    # The command following if is executed, and if its exit status is 0 (which indicates success), the then branch is executed.
+    if ! grep -qE "^\s*(source|\.)\s*(.+\.bashrc)" "$BASH_PROFILE"; then
+      echo "${BLUE}> echo 'source ~/.bashrc' >> ~/.bash_profile${RESET}"
+    fi
+  fi
+fi
+
+
+
+
 echo "${BLUE}> source ~/.${shell}rc # to pick up the new changes${RESET}"
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
