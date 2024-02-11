@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/creack/pty v1.1.21
-	github.com/getsavvyinc/upgrade-cli v0.2.0
+	github.com/getsavvyinc/upgrade-cli v0.3.0
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.2
 	github.com/spf13/cobra v1.8.0
