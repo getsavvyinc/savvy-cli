@@ -44,6 +44,12 @@ savvy record
 
 Perform the tasks you wish to record in your terminal. When you're done, you can stop the recording by typing `exit` or pressing `ctrl-D`.
 
+4. **Upgrade CLI**
+
+```sh
+savvy upgrade
+```
+
 ## Limitations
 
 Currently, Savvy does not support the following:
