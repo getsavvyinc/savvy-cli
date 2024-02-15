@@ -84,7 +84,11 @@ fi
 
 
 
-echo "${BLUE}> source ~/.${shell}rc # to pick up the new changes${RESET}"
+case :$shell:
+  in  *zsh*) echo "${BLUE}> source ~/.zshrc # to pick up the new changes${RESET}";;
+      *bash*) echo "${BLUE}> source ~/.bashrc # to pick up the new changes${RESET}";;
+esac
+
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
