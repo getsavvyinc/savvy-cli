@@ -14,7 +14,7 @@ function __savvy_cmd_pre_exec__() {
   # $2 is the command with all the aliases expanded
   local cmd=$3
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-     nc -w0 -U $SAVVY_INPUT_FILE <<< "$cmd"
+     SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
   fi
 }
 add-zsh-hook preexec __savvy_cmd_pre_exec__
