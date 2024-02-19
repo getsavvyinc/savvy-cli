@@ -59,7 +59,7 @@ savvy_cmd_pre_exec() {
   #TODO: expand aliases
   local cmd=$BASH_COMMAND
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-    nc -w0 -U $SAVVY_INPUT_FILE <<< "$cmd"
+    SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
   fi
 }
 
