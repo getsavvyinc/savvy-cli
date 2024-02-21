@@ -56,7 +56,6 @@ export __bp_enable_subshells="true"
 SAVVY_INPUT_FILE=/tmp/savvy-socket
 
 savvy_cmd_pre_exec() {
-  #TODO: expand aliases
   local cmd=$BASH_COMMAND
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
     SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
