@@ -18,4 +18,6 @@ function __savvy_cmd_pre_exec__() {
   fi
 }
 add-zsh-hook preexec __savvy_cmd_pre_exec__
+# NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
+# TODO: use templates to avoid the need to manually change shell checks
 add-zsh-hook precmd __savvy_cmd_pre_cmd__

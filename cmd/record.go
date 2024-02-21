@@ -32,8 +32,16 @@ var recordCmd = &cobra.Command{
 	Long: `Record creates a sub shell that records each terminal command and helps you create a runbook.
 
   Type 'exit' to exit the sub shell and view the runbook.`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		checker := shell.NewSetupChecker()
+		if err := checker.CheckSetup(); err != nil {
+			display.Error(err)
+			os.Exit(1)
+		}
+	},
 	Run: runRecordCmd,
 }
+
 var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
 func runRecordCmd(cmd *cobra.Command, args []string) {
@@ -51,6 +59,11 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 
 	ctx := context.Background()
 	gctx, cancel := context.WithCancel(ctx)
+
+	if len(commands) == 0 {
+		display.Error(errors.New("No commands were recorded"))
+		return
+	}
 
 	gm := component.NewGenerateRunbookModel(commands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))

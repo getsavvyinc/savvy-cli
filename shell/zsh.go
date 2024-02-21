@@ -18,8 +18,11 @@ type zsh struct {
 var _ Shell = (*zsh)(nil)
 
 const script = `
-  # Reference for loading behavior
-  # https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+# Reference for loading behavior
+# https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+RED=$(tput setaf 1)
+RESET=$(tput sgr0)
 
 SAVVY_INPUT_FILE={{.SocketPath}}
 
@@ -89,6 +92,14 @@ if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zlogin" && "$SAVVY_LOGIN_SHELL" == "1" 
 fi
 
 unset _SAVVY_USER_ZDOTDIR
+
+if ! whence -v __savvy_cmd_pre_exec__ >/dev/null; then
+echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
+echo
+echo "${RED}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}"
+echo "${RED}> source ~/.zshrc${RESET}"
+exit 1
+fi
 
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop recording."

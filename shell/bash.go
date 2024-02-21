@@ -18,6 +18,9 @@ var _ Shell = (*bash)(nil)
 
 // Adapted from: https://github.com/sbstp/kubie/
 const bashrcScript = `
+RED=$(tput setaf 1)
+RESET=$(tput sgr0)
+
 SAVVY_LOGIN_SHELL=0
 case "$OSTYPE" in
   solaris*) SAVVY_LOGIN_SHELL=1;;
@@ -55,6 +58,14 @@ else
     if [[ -f "$HOME/.bashrc" ]] ; then
         source "$HOME/.bashrc"
     fi
+fi
+
+if ! type savvy_cmd_pre_exec >/dev/null 2>&1; then
+echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
+echo
+echo "${RED}> echo 'eval \"\$(savvy init bash)\"' >> ~/.zshrc${RESET}"
+echo "${RED}> source ~/.bashrc${RESET}"
+exit 1
 fi
 
 echo
