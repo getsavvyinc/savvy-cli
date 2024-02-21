@@ -404,4 +404,6 @@ fi;
 
 
 preexec_functions+=(savvy_cmd_pre_exec)
+# NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
+# TODO: use templates to avoid the need to manually change shell checks
 precmd_functions+=(savvy_cmd_pre_cmd)
