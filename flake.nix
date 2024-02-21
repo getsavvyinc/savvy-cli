@@ -17,7 +17,6 @@
               pkgs.gotools
               pkgs.gopls
               pkgs.go-outline
-              pkgs.gocode
               pkgs.gopkgs
               pkgs.gocode-gomod
               pkgs.godef
