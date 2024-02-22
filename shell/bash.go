@@ -63,7 +63,7 @@ fi
 if ! type savvy_cmd_pre_exec >/dev/null 2>&1; then
 echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
 echo
-echo "${RED}> echo 'eval \"\$(savvy init bash)\"' >> ~/.zshrc${RESET}"
+echo "${RED}> echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}"
 echo "${RED}> source ~/.bashrc${RESET}"
 exit 1
 fi
