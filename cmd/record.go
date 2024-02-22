@@ -57,14 +57,13 @@ func runRecordCmd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-	gctx, cancel := context.WithCancel(ctx)
-
 	if len(commands) == 0 {
 		display.Error(errors.New("No commands were recorded"))
 		return
 	}
 
+	ctx := context.Background()
+	gctx, cancel := context.WithCancel(ctx)
 	gm := component.NewGenerateRunbookModel(commands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
