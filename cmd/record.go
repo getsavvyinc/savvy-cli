@@ -32,7 +32,7 @@ var recordCmd = &cobra.Command{
 	Long: `Record creates a sub shell that records each terminal command and helps you create a runbook.
 
   Type 'exit' to exit the sub shell and view the runbook.`,
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRun: func(_ *cobra.Command, _ []string) {
 		checker := shell.NewSetupChecker()
 		if err := checker.CheckSetup(); err != nil {
 			display.Error(err)
@@ -44,7 +44,7 @@ var recordCmd = &cobra.Command{
 
 var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
-func runRecordCmd(cmd *cobra.Command, args []string) {
+func runRecordCmd(_ *cobra.Command, _ []string) {
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
