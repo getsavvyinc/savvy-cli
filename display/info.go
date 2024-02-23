@@ -14,3 +14,7 @@ var infoStyle = lipgloss.NewStyle().
 func Info(text string) {
 	fmt.Println(infoStyle.Render(text))
 }
+
+func Infof(format string, a ...interface{}) {
+	Info(fmt.Sprintf(format, a...))
+}
