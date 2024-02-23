@@ -1,12 +1,16 @@
 package shell
 
 import (
+	"bufio"
 	"context"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"text/template"
 	"time"
+
+	"github.com/getsavvyinc/savvy-cli/tail"
 )
 
 type zsh struct {
@@ -128,5 +132,28 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 }
 
 func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
-	return nil, nil
+	historyFile := os.Getenv("HISTFILE")
+	if historyFile == "" {
+		u, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		historyFile = filepath.Join(u.HomeDir, ".zsh_history")
+	}
+
+	rc, err := tail.Tail(historyFile, 100)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	var result []string
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line != "" {
+			result = append(result, line)
+		}
+	}
+	return result, nil
 }

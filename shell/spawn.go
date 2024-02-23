@@ -11,6 +11,7 @@ import (
 
 type Shell interface {
 	Spawn(ctx context.Context) (*exec.Cmd, error)
+	TailHistory(ctx context.Context) ([]string, error)
 }
 
 func New(logTarget string) Shell {
@@ -36,5 +37,9 @@ func New(logTarget string) Shell {
 type todo struct{}
 
 func (t *todo) Spawn(ctx context.Context) (*exec.Cmd, error) {
+	return nil, errors.New("savvy doesn't support your current shell")
+}
+
+func (t *todo) TailHistory(ctx context.Context) ([]string, error) {
 	return nil, errors.New("savvy doesn't support your current shell")
 }
