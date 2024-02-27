@@ -32,6 +32,7 @@ func recordHistory(_ *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	selectedHistory := allowUserToSelectCommands(lines)
 	expandedHistory, err := expandHistory(sh, selectedHistory)
 	if err != nil {
@@ -41,6 +42,11 @@ func recordHistory(_ *cobra.Command, _ []string) {
 }
 
 func allowUserToSelectCommands(history []string) (selectedHistory []string) {
+	var options []huh.Option[string]
+	for i, cmd := range history {
+		options = append(options, huh.NewOption(fmt.Sprintf("%d %s", i, cmd), cmd))
+	}
+
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
@@ -48,7 +54,7 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 				Description("Press x to include/exclude commands in your Runbook").
 				Value(&selectedHistory).
 				Height(33).
-				Options(huh.NewOptions(history...)...),
+				Options(options...),
 		),
 	)
 
