@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testDataDir = "./testdata"
+	testDataDir = "testdata"
 )
 
 var (
