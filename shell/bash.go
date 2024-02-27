@@ -96,3 +96,7 @@ func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
+
+func (b *bash) TailHistory(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
