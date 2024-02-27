@@ -100,3 +100,7 @@ func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
 func (b *bash) TailHistory(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+
+func (b *bash) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
+	return nil, nil
+}

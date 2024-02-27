@@ -3,9 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/charmbracelet/huh"
+	"github.com/creack/pty"
+	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/spf13/cobra"
 )
@@ -24,16 +27,20 @@ func init() {
 }
 
 func recordHistory(_ *cobra.Command, _ []string) {
-	sh := shell.New("/tmp/savvy.sock")
+	sh := shell.New("/tmp/savvy-socket")
 	lines, err := sh.TailHistory(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
-	selectedHistory := presentHistory(lines)
-	fmt.Println(selectedHistory)
+	selectedHistory := allowUserToSelectCommands(lines)
+	expandedHistory, err := expandHistory(sh, selectedHistory)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(expandedHistory)
 }
 
-func presentHistory(history []string) (selectedHistory []string) {
+func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
@@ -49,4 +56,63 @@ func presentHistory(history []string) (selectedHistory []string) {
 		log.Fatal(err)
 	}
 	return
+}
+
+func expandHistory(sh shell.Shell, rawCommands []string) ([]string, error) {
+	socketPath := "/tmp/savvy-socket"
+	ss, err := server.NewUnixSocketServer(socketPath)
+	if err != nil {
+		return nil, err
+	}
+	go ss.ListenAndServe()
+	defer func() {
+		ss.Close()
+	}()
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer func() {
+		cancelCtx()
+	}()
+
+	c, err := sh.SpawnHistoryExpander(ctx)
+	if err != nil {
+		err := fmt.Errorf("failed to start history recording: %w", err)
+		return nil, err
+	}
+
+	ptmx, err := pty.Start(c)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure to close the pty at the end.
+	defer ptmx.Close()
+
+	// io.Copy blocks till ptmx is closed.
+	go func() {
+		io.Copy(io.Discard, ptmx)
+	}()
+
+	for _, cmd := range rawCommands {
+		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
+			return nil, err
+		}
+	}
+	ptmx.Write([]byte{4}) // EOT
+
+	// time.Sleep(1 * time.Second)
+	// pw.Close()
+	c.Wait()
+	cancelCtx()
+	// cancelReader.Cancel()
+	// println("waiting for wg")
+	// wg.Wait()
+	return ss.Commands(), nil
+}
+
+// nullWriter implements the io.Writer interface and discards all data written to it.
+type nullWriter struct{}
+
+// Write discards the data written to the NullWriter.
+func (nw nullWriter) Write(p []byte) (int, error) {
+	return len(p), nil
 }
