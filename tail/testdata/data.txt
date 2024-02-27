@@ -1,0 +1,7 @@
+Savvy's AI-generated runbooks help developers resolve user-facing issues faster.
+Savvy’s CLI and browser extension provide developers with the knowledge they need
+to resolve user facing incidents faster, with fewer escalations.
+Savvy's CLI allows developers to record their shell and create runbooks right
+right from their terminal.
+Savvy's ClI also allows developers to create runbooks from their shell history
+and share them with their team.
