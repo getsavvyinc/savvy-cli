@@ -92,7 +92,7 @@ func recordHistory(_ *cobra.Command, _ []string) {
 func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 	var options []huh.Option[string]
 	for i, cmd := range history {
-		options = append(options, huh.NewOption(fmt.Sprintf("%d %s", i, cmd), cmd))
+		options = append(options, huh.NewOption(fmt.Sprintf("%d %s", i+1, cmd), cmd))
 	}
 
 	form := huh.NewForm(
