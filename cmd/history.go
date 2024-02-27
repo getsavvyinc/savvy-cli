@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/charmbracelet/huh"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,24 @@ func recordHistory(_ *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, line := range lines {
-		fmt.Println(line)
+	selectedHistory := presentHistory(lines)
+	fmt.Println(selectedHistory)
+}
+
+func presentHistory(history []string) (selectedHistory []string) {
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Savvy History").
+				Description("Press x to include/exclude commands in your Runbook").
+				Value(&selectedHistory).
+				Height(33).
+				Options(huh.NewOptions(history...)...),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		log.Fatal(err)
 	}
+	return
 }
