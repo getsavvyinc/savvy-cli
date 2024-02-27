@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"slices"
 	"text/template"
 	"time"
 
@@ -155,5 +156,7 @@ func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
 			result = append(result, line)
 		}
 	}
+	// reverse the result
+	slices.Reverse(result)
 	return result, nil
 }
