@@ -2,12 +2,18 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/creack/pty"
+	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/cmd/component"
+	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/spf13/cobra"
@@ -27,6 +33,12 @@ func init() {
 }
 
 func recordHistory(_ *cobra.Command, _ []string) {
+	cl, err := client.New()
+	if err != nil && errors.Is(err, client.ErrInvalidClient) {
+		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
+		os.Exit(1)
+	}
+
 	sh := shell.New("/tmp/savvy-socket")
 	lines, err := sh.TailHistory(context.Background())
 	if err != nil {
@@ -34,11 +46,46 @@ func recordHistory(_ *cobra.Command, _ []string) {
 	}
 
 	selectedHistory := allowUserToSelectCommands(lines)
-	expandedHistory, err := expandHistory(sh, selectedHistory)
+	commands, err := expandHistory(sh, selectedHistory)
 	if err != nil {
-		log.Fatal(err)
+		display.ErrorWithSupportCTA(err)
+		os.Exit(1)
 	}
-	fmt.Println(expandedHistory)
+	if len(commands) == 0 {
+		display.Error(errors.New("No commands were recorded"))
+		return
+	}
+
+	ctx := context.Background()
+	gctx, cancel := context.WithCancel(ctx)
+	gm := component.NewGenerateRunbookModel(commands, cl)
+	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
+	if _, err := p.Run(); err != nil {
+		err = fmt.Errorf("failed to generate runbook: %w", err)
+		display.ErrorWithSupportCTA(err)
+		os.Exit(1)
+	}
+
+	// ensure the bubble tea program is finished before we start the next one
+	cancel()
+	p.Wait()
+
+	runbook := <-gm.RunbookCh()
+	m, err := newDisplayCommandsModel(runbook)
+	if err != nil {
+		display.ErrorWithSupportCTA(err)
+		os.Exit(1)
+	}
+
+	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		// TODO: fail gracefully and provide users a link to view the runbook
+		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
+		os.Exit(1)
+	}
+	if runbook.URL != "" {
+		display.Success("View and edit your runbook online at: " + runbook.URL)
+	}
 }
 
 func allowUserToSelectCommands(history []string) (selectedHistory []string) {
