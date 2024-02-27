@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os/exec"
 
+	"github.com/getsavvyinc/savvy-cli/shell/internal/detect"
 	"github.com/getsavvyinc/savvy-cli/shell/kind"
 )
 
@@ -13,7 +14,7 @@ type Shell interface {
 }
 
 func New(logTarget string) Shell {
-	shell := detectWithDefault()
+	shell := detect.DetectWithDefault()
 	switch shell {
 	case kind.Zsh:
 		return &zsh{

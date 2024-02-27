@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"github.com/getsavvyinc/savvy-cli/shell/internal/detect"
 	"github.com/getsavvyinc/savvy-cli/shell/kind"
 )
 
@@ -11,7 +12,7 @@ type SetupChecker interface {
 }
 
 func NewSetupChecker() SetupChecker {
-	shell := detectWithDefault()
+	shell := detect.DetectWithDefault()
 	switch shell {
 	case kind.Zsh:
 		return &zshSetupChecker{}
