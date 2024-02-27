@@ -35,7 +35,7 @@ var sendCmd = &cobra.Command{
 			// nothing to do.
 			return
 		}
-		if _, err = conn.Write([]byte(fmt.Sprintf("%s\n", message))); err != nil {
+		if _, err = fmt.Fprintf(conn, "%s\n", message); err != nil {
 			err = fmt.Errorf("failed to record command locally: %v", err)
 			display.ErrorWithSupportCTA(err)
 			return
