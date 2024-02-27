@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"slices"
+	"strings"
 	"text/template"
 	"time"
 
@@ -259,15 +260,26 @@ func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
 	}
 	defer rc.Close()
 
-	var result []string
+	var lines []string
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line != "" {
-			result = append(result, line)
+			lines = append(lines, line)
 		}
 	}
 	// reverse the result
-	slices.Reverse(result)
+	slices.Reverse(lines)
+	// extract the command from the history
+	// TODO: handle more history formats for zsh here.
+	var result []string
+	for _, line := range lines {
+		parts := strings.SplitN(line, ";", 2)
+		if len(parts) > 1 {
+			result = append(result, parts[1])
+		} else {
+			result = append(result, parts[:]...)
+		}
+	}
 	return result, nil
 }
