@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+
+	"github.com/getsavvyinc/savvy-cli/shell/kind"
 )
 
 type Shell interface {
@@ -13,14 +15,14 @@ type Shell interface {
 func New(logTarget string) Shell {
 	shell := detectWithDefault()
 	switch shell {
-	case Zsh:
+	case kind.Zsh:
 		return &zsh{
 			shellCmd:   "zsh",
 			SocketPath: logTarget,
 		}
-	case Dash:
+	case kind.Dash:
 		fallthrough
-	case Bash:
+	case kind.Bash:
 		return &bash{
 			shellCmd:   "bash",
 			SocketPath: logTarget,
