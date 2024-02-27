@@ -1,4 +1,4 @@
-package shell
+package detect
 
 import (
 	"errors"
@@ -9,24 +9,10 @@ import (
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/shell/kind"
 )
 
 // NOTE: This file is adapted from kubie's shell detection code that can be found here: https://github.com/sbstp/kubie/blob/master/src/shell/detect.rs
-
-// Kind represents the type of shell.
-type Kind string
-
-// Define constants for ShellKind here, based on your needs, e.g., Bash, Zsh, etc.
-const (
-	Bash Kind = "bash"
-	Zsh  Kind = "zsh"
-	Dash Kind = "dash"
-	Fish Kind = "fish"
-)
-
-func SupportedShells() []string {
-	return []string{string(Bash), string(Zsh), string(Dash)}
-}
 
 func runPS(args []string) (string, error) {
 	out, err := exec.Command("ps", args...).CombinedOutput()
@@ -77,7 +63,7 @@ func parseCommand(cmd string) string {
 }
 
 // detect walks up the process tree to find out which shell is in use.
-func detect() (Kind, error) {
+func detect() (kind.Kind, error) {
 	parentPid := fmt.Sprintf("%d", os.Getppid())
 
 	// Walk up the process tree until we find a shell.
@@ -88,7 +74,7 @@ func detect() (Kind, error) {
 		}
 
 		name := parseCommand(cmd)
-		if kind, ok := shellKindFromString(name); ok {
+		if kind, ok := kind.ShellKindFromString(name); ok {
 			return kind, nil
 		}
 
@@ -101,10 +87,10 @@ func detect() (Kind, error) {
 	return "", errors.New("could not detect shell in use")
 }
 
-func detectWithDefault() Kind {
-	kind, err := detect()
+func DetectWithDefault() kind.Kind {
+	knd, err := detect()
 	if err != nil {
-		shell, ok := shellKindFromString(parseCommand(os.Getenv("SHELL")))
+		shell, ok := kind.ShellKindFromString(parseCommand(os.Getenv("SHELL")))
 		if !ok {
 			// exit if we can't even proceed with the default shell
 			err := errors.New("could not detect your default shell")
@@ -115,22 +101,7 @@ func detectWithDefault() Kind {
 		display.Error(err)
 		return shell
 	}
-	return kind
-}
-
-// shellKindFromString tries to match a string to a shell Kind.
-func shellKindFromString(name string) (Kind, bool) {
-	switch name {
-	case "bash":
-		return Bash, true
-	case "zsh":
-		return Zsh, true
-	case "dash":
-		return Dash, true
-	case "fish":
-		return Fish, true
-	}
-	return "", false
+	return knd
 }
 
 // parentOf finds the parent PID of a given PID.
