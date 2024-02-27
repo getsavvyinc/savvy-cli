@@ -22,10 +22,11 @@ func NewCommand(command string) *Command {
 }
 
 type Parser interface {
-	ParseHistory(history []string) []*Command
+	Parse(history []string) []*Command
 }
 
 func NewParser() Parser {
+
 	return &parser{}
 }
 

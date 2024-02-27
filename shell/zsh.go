@@ -126,3 +126,7 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
+
+func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
