@@ -25,7 +25,8 @@ var historyCmd = &cobra.Command{
 	Short: "Create a runbook from your shell history",
 	Long: `Create a runbook from  a selection of the last 100 commands in your shell history.
   Savvy can expand all aliases used in your shell history without running the commands.`,
-	Run: recordHistory,
+	Hidden: true,
+	Run:    recordHistory,
 }
 
 func init() {
