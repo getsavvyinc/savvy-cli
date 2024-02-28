@@ -10,8 +10,6 @@ import (
 	"sync/atomic"
 )
 
-const socketPath = "/tmp/savvy-socket"
-
 type UnixSocketServer struct {
 	socketPath string
 	listener   net.Listener
@@ -24,24 +22,36 @@ type UnixSocketServer struct {
 
 var ErrStartingRecordingSession = errors.New("failed to start recording session")
 
+const defaultSocketPath = "/tmp/savvy-socket"
+
+func NewUnixSocketServerWithDefaultPath() (*UnixSocketServer, error) {
+	return NewUnixSocketServer(defaultSocketPath)
+}
+
 func NewUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet", ErrStartingRecordingSession)
 	}
+	return newUnixSocketServer(socketPath)
+}
+
+func newUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}
 
-	return &UnixSocketServer{
+	srv := &UnixSocketServer{
 		socketPath: socketPath,
 		listener:   listener,
-	}, nil
+	}
+	return srv, nil
 }
 
 func (s *UnixSocketServer) Commands() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	return s.commands
 }
 
@@ -72,13 +82,23 @@ func (s *UnixSocketServer) ListenAndServe() {
 
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	defer c.Close()
+
 	bs, err := io.ReadAll(c)
 	if err != nil {
 		fmt.Printf("Failed to read from connection: %s\n", err)
 		return
 	}
 	command := string(bs)
+	s.appendCommand(command)
+}
+
+func (s *UnixSocketServer) SocketPath() string {
+	return s.socketPath
+}
+
+func (s *UnixSocketServer) appendCommand(command string) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.commands = append(s.commands, command)
-	s.mu.Unlock()
 }
