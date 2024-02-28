@@ -23,7 +23,13 @@ func Error(err error, msgs ...string) {
 		return
 	}
 
-	fmt.Println(style.Render(err.Error()))
+	ErrorMsg(err.Error())
+	if len(msgs) > 0 {
+		ErrorMsg(msgs...)
+	}
+}
+
+func ErrorMsg(msgs ...string) {
 	for _, msg := range msgs {
 		fmt.Println(style.Render(msg))
 	}
