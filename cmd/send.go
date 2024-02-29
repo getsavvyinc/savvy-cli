@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
@@ -30,12 +32,12 @@ var sendCmd = &cobra.Command{
 			return
 		}
 		defer conn.Close()
-		message := args[:]
+		message := strings.Join(args[:], " ") // ["echo hello world"] -> "echo hello world"
 		if len(message) == 0 {
 			// nothing to do.
 			return
 		}
-		if _, err = fmt.Fprintf(conn, "%s\n", message); err != nil {
+		if _, err = io.WriteString(conn, message+"\n"); err != nil {
 			err = fmt.Errorf("failed to record command locally: %v", err)
 			display.ErrorWithSupportCTA(err)
 			return
