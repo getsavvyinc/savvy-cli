@@ -59,7 +59,10 @@ shell="${SHELL:-'zsh'}"
 
 case :$PATH:
   in *:${bin_dir}*) ;; # do nothing
-     *) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.${shell}rc${RESET}";;
+     *) case :$shell:
+       in *zsh*) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc${RESET}";;
+          *bash*) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.bashrc${RESET}";;
+     esac;;
 esac
 
 case :$shell:
