@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"os"
+	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -33,7 +35,9 @@ func init() {
 	recordCmd.AddCommand(historyCmd)
 }
 
-func recordHistory(_ *cobra.Command, _ []string) {
+func recordHistory(cmd *cobra.Command, _ []string) {
+	ctx := cmd.Context()
+	logger := loggerFromContext(ctx)
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
@@ -41,23 +45,21 @@ func recordHistory(_ *cobra.Command, _ []string) {
 	}
 
 	sh := shell.New("/tmp/savvy-socket")
-	lines, err := sh.TailHistory(context.Background())
+	lines, err := sh.TailHistory(ctx)
 	if err != nil {
-		log.Fatal(err)
+		display.FatalErrWithSupportCTA(err)
 	}
 
 	selectedHistory := allowUserToSelectCommands(lines)
-	commands, err := expandHistory(sh, selectedHistory)
+	commands, err := expandHistory(logger, sh, selectedHistory)
 	if err != nil {
-		display.ErrorWithSupportCTA(err)
-		os.Exit(1)
+		display.FatalErrWithSupportCTA(err)
 	}
 	if len(commands) == 0 {
 		display.Error(errors.New("No commands were recorded"))
 		return
 	}
 
-	ctx := context.Background()
 	gctx, cancel := context.WithCancel(ctx)
 	gm := component.NewGenerateRunbookModel(commands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
@@ -68,20 +70,21 @@ func recordHistory(_ *cobra.Command, _ []string) {
 	}
 
 	// ensure the bubble tea program is finished before we start the next one
+	logger.Debug("wait for bubbletea program", "component", "generate runbook", "status", "running")
 	cancel()
 	p.Wait()
+	logger.Debug("wait for bubbletea program", "component", "generate runbook", "status", "finished")
 
 	runbook := <-gm.RunbookCh()
 	m, err := newDisplayCommandsModel(runbook)
 	if err != nil {
-		display.ErrorWithSupportCTA(err)
-		os.Exit(1)
+		display.FatalErrWithSupportCTA(err)
 	}
 
 	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		// TODO: fail gracefully and provide users a link to view the runbook
-		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
+		logger.Debug("failed to display runbook", "error", err.Error())
+		display.Info("View and edit your runbook online at: " + runbook.URL)
 		os.Exit(1)
 	}
 	if runbook.URL != "" {
@@ -112,7 +115,8 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 	return
 }
 
-func expandHistory(sh shell.Shell, rawCommands []string) ([]string, error) {
+func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
+	logger.Debug("expanding history", "commands", rawCommands)
 	socketPath := "/tmp/savvy-socket"
 	ss, err := server.NewUnixSocketServer(socketPath)
 	if err != nil {
@@ -142,7 +146,10 @@ func expandHistory(sh shell.Shell, rawCommands []string) ([]string, error) {
 	defer ptmx.Close()
 
 	// io.Copy blocks till ptmx is closed.
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		io.Copy(io.Discard, ptmx)
 	}()
 
@@ -154,12 +161,18 @@ func expandHistory(sh shell.Shell, rawCommands []string) ([]string, error) {
 	ptmx.Write([]byte{4}) // EOT
 
 	// time.Sleep(1 * time.Second)
-	// pw.Close()
-	c.Wait()
+	logger.Debug("cancel context for shell expanding history")
 	cancelCtx()
-	// cancelReader.Cancel()
-	// println("waiting for wg")
-	// wg.Wait()
+	logger.Debug("waiting for expanding history shell to finish")
+	c.Wait()
+	logger.Debug("shell finished expanding history")
+	logger.Debug("closing pty")
+	if err := ptmx.Close(); err != nil {
+		logger.Debug("failed to close pty", "error", err.Error())
+	}
+	logger.Debug("waiting for waitGroup to finish", "function", "expandHistory")
+	wg.Wait()
+	logger.Debug("waitGroup finished", "function", "expandHistory")
 	return ss.Commands(), nil
 }
 
