@@ -22,6 +22,7 @@ var rootCmd = &cobra.Command{
 			Level:     logLevel,
 		})
 		logger := slog.New(textHandler)
+		slog.SetDefault(logger)
 		cmd.SetContext(ctxWithLogger(cmd.Context(), logger))
 	},
 	// Uncomment the following line if your bare application
