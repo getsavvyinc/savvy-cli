@@ -37,7 +37,7 @@ func init() {
 
 func recordHistory(cmd *cobra.Command, _ []string) {
 	ctx := cmd.Context()
-	logger := loggerFromContext(ctx)
+	logger := loggerFromCtx(ctx)
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
