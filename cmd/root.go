@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -11,10 +13,37 @@ var rootCmd = &cobra.Command{
 	Use:   "savvy",
 	Short: "Create, share and discover runbooks from the command line",
 	Long:  `Create, share and discover runbooks from the command line`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		logLevel := slog.LevelInfo
+		if debugFlag {
+			logLevel = slog.LevelDebug
+		}
+		textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     logLevel,
+		})
+		logger := slog.New(textHandler)
+		cmd.SetContext(context.WithValue(cmd.Context(), cmdLoggerKey, logger))
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
+
+var loggerFromContext = func(ctx context.Context) *slog.Logger {
+	if logger, ok := ctx.Value(cmdLoggerKey).(*slog.Logger); ok && logger != nil {
+		return logger
+	}
+	return defaultLogger
+}
+
+var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+
+type cmdLogger struct{}
+
+var cmdLoggerKey cmdLogger
+
+var debugFlag bool
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -31,6 +60,7 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.savvy.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "d", false, "Enable debug mode")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
