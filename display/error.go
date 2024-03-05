@@ -2,6 +2,7 @@ package display
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -33,6 +34,16 @@ func ErrorMsg(msgs ...string) {
 	for _, msg := range msgs {
 		fmt.Println(style.Render(msg))
 	}
+}
+
+func FatalErr(err error, msgs ...string) {
+	Error(err, msgs...)
+	os.Exit(1)
+}
+
+func FatalErrWithSupportCTA(err error) {
+	Error(err, supportCTA)
+	os.Exit(1)
 }
 
 const supportCTA = `Stuck? We're here to make things easiser for you. Just email us at support@getsavvy.so or join our friendly Discord community (https://getsavvy.so/discord) for a chat.`
