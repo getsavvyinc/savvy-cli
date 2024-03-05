@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log/slog"
 	"os"
 
@@ -13,7 +12,7 @@ var rootCmd = &cobra.Command{
 	Use:   "savvy",
 	Short: "Create, share and discover runbooks from the command line",
 	Long:  `Create, share and discover runbooks from the command line`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 		logLevel := slog.LevelInfo
 		if debugFlag {
 			logLevel = slog.LevelDebug
@@ -23,25 +22,12 @@ var rootCmd = &cobra.Command{
 			Level:     logLevel,
 		})
 		logger := slog.New(textHandler)
-		cmd.SetContext(context.WithValue(cmd.Context(), cmdLoggerKey, logger))
+		cmd.SetContext(ctxWithLogger(cmd.Context(), logger))
 	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
-
-var loggerFromContext = func(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value(cmdLoggerKey).(*slog.Logger); ok && logger != nil {
-		return logger
-	}
-	return defaultLogger
-}
-
-var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
-
-type cmdLogger struct{}
-
-var cmdLoggerKey cmdLogger
 
 var debugFlag bool
 
