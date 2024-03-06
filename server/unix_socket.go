@@ -56,10 +56,14 @@ func (s *UnixSocketServer) Commands() []string {
 }
 
 func (s *UnixSocketServer) Close() error {
-	if s.listener != nil {
+	if !s.closed.Load() {
 		s.closed.Store(true)
-		return s.listener.Close()
+		close(s.ch)
+		if s.listener != nil {
+			return s.listener.Close()
+		}
 	}
+	// if already closed, return nil
 	return nil
 }
 
