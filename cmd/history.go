@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -117,8 +118,7 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
-	socketPath := "/tmp/savvy-socket"
-	ss, err := server.NewUnixSocketServer(socketPath)
+	ss, err := server.NewUnixSocketServerWithDefaultPath()
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +145,14 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	// Make sure to close the pty at the end.
 	defer ptmx.Close()
 
-	// io.Copy blocks till ptmx is closed.
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		io.Copy(io.Discard, ptmx)
+		if _, err := io.Copy(io.Discard, ptmx); err != nil {
+			logger.Debug("failed to copy from cancelReader", "error", err.Error())
+		}
+		logger.Debug("finished copying from cancelReader")
 	}()
 
 	for _, cmd := range rawCommands {
@@ -160,19 +162,21 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	}
 	ptmx.Write([]byte{4}) // EOT
 
-	// time.Sleep(1 * time.Second)
-	logger.Debug("cancel context for shell expanding history")
-	cancelCtx()
-	logger.Debug("waiting for expanding history shell to finish")
-	c.Wait()
-	logger.Debug("shell finished expanding history")
-	logger.Debug("closing pty")
-	if err := ptmx.Close(); err != nil {
-		logger.Debug("failed to close pty", "error", err.Error())
+	logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))
+
+	for len(ss.Commands()) < len(rawCommands) {
+		// wait for all commands to be processed
+		logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))
+		time.Sleep(100 * time.Millisecond)
 	}
-	logger.Debug("waiting for waitGroup to finish", "function", "expandHistory")
+	// time.Sleep(1 * time.Second)
+	logger.Debug("waiting for wg.Wait()")
 	wg.Wait()
-	logger.Debug("waitGroup finished", "function", "expandHistory")
+	logger.Debug("wg.Wait() finished")
+	logger.Debug("waitng for c.Wait()")
+	cancelCtx()
+	c.Wait()
+	logger.Debug("c.Wait() finished")
 	return ss.Commands(), nil
 }
 
