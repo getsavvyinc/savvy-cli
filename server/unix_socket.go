@@ -16,6 +16,7 @@ type UnixSocketServer struct {
 
 	mu       sync.Mutex
 	commands []string
+	ch       chan bool
 
 	closed atomic.Bool
 }
@@ -24,18 +25,26 @@ var ErrStartingRecordingSession = errors.New("failed to start recording session"
 
 const defaultSocketPath = "/tmp/savvy-socket"
 
-func NewUnixSocketServerWithDefaultPath() (*UnixSocketServer, error) {
-	return NewUnixSocketServer(defaultSocketPath)
+func NewUnixSocketServerWithDefaultPath(opts ...Option) (*UnixSocketServer, error) {
+	return NewUnixSocketServer(defaultSocketPath, opts...)
 }
 
-func NewUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
+type Option func(*UnixSocketServer)
+
+func NotifyOnCommandProcessed(ch chan bool) Option {
+	return func(s *UnixSocketServer) {
+		s.ch = ch
+	}
+}
+
+func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet", ErrStartingRecordingSession)
 	}
-	return newUnixSocketServer(socketPath)
+	return newUnixSocketServer(socketPath, opts...)
 }
 
-func newUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
+func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
@@ -44,6 +53,10 @@ func newUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 	srv := &UnixSocketServer{
 		socketPath: socketPath,
 		listener:   listener,
+	}
+
+	for _, opt := range opts {
+		opt(srv)
 	}
 	return srv, nil
 }
@@ -94,6 +107,7 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	}
 	command := string(bs)
 	s.appendCommand(command)
+	s.processedCommand()
 }
 
 func (s *UnixSocketServer) SocketPath() string {
@@ -105,4 +119,10 @@ func (s *UnixSocketServer) appendCommand(command string) {
 	defer s.mu.Unlock()
 
 	s.commands = append(s.commands, command)
+}
+
+func (s *UnixSocketServer) processedCommand() {
+	if s.ch != nil {
+		s.ch <- true
+	}
 }
