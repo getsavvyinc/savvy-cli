@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"os"
 	"strings"
@@ -19,7 +20,17 @@ var sendCmd = &cobra.Command{
 	Short:  "Send data to the unix socket listening at SAVVY_SOCKET_PATH",
 	Long:   `Send data to the unix socket listening at SAVVY_SOCKET_PATH`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := loggerFromCtx(cmd.Context())
+		f, err := os.OpenFile("/Users/shantanu/.savvy_history", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		h := slog.NewTextHandler(f, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})
+		logger := slog.New(h)
+
+		defer f.Close()
+
 		logger.Debug("send called")
 		socketPath := os.Getenv("SAVVY_SOCKET_PATH")
 		if socketPath == "" {
