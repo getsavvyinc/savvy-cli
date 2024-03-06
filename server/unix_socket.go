@@ -105,11 +105,13 @@ func (s *UnixSocketServer) ListenAndServe() {
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	defer c.Close()
 
+	slog.Debug("starting to read from connection")
 	bs, err := io.ReadAll(c)
 	if err != nil {
 		fmt.Printf("Failed to read from connection: %s\n", err)
 		return
 	}
+	slog.Debug("read from connection")
 	command := string(bs)
 	s.appendCommand(command)
 	s.notify()
