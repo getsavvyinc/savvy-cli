@@ -158,6 +158,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	}()
 
 	for i, cmd := range rawCommands {
+		logger.Debug("writing command to pty", "command", cmd, "index", i)
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
 			return nil, err
 		}

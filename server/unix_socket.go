@@ -136,5 +136,6 @@ func (s *UnixSocketServer) notify() {
 		return
 	}
 
+	slog.Debug("notifying waiting channel")
 	s.ch <- true
 }
