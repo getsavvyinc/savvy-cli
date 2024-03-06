@@ -19,12 +19,15 @@ var sendCmd = &cobra.Command{
 	Short:  "Send data to the unix socket listening at SAVVY_SOCKET_PATH",
 	Long:   `Send data to the unix socket listening at SAVVY_SOCKET_PATH`,
 	Run: func(cmd *cobra.Command, args []string) {
+		logger := loggerFromCtx(cmd.Context())
+		logger.Debug("send called")
 		socketPath := os.Getenv("SAVVY_SOCKET_PATH")
 		if socketPath == "" {
 			err := fmt.Errorf("cannot record commands: SAVVY_SOCKET_PATH is not set")
 			display.ErrorWithSupportCTA(err)
 			return
 		}
+		logger.Debug("dialing socket", "socketPath", socketPath)
 		conn, err := net.Dial("unix", socketPath)
 		if err != nil {
 			err = fmt.Errorf("failed to record command: %v", err)
@@ -37,11 +40,13 @@ var sendCmd = &cobra.Command{
 			// nothing to do.
 			return
 		}
+		logger.Debug("writing to socket", "message", message)
 		if _, err = io.WriteString(conn, message+"\n"); err != nil {
 			err = fmt.Errorf("failed to record command locally: %v", err)
 			display.ErrorWithSupportCTA(err)
 			return
 		}
+		logger.Debug("finished writing to socket", "message", message)
 	},
 }
 
