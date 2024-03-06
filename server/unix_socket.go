@@ -74,7 +74,9 @@ func (s *UnixSocketServer) Commands() []string {
 func (s *UnixSocketServer) Close() error {
 	if !s.closed.Load() {
 		defer s.closed.Store(true)
-		close(s.ch)
+		if s.ch != nil {
+			close(s.ch)
+		}
 		if s.listener != nil {
 			return s.listener.Close()
 		}
