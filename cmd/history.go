@@ -162,6 +162,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
 			return nil, err
 		}
+		logger.Debug("waiting for command to be processed", "command", cmd, "index", i)
 
 		// wait for the command to be processed
 		select {
