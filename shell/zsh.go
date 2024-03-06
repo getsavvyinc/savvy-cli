@@ -214,7 +214,6 @@ function __savvy_history_pre_exec__ {
 
   if [[ -n "${cmd}" ]]; then
      SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
-     sleep 0.1
   fi
   # This is how we prevent the command from being executed
   exec zsh
