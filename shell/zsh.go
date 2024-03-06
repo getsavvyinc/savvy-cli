@@ -214,7 +214,10 @@ function __savvy_history_pre_exec__ {
 
   if [[ -n "${cmd}" ]]; then
        echo "pre send" $(date) >> ~/.savvy_history
-       SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
+       #SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
+       savvy send "$cmd" &
+       # nc -U ${SAVVY_INPUT_FILE} <<< "$cmd"
+       #echo "$cmd\n" >> ${SAVVY_INPUT_FILE}
        echo "post send" $(date) >> ~/.savvy_history
   fi
   # This is how we prevent the command from being executed

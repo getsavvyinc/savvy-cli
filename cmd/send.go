@@ -28,15 +28,15 @@ var sendCmd = &cobra.Command{
 			Level: slog.LevelDebug,
 		})
 		logger := slog.New(h)
-
+		logger.Debug("send called")
 		defer f.Close()
 
-		logger.Debug("send called")
 		socketPath := os.Getenv("SAVVY_SOCKET_PATH")
 		if socketPath == "" {
-			err := fmt.Errorf("cannot record commands: SAVVY_SOCKET_PATH is not set")
-			display.ErrorWithSupportCTA(err)
-			return
+			socketPath = "/tmp/savvy-socket"
+			// err := fmt.Errorf("cannot record commands: SAVVY_SOCKET_PATH is not set")
+			// display.ErrorWithSupportCTA(err)
+			// return
 		}
 		logger.Debug("dialing socket", "socketPath", socketPath)
 		conn, err := net.Dial("unix", socketPath)
