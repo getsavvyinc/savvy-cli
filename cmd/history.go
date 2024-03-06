@@ -118,7 +118,9 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
-	ss, err := server.NewUnixSocketServerWithDefaultPath()
+	processedCh := make(chan bool, 1)
+
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.NotifyOnCommandProcessed(processedCh))
 	if err != nil {
 		return nil, err
 	}
@@ -155,11 +157,19 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		logger.Debug("finished copying from cancelReader")
 	}()
 
-	for _, cmd := range rawCommands {
+	for i, cmd := range rawCommands {
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
 			return nil, err
 		}
+
+		// wait for the command to be processed
+		select {
+		case <-processedCh:
+		case <-time.After(30 * time.Second):
+			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
+		}
 	}
+
 	ptmx.Write([]byte{4}) // EOT
 
 	logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))

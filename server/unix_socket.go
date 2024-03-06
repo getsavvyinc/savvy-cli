@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"os"
 	"sync"
@@ -31,6 +32,8 @@ func NewUnixSocketServerWithDefaultPath(opts ...Option) (*UnixSocketServer, erro
 
 type Option func(*UnixSocketServer)
 
+// NotifyOnCommandProcessed returns an Option that sets the channel to notify when a command is processed.
+// NOTE: It is the callers responsibility to close the channel.
 func NotifyOnCommandProcessed(ch chan bool) Option {
 	return func(s *UnixSocketServer) {
 		s.ch = ch
@@ -70,7 +73,7 @@ func (s *UnixSocketServer) Commands() []string {
 
 func (s *UnixSocketServer) Close() error {
 	if !s.closed.Load() {
-		s.closed.Store(true)
+		defer s.closed.Store(true)
 		close(s.ch)
 		if s.listener != nil {
 			return s.listener.Close()
@@ -107,7 +110,7 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	}
 	command := string(bs)
 	s.appendCommand(command)
-	s.processedCommand()
+	s.notify()
 }
 
 func (s *UnixSocketServer) SocketPath() string {
@@ -121,8 +124,15 @@ func (s *UnixSocketServer) appendCommand(command string) {
 	s.commands = append(s.commands, command)
 }
 
-func (s *UnixSocketServer) processedCommand() {
-	if s.ch != nil {
-		s.ch <- true
+func (s *UnixSocketServer) notify() {
+	if s.closed.Load() {
+		slog.Debug("cannot notify waiting channel", "reason", "server is closed")
+		return
 	}
+
+	if s.ch == nil {
+		return
+	}
+
+	s.ch <- true
 }
