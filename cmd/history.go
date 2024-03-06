@@ -165,6 +165,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		// wait for the command to be processed
 		select {
 		case <-processedCh:
+			logger.Debug("command processed", "command", cmd, "index", i)
 		case <-time.After(30 * time.Second):
 			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
 		}
