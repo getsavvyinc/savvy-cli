@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 )
 
@@ -23,6 +24,7 @@ type client struct {
 var _ Client = &client{}
 
 func (c *client) Send(msg string) error {
+	slog.Debug("server/client.Send", "msg", msg)
 	conn, err := net.Dial("unix", c.socketPath)
 	if err != nil {
 		return err

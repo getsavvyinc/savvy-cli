@@ -39,7 +39,7 @@ var sendCmd = &cobra.Command{
 			// return
 		}
 		logger.Debug("dialing socket", "socketPath", socketPath)
-		conn, err := net.Dial("unix", socketPath)
+		conn, err := net.DialUnix("unix", socketPath)
 		if err != nil {
 			err = fmt.Errorf("failed to record command: %v", err)
 			display.ErrorWithSupportCTA(err)

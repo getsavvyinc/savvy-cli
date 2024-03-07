@@ -155,10 +155,9 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	}
 	defer f.Close()
 
-	mw := io.MultiWriter(f, io.Discard)
 	go func() {
 		defer wg.Done()
-		if _, err := io.Copy(mw, ptmx); err != nil {
+		if _, err := io.Copy(f, ptmx); err != nil {
 			logger.Debug("failed to copy from cancelReader", "error", err.Error())
 		}
 		logger.Debug("finished copying from cancelReader")

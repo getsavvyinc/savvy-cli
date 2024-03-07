@@ -1,9 +1,9 @@
 package server
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -106,8 +106,7 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	defer c.Close()
 
 	slog.Debug("starting to read from connection")
-	reader := bufio.NewReader(c)
-	bs, err := reader.ReadBytes('\n')
+	bs, err := io.ReadAll(c)
 	if err != nil {
 		fmt.Printf("Failed to read from connection: %s\n", err)
 		return
