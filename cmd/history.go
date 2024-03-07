@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -160,19 +161,19 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	}
 	ptmx.Write([]byte{4}) // EOT
 
-	// time.Sleep(1 * time.Second)
-	logger.Debug("cancel context for shell expanding history")
-	cancelCtx()
-	logger.Debug("waiting for expanding history shell to finish")
-	c.Wait()
-	logger.Debug("shell finished expanding history")
-	logger.Debug("closing pty")
-	if err := ptmx.Close(); err != nil {
-		logger.Debug("failed to close pty", "error", err.Error())
+	for len(ss.Commands()) < len(rawCommands) {
+		// wait for all commands to be processed
+		logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))
+		time.Sleep(1 * time.Second)
 	}
-	logger.Debug("waiting for waitGroup to finish", "function", "expandHistory")
+
+	logger.Debug("waiting for wg.Wait()")
 	wg.Wait()
-	logger.Debug("waitGroup finished", "function", "expandHistory")
+	logger.Debug("wg.Wait() finished")
+	logger.Debug("waitng for c.Wait()")
+	cancelCtx()
+	c.Wait()
+	logger.Debug("c.Wait() finished")
 	return ss.Commands(), nil
 }
 
