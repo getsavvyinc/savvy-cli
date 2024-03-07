@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"os"
 	"sync"
@@ -71,7 +72,7 @@ func (s *UnixSocketServer) ListenAndServe() {
 			if s.closed.Load() {
 				return
 			}
-			fmt.Printf("Failed to accept connection: %s\n", err)
+			slog.Debug("Failed to accept connection:", "error", err.Error())
 			continue
 		}
 
