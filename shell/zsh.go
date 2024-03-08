@@ -220,7 +220,7 @@ function __savvy_history_pre_exec__() {
        hello
        echo "post savvy echo" $(date) >> ~/.savvy_history
        echo "pre send" $(date) >> ~/.savvy_history
-       /Users/shantanu/src/github.com/getsavvyinc/savvy-cli/savvy send "$cmd"
+       /Users/shantanu/src/github.com/getsavvyinc/savvy-cli/savvy send "$cmd" &
        # savvy send "$cmd"
        #savvy send "$cmd"
        # nc -U ${SAVVY_INPUT_FILE} <<< "$cmd"
