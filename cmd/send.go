@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +18,15 @@ var sendCmd = &cobra.Command{
 	Hidden: true,
 	Short:  "Send data to the unix socket listening at SAVVY_SOCKET_PATH",
 	Long:   `Send data to the unix socket listening at SAVVY_SOCKET_PATH`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+	},
+	PostRun: func(cmd *cobra.Command, args []string) {
+	},
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd:   true,
+		DisableDescriptions: true,
+		DisableNoDescFlag:   true,
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		f, err := os.OpenFile("/Users/shantanu/.savvy_history", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -39,10 +47,10 @@ var sendCmd = &cobra.Command{
 			// return
 		}
 		logger.Debug("dialing socket", "socketPath", socketPath)
-		conn, err := net.DialUnix("unix", socketPath)
+		conn, err := net.Dial("unix", socketPath)
 		if err != nil {
 			err = fmt.Errorf("failed to record command: %v", err)
-			display.ErrorWithSupportCTA(err)
+			logger.Debug("failed to dial socket", "err", err)
 			return
 		}
 		defer conn.Close()
@@ -54,7 +62,7 @@ var sendCmd = &cobra.Command{
 		logger.Debug("writing to socket", "message", message)
 		if _, err = io.WriteString(conn, message+"\n"); err != nil {
 			err = fmt.Errorf("failed to record command locally: %v", err)
-			display.ErrorWithSupportCTA(err)
+			logger.Debug("failed to write to socket", "err", err)
 			return
 		}
 		logger.Debug("finished writing to socket", "message", message)

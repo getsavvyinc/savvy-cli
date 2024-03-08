@@ -26,6 +26,14 @@ builds:
     goos:
       - linux
       - darwin
+  - id: savvy-send
+    binary: savvy-send
+    main: ./send/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
 
 archives:
   - format: binary

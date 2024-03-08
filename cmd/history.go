@@ -46,12 +46,14 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	}
 
 	sh := shell.New("/tmp/savvy-socket")
-	lines, err := sh.TailHistory(ctx)
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-	}
+	//	lines, err := sh.TailHistory(ctx)
+	//	if err != nil {
+	//    display.FatalErrWithSupportCTA(err)
+	//	}
 
-	selectedHistory := allowUserToSelectCommands(lines)
+	// selectedHistory := allowUserToSelectCommands(lines)
+	selectedHistory := []string{"echo one", "echo two", "echo three", "ls -l", "kgp"}
+
 	commands, err := expandHistory(logger, sh, selectedHistory)
 	if err != nil {
 		display.FatalErrWithSupportCTA(err)
@@ -136,7 +138,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 
 	c, err := sh.SpawnHistoryExpander(ctx)
 	if err != nil {
-		err := fmt.Errorf("failed to start history recording: %w", err)
+		logger.Debug("failed to spawn history expander", "error", err.Error())
 		return nil, err
 	}
 
@@ -147,14 +149,14 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	// Make sure to close the pty at the end.
 	defer ptmx.Close()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	f, err := os.OpenFile("/Users/shantanu/.savvy_history", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if _, err := io.Copy(f, ptmx); err != nil {
@@ -163,23 +165,30 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		logger.Debug("finished copying from cancelReader")
 	}()
 
-	for i, cmd := range rawCommands {
-		logger.Debug("writing command to pty", "command", cmd, "index", i)
-		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
-			return nil, err
-		}
-		logger.Debug("waiting for command to be processed", "command", cmd, "index", i)
+	var swg sync.WaitGroup
+	swg.Add(1)
+	go func() {
+		defer swg.Done()
+		for i, cmd := range rawCommands {
+			logger.Debug("writing command to pty", "command", cmd, "index", i)
+			if _, err := ptmx.Write([]byte(cmd + "\n")); err != nil {
+				logger.Debug("failed to write command to pty", "error", err.Error(), "command", cmd, "index", i)
+				return
+			}
 
-		// wait for the command to be processed
-		select {
-		case <-processedCh:
-			logger.Debug("command processed", "command", cmd, "index", i)
-		case <-time.After(30 * time.Second):
-			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
-		}
-	}
+			logger.Debug("waiting for command to be processed", "command", cmd, "index", i)
 
-	ptmx.Write([]byte{4}) // EOT
+			// wait for the command to be processed
+			select {
+			case <-processedCh:
+				logger.Debug("command processed", "command", cmd, "index", i)
+			case <-time.After(30 * time.Second):
+				logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
+			}
+		}
+		ptmx.Write([]byte{4}) // EOT
+	}()
+	swg.Wait()
 
 	logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))
 

@@ -209,12 +209,19 @@ fi
 
 unset _SAVVY_USER_ZDOTDIR
 
-function __savvy_history_pre_exec__ {
+function __savvy_history_pre_exec__() {
   local cmd=${3}
 
   if [[ -n "${cmd}" ]]; then
+       echo "pre echo to tmp" $(date) >> ~/.savvy_history
+       echo "$cmd" >> /tmp/savvy_history
+       echo "post echo to tmp" $(date) >> ~/.savvy_history
+       echo "pre savvy echo" $(date) >> ~/.savvy_history
+       hello
+       echo "post savvy echo" $(date) >> ~/.savvy_history
        echo "pre send" $(date) >> ~/.savvy_history
-       SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
+       /Users/shantanu/src/github.com/getsavvyinc/savvy-cli/savvy send "$cmd"
+       # savvy send "$cmd"
        #savvy send "$cmd"
        # nc -U ${SAVVY_INPUT_FILE} <<< "$cmd"
        #echo "$cmd\n" >> ${SAVVY_INPUT_FILE}
@@ -222,10 +229,13 @@ function __savvy_history_pre_exec__ {
   fi
   # This is how we prevent the command from being executed
   echo "pre exec" $(date) >> ~/.savvy_history
+  add-zsh-hook -L
   exec zsh
 }
 
 autoload -Uz add-zsh-hook
+preexec_functions=()
+precmd_functions=()
 add-zsh-hook preexec __savvy_history_pre_exec__
 `
 

@@ -12,7 +12,12 @@ var rootCmd = &cobra.Command{
 	Use:   "savvy",
 	Short: "Create, share and discover runbooks from the command line",
 	Long:  `Create, share and discover runbooks from the command line`,
-	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 && args[0] == "echo" {
+			return
+		}
+		cmd.ResetCommands()
+		cmd.ResetFlags()
 		logLevel := slog.LevelInfo
 		if debugFlag {
 			logLevel = slog.LevelDebug
@@ -25,16 +30,28 @@ var rootCmd = &cobra.Command{
 		slog.SetDefault(logger)
 		cmd.SetContext(ctxWithLogger(cmd.Context(), logger))
 	},
+	DisableSuggestions:    true,
+	SilenceErrors:         true,
+	DisableFlagParsing:    true,
+	DisableFlagsInUseLine: true,
+	DisableAutoGenTag:     true,
+
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd:   true,
+		DisableNoDescFlag:   true,
+		DisableDescriptions: true,
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
-var debugFlag bool
+var debugFlag bool = true
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -45,9 +62,12 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		return
+	})
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.savvy.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "d", false, "Enable debug mode")
+	// rootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "d", false, "Enable debug mode")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
