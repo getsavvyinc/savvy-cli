@@ -118,8 +118,7 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
-	socketPath := "/tmp/savvy-socket"
-	ss, err := server.NewUnixSocketServer(socketPath)
+	ss, err := server.NewUnixSocketServerWithDefaultPath()
 	if err != nil {
 		return nil, err
 	}
