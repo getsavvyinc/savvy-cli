@@ -15,8 +15,9 @@ type UnixSocketServer struct {
 	socketPath string
 	listener   net.Listener
 
-	mu       sync.Mutex
-	commands []string
+	mu                  sync.Mutex
+	commands            []string
+	commandRecordedHook func(string)
 
 	closed atomic.Bool
 }
@@ -25,18 +26,26 @@ var ErrStartingRecordingSession = errors.New("failed to start recording session"
 
 const defaultSocketPath = "/tmp/savvy-socket"
 
-func NewUnixSocketServerWithDefaultPath() (*UnixSocketServer, error) {
-	return NewUnixSocketServer(defaultSocketPath)
+type Option func(*UnixSocketServer)
+
+func WithCommandRecordedHook(hook func(string)) Option {
+	return func(s *UnixSocketServer) {
+		s.commandRecordedHook = hook
+	}
 }
 
-func NewUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
+func NewUnixSocketServerWithDefaultPath(opts ...Option) (*UnixSocketServer, error) {
+	return NewUnixSocketServer(defaultSocketPath, opts...)
+}
+
+func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet", ErrStartingRecordingSession)
 	}
-	return newUnixSocketServer(socketPath)
+	return newUnixSocketServer(socketPath, opts...)
 }
 
-func newUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
+func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
@@ -46,6 +55,11 @@ func newUnixSocketServer(socketPath string) (*UnixSocketServer, error) {
 		socketPath: socketPath,
 		listener:   listener,
 	}
+
+	for _, opt := range opts {
+		opt(srv)
+	}
+
 	return srv, nil
 }
 
@@ -91,6 +105,9 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	}
 	command := string(bs)
 	s.appendCommand(command)
+	if s.commandRecordedHook != nil {
+		s.commandRecordedHook(command)
+	}
 }
 
 func (s *UnixSocketServer) SocketPath() string {
