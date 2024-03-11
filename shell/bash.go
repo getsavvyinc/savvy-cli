@@ -21,12 +21,11 @@ const bashrcScript = `
 RED=$(tput setaf 1)
 RESET=$(tput sgr0)
 
-SAVVY_LOGIN_SHELL=0
 case "$OSTYPE" in
-  solaris*) SAVVY_LOGIN_SHELL=1;;
-  darwin*)  SAVVY_LOGIN_SHELL=1;;
-  linux*)   SAVVY_LOGIN_SHELL=1;;
-  bsd*)     SAVVY_LOGIN_SHELL=1;;
+  solaris*) ;;
+  darwin*)  ;;
+  linux*)   ;;
+  bsd*)     ;;
   msys*)    echo "windows os is not supported" ;;
   cygwin*)  echo "windows os is not supported" ;;
   *)        echo "unknown: $OSTYPE" ;;
@@ -38,7 +37,7 @@ SAVVY_INPUT_FILE={{.SocketPath}}
 # https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
 
-if [[ "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
+if shopt -q login_shell; then
     if [[ -f "/etc/profile" ]] ; then
         source "/etc/profile"
     fi
