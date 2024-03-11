@@ -24,7 +24,7 @@ type bash struct {
 var _ Shell = (*bash)(nil)
 
 // Adapted from: https://github.com/sbstp/kubie/
-const bashrcScript = `
+const bashBaseScript = `
 RED=$(tput setaf 1)
 RESET=$(tput sgr0)
 
@@ -73,15 +73,31 @@ echo "${RED}> echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}"
 echo "${RED}> source ~/.bashrc${RESET}"
 exit 1
 fi
+`
 
+const bashRecordSetup = `
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop recording."
 `
 
-var bashTemplate *template.Template
+const bashHistorySetup = `
+
+savvy_cmd_pre_exec_history() {
+  local cmd=$BASH_COMMAND
+  # Running send as a b/g process is intentional.
+  SAVVY_SOCKET_PATH={{.SocketPath}} savvy send "$cmd" &
+  # avoid running the original command
+  false;
+}
+
+preexec_functions+=(savvy_cmd_pre_exec_history)
+`
+
+var bashTemplate, bashHistoryTemplate *template.Template
 
 func init() {
-	bashTemplate = template.Must(template.New("bash").Parse(bashrcScript))
+	bashTemplate = template.Must(template.New("bash").Parse(bashBaseScript + bashRecordSetup))
+	bashHistoryTemplate = template.Must(template.New("bashHistory").Parse(bashBaseScript + bashHistorySetup))
 }
 
 func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
@@ -148,5 +164,20 @@ func (b *bash) TailHistory(ctx context.Context) ([]string, error) {
 }
 
 func (b *bash) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
-	return nil, nil
+	// Create a temporary file to store the script
+	tmpDir := os.TempDir()
+	bashrc, err := os.CreateTemp(tmpDir, "savvy-bashrc-*.bash")
+	if err != nil {
+		return nil, err
+	}
+	defer bashrc.Close()
+
+	if err := bashHistoryTemplate.Execute(bashrc, b); err != nil {
+		return nil, err
+	}
+
+	cmd := exec.CommandContext(ctx, b.shellCmd, "--rcfile", bashrc.Name())
+	cmd.Env = append(os.Environ())
+	cmd.WaitDelay = 500 * time.Millisecond
+	return cmd, nil
 }
