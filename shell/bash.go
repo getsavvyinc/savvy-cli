@@ -1,11 +1,18 @@
 package shell
 
 import (
+	"bufio"
 	"context"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
+	"regexp"
+	"slices"
 	"text/template"
 	"time"
+
+	"github.com/getsavvyinc/savvy-cli/tail"
 )
 
 type bash struct {
@@ -96,8 +103,48 @@ func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
+// bashTimestamp matches the timestamp line in bash history files.
+// Example: #1616420000
+var bashTimestamp = regexp.MustCompile(`^#(\d){10}$`)
+
 func (b *bash) TailHistory(ctx context.Context) ([]string, error) {
-	return nil, nil
+	historyFile := os.Getenv("HISTFILE")
+	if historyFile == "" {
+		u, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		historyFile = filepath.Join(u.HomeDir, ".bash_history")
+	}
+
+	// Bash history files record timestamp on one line and command on the next line.
+	// So to read the last 100 commands, we need to read a maximum of 200 lines.
+	rc, err := tail.Tail(historyFile, 200)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	// reverse the result
+	slices.Reverse(lines)
+	// extract the command from the history
+	var result []string
+	for _, line := range lines {
+		// skip timestamps in the history
+		if bashTimestamp.MatchString(line) {
+			continue
+		}
+		result = append(result, line)
+	}
+	return result, nil
 }
 
 func (b *bash) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
