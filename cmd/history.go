@@ -176,11 +176,3 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	logger.Debug("c.Wait() finished")
 	return ss.Commands(), nil
 }
-
-// nullWriter implements the io.Writer interface and discards all data written to it.
-type nullWriter struct{}
-
-// Write discards the data written to the NullWriter.
-func (nw nullWriter) Write(p []byte) (int, error) {
-	return len(p), nil
-}
