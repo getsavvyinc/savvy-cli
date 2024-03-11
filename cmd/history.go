@@ -13,6 +13,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
@@ -38,7 +39,7 @@ func init() {
 
 func recordHistory(cmd *cobra.Command, _ []string) {
 	ctx := cmd.Context()
-	logger := loggerFromCtx(ctx)
+	logger := loggerFromCtx(ctx).With("command", "history")
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
@@ -52,13 +53,25 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	}
 
 	selectedHistory := allowUserToSelectCommands(lines)
-	commands, err := expandHistory(logger, sh, selectedHistory)
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-	}
-	if len(commands) == 0 {
-		display.Error(errors.New("No commands were recorded"))
+	if len(selectedHistory) == 0 {
+		display.Error(errors.New("No commands were selected"))
 		return
+	}
+
+	var commands []string
+	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
+		var err error
+
+		commands, err = expandHistory(logger, sh, selectedHistory)
+		if err != nil {
+			display.FatalErrWithSupportCTA(err)
+		}
+		if len(commands) == 0 {
+			display.Error(errors.New("No commands were recorded"))
+			return
+		}
+	}).Run(); err != nil {
+		logger.Debug("failed to run spinner", "error", err.Error())
 	}
 
 	gctx, cancel := context.WithCancel(ctx)
@@ -118,7 +131,9 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
+
 	commandProcessedChan := make(chan bool, 1)
+
 	hook := func(cmd string) {
 		logger.Debug("command recorded", "command", cmd)
 		commandProcessedChan <- true
