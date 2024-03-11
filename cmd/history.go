@@ -118,19 +118,20 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
-	ss, err := server.NewUnixSocketServerWithDefaultPath()
+	commandProcessedChan := make(chan bool, 1)
+	hook := func(cmd string) {
+		logger.Debug("command recorded", "command", cmd)
+		commandProcessedChan <- true
+	}
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
 	if err != nil {
 		return nil, err
 	}
 	go ss.ListenAndServe()
-	defer func() {
-		ss.Close()
-	}()
+	defer ss.Close()
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer func() {
-		cancelCtx()
-	}()
+	defer cancelCtx()
 
 	c, err := sh.SpawnHistoryExpander(ctx)
 	if err != nil {
@@ -153,24 +154,25 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		io.Copy(io.Discard, ptmx)
 	}()
 
-	for _, cmd := range rawCommands {
+	for i, cmd := range rawCommands {
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
 			return nil, err
 		}
+		// Wait for the command to be processed by the server.
+		select {
+		case <-commandProcessedChan:
+		case <-time.After(5 * time.Second):
+			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
+		}
 	}
-	ptmx.Write([]byte{4}) // EOT
-
-	for len(ss.Commands()) < len(rawCommands) {
-		// wait for all commands to be processed
-		logger.Debug("waiting for all commands to be processed", "processed", len(ss.Commands()), "total", len(rawCommands))
-		time.Sleep(1 * time.Second)
-	}
+	ptmx.Write([]byte{4}) // End Of Transmission (EOT) == Ctrl-D
 
 	logger.Debug("waiting for wg.Wait()")
 	wg.Wait()
 	logger.Debug("wg.Wait() finished")
-	logger.Debug("waitng for c.Wait()")
+	logger.Debug("canceling context for psuedy terminal and its associated command")
 	cancelCtx()
+	logger.Debug("waitng for c.Wait()")
 	c.Wait()
 	logger.Debug("c.Wait() finished")
 	return ss.Commands(), nil
