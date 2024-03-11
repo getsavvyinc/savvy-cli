@@ -185,7 +185,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	logger.Debug("waiting for wg.Wait()")
 	wg.Wait()
 	logger.Debug("wg.Wait() finished")
-	logger.Debug("canceling context for psuedy terminal and its associated command")
+	logger.Debug("canceling context for psuedo terminal and its associated command")
 	cancelCtx()
 	logger.Debug("waitng for c.Wait()")
 	c.Wait()
