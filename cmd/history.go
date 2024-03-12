@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -106,18 +107,24 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	}
 }
 
-func allowUserToSelectCommands(history []string) (selectedHistory []string) {
-	var options []huh.Option[string]
+type selectableCommand struct {
+	Key     int
+	Command string
+}
+
+func allowUserToSelectCommands(history []string) []string {
+	var options []huh.Option[selectableCommand]
+	var selectedOptions []selectableCommand
 	for i, cmd := range history {
-		options = append(options, huh.NewOption(fmt.Sprintf("%d %s", i+1, cmd), cmd))
+		options = append(options, huh.NewOption(fmt.Sprintf("%d %s", i+1, cmd), selectableCommand{Key: i, Command: cmd}))
 	}
 
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewMultiSelect[string]().
+			huh.NewMultiSelect[selectableCommand]().
 				Title("Savvy History").
 				Description("Press x to include/exclude commands in your Runbook").
-				Value(&selectedHistory).
+				Value(&selectedOptions).
 				Height(33).
 				Options(options...),
 		),
@@ -126,7 +133,17 @@ func allowUserToSelectCommands(history []string) (selectedHistory []string) {
 	if err := form.Run(); err != nil {
 		log.Fatal(err)
 	}
-	return
+
+	sort.Slice(selectedOptions, func(i, j int) bool {
+		// older commands should be at the top
+		return selectedOptions[i].Key > selectedOptions[j].Key
+	})
+
+	var commands []string
+	for _, c := range selectedOptions {
+		commands = append(commands, c.Command)
+	}
+	return commands
 }
 
 func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
