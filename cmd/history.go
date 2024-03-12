@@ -123,7 +123,7 @@ func allowUserToSelectCommands(history []string) []string {
 		huh.NewGroup(
 			huh.NewMultiSelect[selectableCommand]().
 				Title("Savvy History").
-				Description("Press x to include/exclude commands in your Runbook").
+				Description("Press x to include/exclude commands in your Runbook. Selected Commands will NOT be executed.").
 				Value(&selectedOptions).
 				Height(33).
 				Options(options...),
