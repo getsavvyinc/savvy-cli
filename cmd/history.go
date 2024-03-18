@@ -21,6 +21,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
+	"github.com/muesli/cancelreader"
 	"github.com/spf13/cobra"
 )
 
@@ -181,9 +182,16 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	// io.Copy blocks till ptmx is closed.
 	var wg sync.WaitGroup
 	wg.Add(1)
+	cancelReader, err := cancelreader.NewReader(ptmx)
+	if err != nil {
+		logger.Debug("failed to create cancel reader", "error", err.Error())
+		return nil, err
+	}
+	defer cancelReader.Close()
+
 	go func() {
 		defer wg.Done()
-		io.Copy(io.Discard, ptmx)
+		io.Copy(io.Discard, cancelReader)
 	}()
 
 	for i, cmd := range rawCommands {
@@ -193,6 +201,7 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 		// Wait for the command to be processed by the server.
 		select {
 		case <-commandProcessedChan:
+			logger.Debug("command processed", "command", cmd, "index", i, "cmd", "history")
 		case <-time.After(5 * time.Second):
 			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
 		}
@@ -200,6 +209,9 @@ func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([
 	ptmx.Write([]byte{4}) // End Of Transmission (EOT) == Ctrl-D
 
 	logger.Debug("waiting for wg.Wait()")
+	// cancelReader.Cancel() will close the cancelReader and cause io.Copy to return, which will unblock wg.Wait()
+	ok := cancelReader.Cancel()
+	logger.Debug("cancelReader.Cancel() returned", "ok", ok)
 	wg.Wait()
 	logger.Debug("wg.Wait() finished")
 	logger.Debug("canceling context for psuedo terminal and its associated command")
