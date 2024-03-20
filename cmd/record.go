@@ -96,8 +96,7 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 
 func startRecording() ([]string, error) {
 	// TODO: Make this unique for each invokation
-	socketPath := "/tmp/savvy-socket"
-	ss, err := server.NewUnixSocketServer(socketPath)
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithFilterErrors(ignoreErrors))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,7 @@ func startRecording() ([]string, error) {
 		ss.Close()
 	}()
 	// Create arbitrary command.
-	sh := shell.New(socketPath)
+	sh := shell.New(ss.SocketPath())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer func() {
 		cancelCtx()
@@ -222,6 +221,10 @@ func (dc *displayCommands) View() string {
 	return dc.l.View()
 }
 
+var ignoreErrors bool
+
 func init() {
 	rootCmd.AddCommand(recordCmd)
+	// add a boolean flag
+	recordCmd.Flags().BoolVar(&ignoreErrors, "ignore-errors", false, "Ignore commands that return an error when recording commands")
 }
