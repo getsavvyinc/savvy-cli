@@ -55,16 +55,25 @@ export __bp_enable_subshells="true"
 
 SAVVY_INPUT_FILE=/tmp/savvy-socket
 
+step_id=""
 savvy_cmd_pre_exec() {
   local cmd=$BASH_COMMAND
+  step_id=""
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-    SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd"
+    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd")
   fi
 }
 
 savvy_cmd_pre_cmd() {
+  local exit_code=$?
+
   if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'* ]]; then
   PS1+="\[\e[31m\]recording\[\e[0m\] 😎 "
+  fi
+
+  # if return code is not 0, send the return code to the server
+  if [[ "${SAVVY_CONTEXT}" == "1" && "${exit_code}" != "0" ]] ; then
+    SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --step-id="${step_id}" --exit-code="${exit_code}"
   fi
 }
 
