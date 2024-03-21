@@ -31,6 +31,8 @@ func (c *client) Send(msg string) error {
 	if len(msg) == 0 {
 		return nil
 	}
+
+	// TODO: update this to send RecordedData
 	if _, err = fmt.Fprintf(conn, "%s\n", msg); err != nil {
 		return err
 	}
