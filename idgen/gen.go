@@ -6,6 +6,7 @@ import (
 )
 
 const CommandPrefix = "cmd-"
+const FilePrefix = "f-"
 
 func New(prefix string) string {
 	bytes := make([]byte, 8)

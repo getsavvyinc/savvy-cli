@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net"
+
+	"github.com/getsavvyinc/savvy-cli/idgen"
 )
 
 type Client interface {
@@ -32,8 +34,12 @@ func (c *client) Send(msg string) error {
 		return nil
 	}
 
-	// TODO: update this to send RecordedData
-	if _, err = fmt.Fprintf(conn, "%s\n", msg); err != nil {
+	data := RecordedData{
+		Command: msg,
+		StepID:  idgen.New(idgen.FilePrefix),
+	}
+
+	if err := json.NewEncoder(conn).Encode(data); err != nil {
 		return err
 	}
 	return nil
