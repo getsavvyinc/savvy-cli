@@ -40,8 +40,11 @@ var sendCmd = &cobra.Command{
 			return
 		}
 
+		var quite bool
 		if stepID == "" {
 			stepID = idgen.New(idgen.CommandPrefix)
+		} else {
+			quite = true
 		}
 
 		data := server.RecordedData{
@@ -55,8 +58,10 @@ var sendCmd = &cobra.Command{
 			display.ErrorWithSupportCTA(err)
 			return
 		}
-		// print the stepID to stdout
-		fmt.Print(stepID)
+
+		if !quite {
+			fmt.Print(stepID)
+		}
 	},
 }
 
