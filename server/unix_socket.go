@@ -17,7 +17,7 @@ type UnixSocketServer struct {
 	socketPath   string
 	logger       *slog.Logger
 	listener     net.Listener
-	filterErrors bool
+	ignoreErrors bool
 
 	mu                  sync.Mutex
 	commands            []*RecordedData
@@ -45,9 +45,9 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
-func WithFilterErrors(filter bool) Option {
+func WithIgnoreErrors(ignoreErrors bool) Option {
 	return func(s *UnixSocketServer) {
-		s.filterErrors = filter
+		s.ignoreErrors = ignoreErrors
 	}
 }
 
@@ -71,9 +71,11 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 	}
 
 	srv := &UnixSocketServer{
-		socketPath: socketPath,
-		listener:   listener,
-		logger:     defaultLogger,
+		socketPath:    socketPath,
+		listener:      listener,
+		logger:        defaultLogger,
+		ignoreErrors:  false,
+		lookupCommand: make(map[string]*RecordedData),
 	}
 
 	for _, opt := range opts {
@@ -90,7 +92,7 @@ func (s *UnixSocketServer) Commands() []string {
 	var commands []string
 
 	for _, cmd := range s.commands {
-		if s.filterErrors && len(cmd.ExitStatus) > 0 && cmd.ExitStatus != "0" {
+		if s.ignoreErrors && cmd.ExitCode != 0 {
 			continue
 		}
 		commands = append(commands, cmd.Command)
@@ -124,9 +126,9 @@ func (s *UnixSocketServer) ListenAndServe() {
 }
 
 type RecordedData struct {
-	Command    string `json:"command"`
-	StepID     string `json:"step_id"`
-	ExitStatus string `json:"exit_status"`
+	Command  string `json:"command"`
+	StepID   string `json:"step_id"`
+	ExitCode int    `json:"exit_code"`
 }
 
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
@@ -148,9 +150,9 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 		s.commandRecordedHook(data.Command)
 	}
 
-	if data.Command != "" && data.ExitStatus != "0" {
-		s.logger.Debug("command failed", "command", data.Command, "exit_status", data.ExitStatus)
-		s.updateExitStatus(data.StepID, data.ExitStatus)
+	if data.StepID != "" && data.ExitCode != 0 {
+		s.logger.Debug("command failed", "command", data.Command, "exit_status", data.ExitCode)
+		s.updateExitStatus(data.StepID, data.ExitCode)
 	}
 }
 
@@ -158,12 +160,12 @@ func (s *UnixSocketServer) SocketPath() string {
 	return s.socketPath
 }
 
-func (s *UnixSocketServer) updateExitStatus(stepID, exitStatus string) {
+func (s *UnixSocketServer) updateExitStatus(stepID string, exitCode int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if cmd, ok := s.lookupCommand[stepID]; ok {
-		cmd.ExitStatus = exitStatus
+		cmd.ExitCode = exitCode
 	}
 }
 
@@ -182,6 +184,7 @@ func (s *UnixSocketServer) maybeAppendData(data RecordedData) bool {
 	}
 
 	s.commands = append(s.commands, &data)
+	s.lookupCommand[data.StepID] = &data
 	s.logger.Debug("command recorded", "command", data.Command)
 	return true
 }
