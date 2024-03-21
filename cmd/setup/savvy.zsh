@@ -14,7 +14,6 @@ step_id=""
 
   # if return code is not 0, send the return code to the server
   if [[ "${SAVVY_CONTEXT}" == "1" && "${exit_code}" != "0" ]] ; then
-    echo "sending exit code to server: ${exit_code} with step_id: ${step_id}"
     SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --step-id="${step_id}" --exit-code="${exit_code}"
   fi
  }
