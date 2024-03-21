@@ -96,7 +96,7 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 
 func startRecording() ([]string, error) {
 	// TODO: Make this unique for each invokation
-	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithFilterErrors(ignoreErrors))
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors))
 	if err != nil {
 		return nil, err
 	}
