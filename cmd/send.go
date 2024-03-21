@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/idgen"
+	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/spf13/cobra"
 )
 
@@ -33,18 +35,38 @@ var sendCmd = &cobra.Command{
 		}
 		defer conn.Close()
 		message := strings.Join(args[:], " ") // ["echo hello world"] -> "echo hello world"
-		if len(message) == 0 {
+		if len(message) == 0 && (exitCode == 0 && stepID == "") {
 			// nothing to do.
 			return
 		}
-		if _, err = io.WriteString(conn, message+"\n"); err != nil {
+
+		if stepID == "" {
+			stepID = idgen.New(idgen.CommandPrefix)
+		}
+
+		data := server.RecordedData{
+			Command:  message,
+			StepID:   stepID,
+			ExitCode: exitCode,
+		}
+
+		if err := json.NewEncoder(conn).Encode(data); err != nil {
 			err = fmt.Errorf("failed to record command locally: %v", err)
 			display.ErrorWithSupportCTA(err)
 			return
 		}
+		// print the stepID to stdout
+		fmt.Print(stepID)
 	},
 }
 
+var stepID string
+var exitCode int
+
 func init() {
 	rootCmd.AddCommand(sendCmd)
+	// add flags to accept step_id as string and
+	// exit_code as int from the command line
+	sendCmd.Flags().StringVar(&stepID, "step-id", "", "Step ID")
+	sendCmd.Flags().IntVar(&exitCode, "exit-code", 0, "Exit code")
 }
