@@ -25,7 +25,7 @@ function __savvy_cmd_pre_exec__() {
   # clear step_id
   step_id=""
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${rendered_prompt}" $cmd)
+    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" $cmd)
   fi
 }
 add-zsh-hook preexec __savvy_cmd_pre_exec__

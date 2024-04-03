@@ -15,7 +15,13 @@ import (
 
 type Client interface {
 	WhoAmI(ctx context.Context) (string, error)
+	GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error)
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
+}
+
+type RecordedCommand struct {
+	Command string `json:"command"`
+	Prompt  string `json:"prompt,omitempty"`
 }
 
 type client struct {
@@ -118,6 +124,29 @@ type Runbook struct {
 type Step struct {
 	Description string `json:"description"`
 	Command     string `json:"command"`
+}
+
+func (c *client) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
+	cl := c.cl
+	bs, err := json.Marshal(struct{ Commands []RecordedCommand }{Commands: commands})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiURL("/api/v1/generate_runbookv2"), bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var generatedRunbook GeneratedRunbook
+	if err := json.NewDecoder(resp.Body).Decode(&generatedRunbook); err != nil {
+		return nil, err
+	}
+	return &generatedRunbook, nil
 }
 
 func (c *client) GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error) {

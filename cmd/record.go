@@ -51,20 +51,20 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	commands, err := startRecording()
+	recordedCommands, err := startRecording()
 	if err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
 
-	if len(commands) == 0 {
+	if len(recordedCommands) == 0 {
 		display.Error(errors.New("No commands were recorded"))
 		return
 	}
 
 	ctx := context.Background()
 	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(commands, cl)
+	gm := component.NewGenerateRunbookModel(recordedCommands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
 		err = fmt.Errorf("failed to generate runbook: %w", err)
@@ -94,7 +94,7 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 	}
 }
 
-func startRecording() ([]string, error) {
+func startRecording() ([]*server.RecordedCommand, error) {
 	// TODO: Make this unique for each invokation
 	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors))
 	if err != nil {
