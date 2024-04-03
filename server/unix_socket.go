@@ -129,6 +129,7 @@ type RecordedData struct {
 	Command  string `json:"command"`
 	StepID   string `json:"step_id"`
 	ExitCode int    `json:"exit_code"`
+	Prompt   string `json:"prompt",omitempty`
 }
 
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
