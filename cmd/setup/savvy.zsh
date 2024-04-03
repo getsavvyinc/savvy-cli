@@ -21,10 +21,11 @@ step_id=""
 function __savvy_cmd_pre_exec__() {
   # $2 is the command with all the aliases expanded
   local cmd=$3
+  local prompt=$(print -P "$PROMPT")
   # clear step_id
   step_id=""
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send $cmd)
+    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${rendered_prompt}" $cmd)
   fi
 }
 add-zsh-hook preexec __savvy_cmd_pre_exec__

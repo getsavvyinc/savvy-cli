@@ -51,6 +51,7 @@ var sendCmd = &cobra.Command{
 			Command:  message,
 			StepID:   stepID,
 			ExitCode: exitCode,
+			Prompt:   prompt,
 		}
 
 		if err := json.NewEncoder(conn).Encode(data); err != nil {
@@ -67,6 +68,7 @@ var sendCmd = &cobra.Command{
 
 var stepID string
 var exitCode int
+var prompt string
 
 func init() {
 	rootCmd.AddCommand(sendCmd)
@@ -74,4 +76,5 @@ func init() {
 	// exit_code as int from the command line
 	sendCmd.Flags().StringVar(&stepID, "step-id", "", "Step ID")
 	sendCmd.Flags().IntVar(&exitCode, "exit-code", 0, "Exit code")
+	sendCmd.Flags().StringVar(&prompt, "prompt", "", "record shell prompt while command is executed")
 }
