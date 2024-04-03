@@ -60,7 +60,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	var commands []string
+	var commands []*server.RecordedCommand
 	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
 		var err error
 
@@ -68,6 +68,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		if err != nil {
 			display.FatalErrWithSupportCTA(err)
 		}
+
 		if len(commands) == 0 {
 			display.Error(errors.New("No commands were recorded"))
 			return
@@ -147,7 +148,7 @@ func allowUserToSelectCommands(history []string) []string {
 	return commands
 }
 
-func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]string, error) {
+func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]*server.RecordedCommand, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
 
 	commandProcessedChan := make(chan bool, 1)

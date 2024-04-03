@@ -85,17 +85,25 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 	return srv, nil
 }
 
-func (s *UnixSocketServer) Commands() []string {
+type RecordedCommand struct {
+	Command string `json:"command"`
+	Prompt  string `json:"prompt,omitempty"`
+}
+
+func (s *UnixSocketServer) Commands() []*RecordedCommand {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var commands []string
+	var commands []*RecordedCommand
 
 	for _, cmd := range s.commands {
 		if s.ignoreErrors && cmd.ExitCode != 0 {
 			continue
 		}
-		commands = append(commands, cmd.Command)
+		commands = append(commands, &RecordedCommand{
+			Command: cmd.Command,
+			Prompt:  cmd.Prompt,
+		})
 	}
 	return commands
 }
@@ -129,7 +137,7 @@ type RecordedData struct {
 	Command  string `json:"command"`
 	StepID   string `json:"step_id"`
 	ExitCode int    `json:"exit_code"`
-	Prompt   string `json:"prompt",omitempty`
+	Prompt   string `json:"prompt,omitempty"`
 }
 
 func (s *UnixSocketServer) handleConnection(c net.Conn) {

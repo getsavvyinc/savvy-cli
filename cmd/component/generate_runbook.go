@@ -6,13 +6,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/fetch"
+	"github.com/getsavvyinc/savvy-cli/server"
 )
 
 type GenerateRunbookModel struct {
 	fetch.Model
 	cl client.Client
 
-	commands  []string
+	commands  []*server.RecordedCommand
 	runbookCh chan *Runbook
 	done      bool
 }
@@ -22,7 +23,7 @@ func (m GenerateRunbookModel) RunbookCh() chan *Runbook {
 }
 
 func NewGenerateRunbookModel(
-	commands []string,
+	commands []*server.RecordedCommand,
 	cl client.Client,
 ) GenerateRunbookModel {
 	m := GenerateRunbookModel{
@@ -44,8 +45,15 @@ func (m *GenerateRunbookModel) IsDone() bool {
 }
 
 func (m *GenerateRunbookModel) Generate() tea.Msg {
+	var commands []client.RecordedCommand
+	for _, cmd := range m.commands {
+		commands = append(commands, client.RecordedCommand{
+			Command: cmd.Command,
+			Prompt:  cmd.Prompt,
+		})
+	}
 
-	generatedRunbook, err := m.cl.GenerateRunbook(context.Background(), m.commands)
+	generatedRunbook, err := m.cl.GenerateRunbookV2(context.Background(), commands)
 	return GenerateRunbookDoneMsg{
 		GeneratedRunbook: generatedRunbook,
 		Err:              err,
