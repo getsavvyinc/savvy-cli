@@ -55,12 +55,25 @@ export __bp_enable_subshells="true"
 
 SAVVY_INPUT_FILE=/tmp/savvy-socket
 
+
+get_user_prompt() {
+  local user_prompt
+  # P expansion is only available in bash 4.4+
+  if [[ "${BASH_VERSINFO[0]}" -gt 4 ]] || (( BASH_VERSINFO[0] > 3  && BASH_VERSINFO[1] > 4)); then
+    user_prompt=$(printf '%s' "${PS1@P}")
+  else
+    user_prompt=""
+  fi
+  echo "${user_prompt}"
+}
+
 step_id=""
 savvy_cmd_pre_exec() {
   local cmd=$BASH_COMMAND
+  local prompt=$(get_user_prompt)
   step_id=""
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
-    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send "$cmd")
+    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" "$cmd")
   fi
 }
 
