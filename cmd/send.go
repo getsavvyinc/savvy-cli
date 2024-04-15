@@ -10,6 +10,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/idgen"
 	"github.com/getsavvyinc/savvy-cli/server"
+	"github.com/getsavvyinc/savvy-cli/shell/expansion"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,8 @@ var sendCmd = &cobra.Command{
 			// nothing to do.
 			return
 		}
+
+		message = expansion.IgnoreGrep(message)
 
 		var quite bool
 		if stepID == "" {
