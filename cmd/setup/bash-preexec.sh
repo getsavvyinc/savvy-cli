@@ -91,7 +91,7 @@ savvy_cmd_pre_cmd() {
   local exit_code=$?
 
   if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'* ]]; then
-  PS1+=$'\[\e[31m\]recording\[\e[0m\] \U1f60e '
+    PS1+=$'\[\e[31m\]recording\[\e[0m\] \U1f60e '
   fi
 
   # if return code is not 0, send the return code to the server
