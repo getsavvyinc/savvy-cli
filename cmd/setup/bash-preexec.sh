@@ -69,7 +69,17 @@ get_user_prompt() {
 
 step_id=""
 savvy_cmd_pre_exec() {
-  local cmd=$BASH_COMMAND
+  local expanded_command=""
+  local spaced_command=$(echo $1 | sed -e 's/\$(\([^)]*\))/$( \1 )/g' -e 's/`\(.*\)`/` \1 `/g')
+  local command_parts=( $spaced_command )
+  for part in "${command_parts[@]}"; do
+      if [[ "$part" =~ ^[a-zA-Z0-9_]+$ && $(type -t "$part") == "alias" ]]; then
+        expanded_command+=$(alias "$part" | sed -e "s/^[[:space:]]*alias $part='//" -e "s/^$part='//" -e "s/'$//")" "
+      else
+          expanded_command+="$part "
+      fi
+  done
+  local cmd="${expanded_command}"
   local prompt=$(get_user_prompt)
   step_id=""
   if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
