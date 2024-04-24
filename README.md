@@ -6,7 +6,7 @@
   <a href="https://www.getsavvy.so/">Website</a> |
 </h3>
 
-Savvy helps your create and share runbooks directly from your terminal.
+Savvy is the easiest way to create, share and run runbooks from your terminal.
 
 ## Demo
 
