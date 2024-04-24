@@ -56,6 +56,29 @@ func New() (Client, error) {
 	return c, nil
 }
 
+func Guest() Client {
+	return &client{
+		cl: &http.Client{
+			Transport: &GuestRoundTripper{savvyVersion: config.Version()},
+		},
+		apiHost: config.APIHost(),
+	}
+}
+
+type GuestRoundTripper struct {
+	savvyVersion string
+}
+
+func (g *GuestRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Clone the request to ensure thread safety
+	clonedReq := req.Clone(req.Context())
+	clonedReq.Header.Set("X-Savvy-Version", g.savvyVersion)
+	clonedReq.Header.Set("X-Savvy-Guest", "true")
+
+	// Use the embedded Transport to perform the actual request
+	return http.DefaultTransport.RoundTrip(clonedReq)
+}
+
 type AuthorizedRoundTripper struct {
 	token        string
 	savvyVersion string
