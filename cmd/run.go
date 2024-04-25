@@ -43,11 +43,10 @@ func savvyRun(cmd *cobra.Command, args []string) {
 	}
 
 	runbookID := args[0]
-	fmt.Println("Running runbook", runbookID)
 
 	rb, err := cl.RunbookByID(ctx, runbookID)
 	if err != nil {
-		logger.Error("error getting runbook", "error", err)
+		logger.Error("failed to fetch runbook", "runbook_id", runbookID, "error", err)
 		return
 	}
 
