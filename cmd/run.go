@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
+	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/spf13/cobra"
 )
@@ -43,12 +45,26 @@ func savvyRun(cmd *cobra.Command, args []string) {
 	}
 
 	runbookID := args[0]
-
-	rb, err := cl.RunbookByID(ctx, runbookID)
+	rb, err := fetchRunbook(ctx, cl, runbookID)
 	if err != nil {
 		logger.Error("failed to fetch runbook", "runbook_id", runbookID, "error", err)
 		return
 	}
 
-	fmt.Println("Running runbook", rb.Title)
+	fmt.Println("next: run the runbook", rb.Title)
+}
+
+func fetchRunbook(ctx context.Context, cl client.Client, runbookID string) (*client.Runbook, error) {
+	var rb *client.Runbook
+	var err error
+	if serr := huhSpinner.New().Title("Fetching runbook").Action(func() {
+		rb, err = cl.RunbookByID(ctx, runbookID)
+		if err != nil {
+			err = fmt.Errorf("failed to fetch runbook %s: %w", runbookID, err)
+			return
+		}
+	}).Run(); serr != nil {
+		return nil, err
+	}
+	return rb, err
 }
