@@ -26,6 +26,10 @@ type GuestRoundTripper struct {
 	savvyVersion string
 }
 
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func (g *GuestRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone the request to ensure thread safety
 	clonedReq := req.Clone(req.Context())
@@ -81,6 +85,14 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		var errResp ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+			return nil, fmt.Errorf("could not parse error message: %w", err)
+		}
+		return nil, fmt.Errorf("error getting runbook: %s", errResp.Message)
+	}
 
 	var runbook Runbook
 	if err := json.NewDecoder(resp.Body).Decode(&runbook); err != nil {
