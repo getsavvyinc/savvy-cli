@@ -25,7 +25,7 @@ type zsh struct {
 
 var _ Shell = (*zsh)(nil)
 
-const script = `
+const baseScript = `
 # Reference for loading behavior
 # https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
@@ -101,6 +101,9 @@ fi
 
 unset _SAVVY_USER_ZDOTDIR
 
+`
+
+const recordScript = `
 if ! whence -v __savvy_cmd_pre_exec__ >/dev/null; then
 echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
 echo
@@ -123,7 +126,7 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	}
 	defer zshrc.Close()
 
-	t := template.Must(template.New("zshrc").Parse(script))
+	t := template.Must(template.New("zshrc").Parse(baseScript + recordScript))
 
 	if err := t.Execute(zshrc, z); err != nil {
 		return nil, err
@@ -136,81 +139,6 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 }
 
 const historyScript = `
-# Reference for loading behavior
-# https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
-
-RED=$(tput setaf 1)
-RESET=$(tput sgr0)
-
-SAVVY_INPUT_FILE={{.SocketPath}}
-
-if [[ -f "/etc/zshenv" ]] ; then
-    source "/etc/zshenv"
-elif [[ -f "/etc/zsh/zshenv" ]] ; then
-    source "/etc/zsh/zshenv"
-fi
-
-if [[ -f "$HOME/.zshenv" ]] ; then
-    tmp_ZDOTDIR=$ZDOTDIR
-    source "$HOME/.zshenv"
-    # If the user has overridden $ZDOTDIR, we save that in $_SAVVY_USER_ZDOTDIR for later reference
-    # and reset $ZDOTDIR
-    if [[ "$tmp_ZDOTDIR" != "$ZDOTDIR" ]]; then
-        _SAVVY_USER_ZDOTDIR=$ZDOTDIR
-        ZDOTDIR=$tmp_ZDOTDIR
-        unset tmp_ZDOTDIR
-    fi
-fi
-
-# If a zsh_history file exists, copy it over before zsh initialization so history is maintained
-if [[ -f "$HOME/.zsh_history" ]] ; then
-    cp $HOME/.zsh_history $ZDOTDIR
-fi
-
-SAVVY_LOGIN_SHELL=0
-
-case "$OSTYPE" in
-  solaris*) SAVVY_LOGIN_SHELL=1;;
-  darwin*)  SAVVY_LOGIN_SHELL=1;;
-  linux*)   SAVVY_LOGIN_SHELL=1;;
-  bsd*)     SAVVY_LOGIN_SHELL=1;;
-  msys*)    echo "windows os is not supported" ;;
-  cygwin*)  echo "windows os is not supported" ;;
-  *)        echo "unknown: $OSTYPE" ;;
-esac
-
-if [[ -f "/etc/zprofile" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "/etc/zprofile"
-elif [[ -f "/etc/zsh/zprofile" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "/etc/zsh/zprofile"
-fi
-
-if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zprofile" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zprofile"
-fi
-
-if [[ -f "/etc/zshrc" ]] ; then
-    source "/etc/zshrc"
-elif [[ -f "/etc/zsh/zshrc" ]] ; then
-    source "/etc/zsh/zshrc"
-fi
-
-if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zshrc" ]] ; then
-    source "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zshrc"
-fi
-
-if [[ -f "/etc/zlogin" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "/etc/zlogin"
-elif [[ -f "/etc/zsh/zlogin" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "/etc/zsh/zlogin"
-fi
-
-if [[ -f "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zlogin" && "$SAVVY_LOGIN_SHELL" == "1" ]] ; then
-    source "${_SAVVY_USER_ZDOTDIR:-$HOME}/.zlogin"
-fi
-
-unset _SAVVY_USER_ZDOTDIR
-
 function __savvy_history_pre_exec__ {
   local cmd=${3}
 
@@ -236,7 +164,7 @@ func (z *zsh) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 	}
 	defer zshrc.Close()
 
-	t := template.Must(template.New("historyZshrc").Parse(historyScript))
+	t := template.Must(template.New("historyZshrc").Parse(baseScript + historyScript))
 	if err := t.Execute(zshrc, z); err != nil {
 		return nil, err
 	}
