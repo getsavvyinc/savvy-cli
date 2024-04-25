@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os/exec"
 
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/shell/internal/detect"
 	"github.com/getsavvyinc/savvy-cli/shell/kind"
 )
@@ -13,6 +14,7 @@ type Shell interface {
 	Spawn(ctx context.Context) (*exec.Cmd, error)
 	TailHistory(ctx context.Context) ([]string, error)
 	SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error)
+	SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error)
 }
 
 func New(logTarget string) Shell {
@@ -46,5 +48,9 @@ func (t *todo) TailHistory(ctx context.Context) ([]string, error) {
 }
 
 func (t *todo) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
+	return nil, errors.New("savvy doesn't support your current shell")
+}
+
+func (t *todo) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
 	return nil, errors.New("savvy doesn't support your current shell")
 }

@@ -3,6 +3,7 @@ package shell
 import (
 	"bufio"
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"os/user"
@@ -12,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/tail"
 )
 
@@ -177,7 +179,11 @@ func (b *bash) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 	}
 
 	cmd := exec.CommandContext(ctx, b.shellCmd, "--rcfile", bashrc.Name())
-	cmd.Env = append(os.Environ())
+	cmd.Env = os.Environ()
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
+}
+
+func (b *bash) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
+	return nil, errors.New("savvy doesn't support your current shell")
 }

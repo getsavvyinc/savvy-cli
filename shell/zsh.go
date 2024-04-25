@@ -3,6 +3,7 @@ package shell
 import (
 	"bufio"
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"os/user"
@@ -12,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/tail"
 )
 
@@ -283,4 +285,8 @@ func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
 		}
 	}
 	return result, nil
+}
+
+func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
+	return nil, errors.New("savvy doesn't support your current shell")
 }
