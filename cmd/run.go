@@ -39,7 +39,17 @@ func savvyRun(cmd *cobra.Command, args []string) {
 	cl, err := client.New()
 	if err != nil {
 		logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
-		cl = client.Guest()
+		cl = client.NewGuest()
 	}
-	_ = cl
+
+	runbookID := args[0]
+	fmt.Println("Running runbook", runbookID)
+
+	rb, err := cl.RunbookByID(ctx, runbookID)
+	if err != nil {
+		logger.Error("error getting runbook", "error", err)
+		return
+	}
+
+	fmt.Println("Running runbook", rb.Title)
 }
