@@ -1,20 +1,30 @@
 package cmd
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/getsavvyinc/savvy-cli/client"
-	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:     "run",
+	Use:     "run [runbookID]",
 	Short:   "Run takes a runbook ID and runs it",
-	Example: "savvy run $rb-runbookID",
-	Long:    `Run takes a runbook ID and runs it. Run automatically steps though the runbook for you, there's no need manually copy paste individual commands.`,
-	Run:     savvyRun,
+	Example: "savvy run rb-runbookID",
+	Long: `
+  Run takes a runbook ID and runs it.
+
+  Run automatically steps though the runbook for you, there's no need manually copy paste individual commands.
+  `,
+	Run: savvyRun,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("missing: runbookID\n")
+		}
+		return nil
+	},
+	// Args: cobra.ExactArgs(1),
 }
 
 func init() {
@@ -31,11 +41,5 @@ func savvyRun(cmd *cobra.Command, args []string) {
 		logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
 		cl = client.Guest()
 	}
-
-	if len(args) == 0 {
-		display.ErrorMsg("missing: runbookID")
-		os.Exit(1)
-	}
-
 	_ = cl
 }
