@@ -16,6 +16,7 @@ import (
 type Client interface {
 	WhoAmI(ctx context.Context) (string, error)
 	GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error)
+	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 }
 
