@@ -18,6 +18,7 @@ type Client interface {
 	GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
+	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 }
 
 type RecordedCommand struct {
@@ -55,29 +56,6 @@ func New() (Client, error) {
 		return nil, err
 	}
 	return c, nil
-}
-
-func Guest() Client {
-	return &client{
-		cl: &http.Client{
-			Transport: &GuestRoundTripper{savvyVersion: config.Version()},
-		},
-		apiHost: config.APIHost(),
-	}
-}
-
-type GuestRoundTripper struct {
-	savvyVersion string
-}
-
-func (g *GuestRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone the request to ensure thread safety
-	clonedReq := req.Clone(req.Context())
-	clonedReq.Header.Set("X-Savvy-Version", g.savvyVersion)
-	clonedReq.Header.Set("X-Savvy-Guest", "true")
-
-	// Use the embedded Transport to perform the actual request
-	return http.DefaultTransport.RoundTrip(clonedReq)
 }
 
 type AuthorizedRoundTripper struct {
@@ -194,4 +172,28 @@ func (c *client) GenerateRunbook(ctx context.Context, commands []string) (*Gener
 		return nil, err
 	}
 	return &generatedRunbook, nil
+}
+
+func (c *client) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
+	cl := c.cl
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/runbook"), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	qp := req.URL.Query()
+	qp.Set("runbook_id", id)
+	req.URL.RawQuery = qp.Encode()
+
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var runbook Runbook
+	if err := json.NewDecoder(resp.Body).Decode(&runbook); err != nil {
+		return nil, err
+	}
+	return &runbook, nil
 }
