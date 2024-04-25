@@ -119,8 +119,9 @@ type GeneratedRunbook struct {
 }
 
 type Runbook struct {
-	Title string `json:"title"`
-	Steps []Step `json:"steps"`
+	RunbookID string `json:"runbook_id"`
+	Title     string `json:"title"`
+	Steps     []Step `json:"steps"`
 }
 
 type Step struct {
