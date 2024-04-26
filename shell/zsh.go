@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -249,8 +250,14 @@ func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (
 		nextStep = "1"
 	}
 
+	var nextStepIdx int
+	nextStepIdx, err = strconv.Atoi(nextStep)
+	if err != nil {
+		nextStepIdx = 1
+	}
+
 	cmd := exec.CommandContext(ctx, z.shellCmd)
-	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%s", nextStep))
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextStepIdx))
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
