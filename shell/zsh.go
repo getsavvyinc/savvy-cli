@@ -250,7 +250,7 @@ func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (
 	}
 
 	cmd := exec.CommandContext(ctx, z.shellCmd)
-	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%s", nextStep))
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%s", nextStep))
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }

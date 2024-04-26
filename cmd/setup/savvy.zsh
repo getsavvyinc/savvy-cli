@@ -40,7 +40,7 @@ function __savvy_run_pre_exec__() {
 
 # SAVVY_RUNBOOK_COMMANDS is a list of commands that savvy should run in the run context
 
-SAVVY_COMMANDS="(${(s:,:)SAVVY_RUNBOOK_COMMANDS}")
+SAVVY_COMMANDS=("${(s:,:)SAVVY_RUNBOOK_COMMANDS}")
 num_commands=${#SAVVY_COMMANDS}
 function __savvy_runbook_runner__() {
   next_step_idx=${SAVVY_NEXT_STEP:1}
