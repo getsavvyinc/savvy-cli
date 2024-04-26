@@ -3,7 +3,7 @@ package shell
 import (
 	"bufio"
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
@@ -104,7 +104,7 @@ unset _SAVVY_USER_ZDOTDIR
 `
 
 const recordScript = `
-if ! whence -v __savvy_cmd_pre_exec__ >/dev/null; then
+if ! whence -v __savvy_record_pre_exec__ >/dev/null; then
 echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
 echo
 echo "${RED}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}"
@@ -133,7 +133,7 @@ func (z *zsh) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	}
 
 	cmd := exec.CommandContext(ctx, z.shellCmd)
-	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=1")
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=record")
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
@@ -215,6 +215,42 @@ func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
+const runRunbookScript = `
+if ! whence -v __savvy_run_pre_exec__ >/dev/null; then
+echo "${RED} Your shell is not configured to use Savvy. Please run the following commands: ${RESET}"
+echo
+echo "${RED}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}"
+echo "${RED}> source ~/.zshrc${RESET}"
+exit 1
+fi
+
+echo
+echo "Type 'exit' or press 'ctrl+d' to stop running."
+`
+
 func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
-	return nil, errors.New("savvy doesn't support your current shell")
+	tmp := os.TempDir()
+	zshrcPath := filepath.Join(tmp, ".zshrc")
+	zshrc, err := os.Create(zshrcPath)
+	if err != nil {
+		return nil, err
+	}
+	defer zshrc.Close()
+
+	t := template.Must(template.New("zshrc").Parse(baseScript + runRunbookScript))
+
+	if err := t.Execute(zshrc, z); err != nil {
+		return nil, err
+	}
+
+	// Inherit the next step from the environment if we are in a subshell
+	nextStep := os.Getenv("SAVVY_NEXT_STEP")
+	if nextStep == "" {
+		nextStep = "1"
+	}
+
+	cmd := exec.CommandContext(ctx, z.shellCmd)
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%s", nextStep))
+	cmd.WaitDelay = 500 * time.Millisecond
+	return cmd, nil
 }
