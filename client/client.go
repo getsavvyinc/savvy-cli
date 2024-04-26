@@ -129,6 +129,14 @@ type Step struct {
 	Command     string `json:"command"`
 }
 
+func (rb *Runbook) Commands() []string {
+	var commands []string
+	for _, step := range rb.Steps {
+		commands = append(commands, step.Command)
+	}
+	return commands
+}
+
 func (c *client) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
 	cl := c.cl
 	bs, err := json.Marshal(struct{ Commands []RecordedCommand }{Commands: commands})
