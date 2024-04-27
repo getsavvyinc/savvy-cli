@@ -31,7 +31,8 @@ function __savvy_record_pre_exec__() {
 }
 
 function __savvy_run_pre_exec__() {
-  local cmd=$3
+  # we want the command as it was typed in.
+  local cmd=$1
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
     if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
       SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
@@ -39,8 +40,26 @@ function __savvy_run_pre_exec__() {
   fi
 }
 
-function __savvy_runbook_runner__() {
+function __savvy_run_pre_cmd__() {
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
+    PS1="${orignal_ps1}"$'(%F{red}savvy run %f'" ${SAVVY_RUN_CURR})"" "
+  fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -gt "${#SAVVY_COMMANDS}" ]] ; then
+    # space at the end is important
+    PS1="${orignal_ps1}"$'%F{green} done%f \U1f60e '
+  fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
+    RPS1="${original_rps1} %F{green}(${SAVVY_NEXT_STEP}/${#SAVVY_COMMANDS})"
+  else 
+    RPS1="${original_rps1}"
+  fi
+}
+
+function __savvy_runbook_runner__() {
+
+  if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" ]] ; then
     next_step_idx=${SAVVY_NEXT_STEP}
     BUFFER="${SAVVY_COMMANDS[next_step_idx]}"
     zle end-of-line  # Accept the line for editing
@@ -51,16 +70,23 @@ function __savvy_runbook_runner__() {
 #
 # TODO: use templates to avoid the need to manually change shell checks
 
+# Save the original PS1
+orignal_ps1=$PS1
+original_rps1=$RPS1
+
 SAVVY_COMMANDS=()
+SAVVY_RUN_CURR=""
 SAVVY_NEXT_STEP=1
 if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
   zle -N zle-line-init __savvy_runbook_runner__
   add-zle-hook-widget line-init __savvy_runbook_runner__
   # SAVVY_RUNBOOK_COMMANDS is a list of commands that savvy should run in the run context
   SAVVY_COMMANDS=("${(s:,:)SAVVY_RUNBOOK_COMMANDS}")
+  SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
 fi
 
 add-zsh-hook preexec __savvy_record_pre_exec__
 add-zsh-hook preexec __savvy_run_pre_exec__
 
 add-zsh-hook precmd __savvy_record_pre_cmd__
+add-zsh-hook precmd __savvy_run_pre_cmd__
