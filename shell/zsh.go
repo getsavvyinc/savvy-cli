@@ -256,8 +256,17 @@ func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (
 		nextStepIdx = 1
 	}
 
+	runbook_alias := computeRunbookAlias(runbook)
+
 	cmd := exec.CommandContext(ctx, z.shellCmd)
-	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextStepIdx))
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), ",")), fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextStepIdx), fmt.Sprintf("SAVVY_RUNBOOK_ALIAS=%s", runbook_alias))
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
+}
+
+func computeRunbookAlias(runbook *client.Runbook) string {
+	lc := strings.ToLower(runbook.Title)
+	alias := strings.ReplaceAll(lc, " ", "-")
+	alias, _ = strings.CutPrefix(alias, "how-to-")
+	return alias
 }

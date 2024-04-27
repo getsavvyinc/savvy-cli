@@ -68,8 +68,6 @@ func savvyRun(cmd *cobra.Command, args []string) {
 		)
 		return
 	}
-
-	fmt.Println("next: run the runbook", rb.Title)
 }
 
 func runRunbook(ctx context.Context, runbook *client.Runbook) error {
