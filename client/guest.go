@@ -100,3 +100,7 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 	}
 	return &runbook, nil
 }
+
+func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
+	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "list runbooks")
+}
