@@ -22,11 +22,21 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:     "run [runbookID]",
-	Short:   "Run takes a runbook ID and runs it",
-	Example: "savvy run rb-runbookID",
+	Use:   "run [runbookID]",
+	Short: "Run takes a runbook ID and runs it",
+	Example: `
+  # Select and run from a list of runbooks you have access to
+  savvy run
+
+  # Run a specific runbook
+  savvy run rb-runbookID
+  `,
 	Long: `
-  Run takes a runbook ID and runs it.
+  Run allows users to select any runbook and run it.
+
+  Without any arguments, savvy run will display a list of runbooks you have access to and allow you to select one to run.
+
+  If you provide a runbook ID, savvy run will run that specific runbook.
 
   Run automatically steps though the runbook for you, there's no need manually copy paste individual commands.
   `,
