@@ -215,7 +215,7 @@ func (c *client) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 
 func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 	cl := c.cl
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/runbooks"), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/runbooks/"), nil)
 	if err != nil {
 		return nil, err
 	}
