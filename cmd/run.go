@@ -40,14 +40,8 @@ var runCmd = &cobra.Command{
 
   Run automatically steps though the runbook for you, there's no need manually copy paste individual commands.
   `,
-	Run: savvyRun,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("missing: runbookID\n")
-		}
-		return nil
-	},
-	// Args: cobra.ExactArgs(1),
+	Run:  savvyRun,
+	Args: cobra.MaximumNArgs(1),
 }
 
 func init() {
