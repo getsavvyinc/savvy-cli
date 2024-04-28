@@ -19,6 +19,7 @@ type Client interface {
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
+	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 }
 
 type RecordedCommand struct {
@@ -124,6 +125,11 @@ type Runbook struct {
 	Steps     []Step `json:"steps"`
 }
 
+type RunbookInfo struct {
+	RunbookID string `json:"runbook_id"`
+	Title     string `json:"title"`
+}
+
 type Step struct {
 	Description string `json:"description"`
 	Command     string `json:"command"`
@@ -205,4 +211,23 @@ func (c *client) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 		return nil, err
 	}
 	return &runbook, nil
+}
+
+func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
+	cl := c.cl
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/runbooks"), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var runbooks []RunbookInfo
+	if err := json.NewDecoder(resp.Body).Decode(&runbooks); err != nil {
+		return nil, err
+	}
+	return runbooks, nil
 }
