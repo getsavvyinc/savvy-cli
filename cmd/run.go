@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
+	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
@@ -59,7 +61,18 @@ func savvyRun(cmd *cobra.Command, args []string) {
 		cl = client.NewGuest()
 	}
 
-	runbookID := args[0]
+	var runbookID string
+
+	if len(args) == 0 {
+		runbookID, err = allowUserToSelectRunbook(ctx, logger, cl)
+		if err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+	} else {
+		runbookID = args[0]
+	}
+
 	rb, err := fetchRunbook(ctx, cl, runbookID)
 	if err != nil {
 		logger.Error("failed to fetch runbook", "runbook_id", runbookID, "error", err)
@@ -163,4 +176,45 @@ func fetchRunbook(ctx context.Context, cl client.Client, runbookID string) (*cli
 		return nil, err
 	}
 	return rb, err
+}
+
+type selectableRunbook struct {
+	Key       int    `json:"key"`
+	RunbookID string `json:"runbook_id"`
+}
+
+func allowUserToSelectRunbook(ctx context.Context, logger *slog.Logger, cl client.Client) (string, error) {
+	l := logger.With("func", "allowsUserToSelectRunbook")
+	runbooks, err := cl.Runbooks(ctx)
+	if err != nil {
+		l.Debug("failed to fetch runbooks", "error", err)
+		return "", err
+	}
+
+	var options []huh.Option[selectableRunbook]
+	var selectedRunbook selectableRunbook
+
+	for i, rb := range runbooks {
+		options = append(options, huh.NewOption(
+			fmt.Sprintf("%d. %s", i+1, rb.Title),
+			selectableRunbook{Key: i, RunbookID: rb.RunbookID},
+		))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[selectableRunbook]().
+				Title("Select a runbook").
+				Options(options...).
+				Description("Press x to select the runbook you want to run").
+				Height(33).
+				Value(&selectedRunbook),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		logger.Debug("failed to run form", "error", err)
+		return "", err
+	}
+	return selectedRunbook.RunbookID, nil
 }
