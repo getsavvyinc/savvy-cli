@@ -206,7 +206,7 @@ func allowUserToSelectRunbook(ctx context.Context, logger *slog.Logger, cl clien
 			huh.NewSelect[selectableRunbook]().
 				Title("Select a runbook").
 				Options(options...).
-				Description("Press x to select the runbook you want to run").
+				Description("Press Enter to select the runbook you want to run").
 				Height(33).
 				Value(&selectedRunbook),
 		),
