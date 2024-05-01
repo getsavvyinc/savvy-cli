@@ -81,7 +81,7 @@ if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
   zle -N zle-line-init __savvy_runbook_runner__
   add-zle-hook-widget line-init __savvy_runbook_runner__
   # SAVVY_RUNBOOK_COMMANDS is a list of commands that savvy should run in the run context
-  SAVVY_COMMANDS=("${(s:,:)SAVVY_RUNBOOK_COMMANDS}")
+  SAVVY_COMMANDS=("${(@s:COMMA:)SAVVY_RUNBOOK_COMMANDS}")
   SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
 fi
 
