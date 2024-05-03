@@ -246,22 +246,9 @@ func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (
 		return nil, err
 	}
 
-	// Inherit the next step from the environment if we are in a subshell
-	nextStep := os.Getenv("SAVVY_NEXT_STEP")
-	if nextStep == "" {
-		nextStep = "1"
-	}
-
-	var nextStepIdx int
-	nextStepIdx, err = strconv.Atoi(nextStep)
-	if err != nil {
-		nextStepIdx = 1
-	}
-
-	runbook_alias := computeRunbookAlias(runbook)
-
 	cmd := exec.CommandContext(ctx, z.shellCmd)
-	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp, "SAVVY_CONTEXT=run", fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", strings.Join(runbook.Commands(), RunbookCommandDelimiter)), fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextStepIdx), fmt.Sprintf("SAVVY_RUNBOOK_ALIAS=%s", runbook_alias))
+	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp)
+	cmd.Env = append(cmd.Env, runbookRunMetadata(runbook)...)
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
@@ -271,4 +258,30 @@ func computeRunbookAlias(runbook *client.Runbook) string {
 	alias := strings.ReplaceAll(lc, " ", "-")
 	alias, _ = strings.CutPrefix(alias, "how-to-")
 	return alias
+}
+
+func nextRunbookStepToRun() int {
+	// Inherit the next step from the environment if we are in a subshell
+	nextStep := os.Getenv("SAVVY_NEXT_STEP")
+	if nextStep == "" {
+		nextStep = "1"
+	}
+
+	idx, err := strconv.Atoi(nextStep)
+	if err != nil {
+		return 1
+	}
+	return idx
+}
+
+func runbookRunMetadata(runbook *client.Runbook) []string {
+	runbookCommands := strings.Join(runbook.Commands(), RunbookCommandDelimiter)
+	runbookAlias := computeRunbookAlias(runbook)
+
+	return []string{
+		"SAVVY_CONTEXT=run",
+		fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", runbookCommands),
+		fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextRunbookStepToRun()),
+		fmt.Sprintf("SAVVY_RUNBOOK_ALIAS=%s", runbookAlias),
+	}
 }
