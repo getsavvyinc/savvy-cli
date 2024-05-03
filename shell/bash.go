@@ -3,7 +3,6 @@ package shell
 import (
 	"bufio"
 	"context"
-	"errors"
 	"os"
 	"os/exec"
 	"os/user"
@@ -95,11 +94,12 @@ savvy_cmd_pre_exec_history() {
 preexec_functions+=(savvy_cmd_pre_exec_history)
 `
 
-var bashTemplate, bashHistoryTemplate *template.Template
+var bashTemplate, bashHistoryTemplate, bashRunTemplate *template.Template
 
 func init() {
 	bashTemplate = template.Must(template.New("bash").Parse(bashBaseScript + bashRecordSetup))
 	bashHistoryTemplate = template.Must(template.New("bashHistory").Parse(bashBaseScript + bashHistorySetup))
+	bashRunTemplate = template.Must(template.New("bashRun").Parse(bashBaseScript + bashRunSetup))
 }
 
 func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
@@ -116,7 +116,7 @@ func (b *bash) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	}
 
 	cmd := exec.CommandContext(ctx, b.shellCmd, "--rcfile", bashrc.Name())
-	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=1")
+	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=record")
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
@@ -184,6 +184,27 @@ func (b *bash) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
+const bashRunSetup = `
+echo
+echo "Type 'ctrl+n' to get the next command."
+echo
+echo "Type 'exit' or press 'ctrl+d' to stop recording."
+`
+
 func (b *bash) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
-	return nil, errors.New("savvy doesn't support your current shell")
+	tmpDir := os.TempDir()
+	bashrc, err := os.CreateTemp(tmpDir, "savvy-bashrc-*.bash")
+	if err != nil {
+		return nil, err
+	}
+	defer bashrc.Close()
+
+	if err := bashRunTemplate.Execute(bashrc, b); err != nil {
+		return nil, err
+	}
+
+	cmd := exec.CommandContext(ctx, b.shellCmd, "--rcfile", bashrc.Name())
+	cmd.Env = append(os.Environ(), runbookRunMetadata(runbook)...)
+	cmd.WaitDelay = 500 * time.Millisecond
+	return cmd, nil
 }

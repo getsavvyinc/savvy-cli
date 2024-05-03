@@ -43,111 +43,14 @@ if [ -z "${BASH_VERSION-}" ]; then
     return 1;
 fi
 
-
 # We only support Bash 3.1+.
 # Note: BASH_VERSINFO is first available in Bash-2.0.
 if [[ -z "${BASH_VERSINFO-}" ]] || (( BASH_VERSINFO[0] < 3 || (BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] < 1) )); then
     return 1
 fi
 
-# Enable experimental subshell support
-export __bp_enable_subshells="true"
-
-SAVVY_INPUT_FILE=/tmp/savvy-socket
-
-# Save the original PS1
-orignal_ps1=$PS1
-original_rps1=$RPS1
-
-get_user_prompt() {
-  local user_prompt
-  # P expansion is only available in bash 4.4+
-  if [[ "${BASH_VERSINFO[0]}" -gt 4 ]] || (( BASH_VERSINFO[0] > 3  && BASH_VERSINFO[1] > 4)); then
-    user_prompt=$(printf '%s' "${PS1@P}")
-  else
-    user_prompt=""
-  fi
-  echo "${user_prompt}"
-}
-
-step_id=""
-savvy_cmd_pre_exec() {
-  local expanded_command=""
-  local spaced_command=$(echo $1 | sed -e 's/\$(\([^)]*\))/$( \1 )/g' -e 's/`\(.*\)`/` \1 `/g')
-  local command_parts=( $spaced_command )
-  for part in "${command_parts[@]}"; do
-      if [[ "$part" =~ ^[a-zA-Z0-9_]+$ && $(type -t "$part") == "alias" ]]; then
-        expanded_command+=$(alias "$part" | sed -e "s/^[[:space:]]*alias $part='//" -e "s/^$part='//" -e "s/'$//")" "
-      else
-          expanded_command+="$part "
-      fi
-  done
-  local cmd="${expanded_command}"
-  local prompt=$(get_user_prompt)
-  step_id=""
-  if [[ "${SAVVY_CONTEXT}" == "record" ]] ; then
-    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" "$cmd")
-  fi
-}
-
-savvy_cmd_pre_cmd() {
-  local exit_code=$?
-
-  if [[ "${SAVVY_CONTEXT}" == "record" && "$PS1" != *'recording'* ]]; then
-    PS1+=$'\[\e[31m\]recording\[\e[0m\] \U1f60e '
-  fi
-
-  # if return code is not 0, send the return code to the server
-  if [[ "${SAVVY_CONTEXT}" == "record" && "${exit_code}" != "0" ]] ; then
-    SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --step-id="${step_id}" --exit-code="${exit_code}"
-  fi
-}
-
-SAVVY_COMMANDS=()
-SAVVY_RUN_CURR=""
-SAVVY_NEXT_STEP=1
-
-# Set up a function to run the next command in the runbook when the user presses C-n
-savvy_runbook_runner() {
-  if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" ]] ; then
-    next_step_idx=${SAVVY_NEXT_STEP}
-    READLINE_LINE="${SAVVY_COMMANDS[next_step_idx]}"
-    READLINE_POINT=${#READLINE_LINE}
-  fi
-}
-
-
-savvy_run_pre_exec() {
-  # we want the command as it was typed in.
-  local cmd=$1
-  if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-    if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
-      SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
-    fi
-  fi
-}
-
-savvy_run_pre_cmd() {
-  if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-    PS1="${orignal_ps1}"$'(%F{red}savvy run %f'" ${SAVVY_RUN_CURR})"" "
-  fi
-
-  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -gt "${#SAVVY_COMMANDS}" ]] ; then
-    # space at the end is important
-    PS1="${orignal_ps1}"$'%F{green} done%f \U1f60e '
-  fi
-
-  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
-    RPS1="${original_rps1} %F{green}(${SAVVY_NEXT_STEP}/${#SAVVY_COMMANDS})"
-  else
-    RPS1="${original_rps1}"
-  fi
-}
-
 # Avoid duplicate inclusion
 if [[ -n "${bash_preexec_imported:-}" || -n "${__bp_imported:-}" ]]; then
-    preexec_functions+=(savvy_cmd_pre_exec)
-    precmd_functions+=(savvy_cmd_pre_cmd)
     return 0
 fi
 bash_preexec_imported="defined"
@@ -321,9 +224,9 @@ __bp_preexec_invoke_exec() {
         return
     fi
 
-    if [[ -n "${COMP_LINE:-}" ]]; then
-        # We're in the middle of a completer. This obviously can't be
-        # an interactively issued command.
+    if [[ -n "${COMP_POINT:-}" || -n "${READLINE_POINT:-}" ]]; then
+        # We're in the middle of a completer or a keybinding set up by "bind
+        # -x".  This obviously can't be an interactively issued command.
         return
     fi
     if [[ -z "${__bp_preexec_interactive_mode:-}" ]]; then
@@ -478,14 +381,108 @@ if [[ -z "${__bp_delay_install:-}" ]]; then
     __bp_install_after_session_init
 fi;
 
+#### SAVVY CUSTOMIZATIONS ####
 
-preexec_functions+=(savvy_cmd_pre_exec)
-# NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
-# TODO: use templates to avoid the need to manually change shell checks
-precmd_functions+=(savvy_cmd_pre_cmd)
+# Enable experimental subshell support
+export __bp_enable_subshells="true"
+
+
+SAVVY_INPUT_FILE=/tmp/savvy-socket
+
+# Save the original PS1
+orignal_ps1=$PS1
+
+get_user_prompt() {
+  local user_prompt
+  # P expansion is only available in bash 4.4+
+  if [[ "${BASH_VERSINFO[0]}" -gt 4 ]] || (( BASH_VERSINFO[0] > 3  && BASH_VERSINFO[1] > 4)); then
+    user_prompt=$(printf '%s' "${PS1@P}")
+  else
+    user_prompt=""
+  fi
+  echo "${user_prompt}"
+}
+
+step_id=""
+savvy_cmd_pre_exec() {
+  local expanded_command=""
+  local spaced_command=$(echo $1 | sed -e 's/\$(\([^)]*\))/$( \1 )/g' -e 's/`\(.*\)`/` \1 `/g')
+  local command_parts=( $spaced_command )
+  for part in "${command_parts[@]}"; do
+      if [[ "$part" =~ ^[a-zA-Z0-9_]+$ && $(type -t "$part") == "alias" ]]; then
+        expanded_command+=$(alias "$part" | sed -e "s/^[[:space:]]*alias $part='//" -e "s/^$part='//" -e "s/'$//")" "
+      else
+          expanded_command+="$part "
+      fi
+  done
+  local cmd="${expanded_command}"
+  local prompt=$(get_user_prompt)
+  step_id=""
+  if [[ "${SAVVY_CONTEXT}" == "record" ]] ; then
+    step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" "$cmd")
+  fi
+}
+
+savvy_cmd_pre_cmd() {
+  local exit_code=$?
+
+  if [[ "${SAVVY_CONTEXT}" == "record" && "$PS1" != *'recording'* ]]; then
+    PS1+=$'\[\e[31m\]recording\[\e[0m\] \U1f60e '
+  fi
+
+  # if return code is not 0, send the return code to the server
+  if [[ "${SAVVY_CONTEXT}" == "record" && "${exit_code}" != "0" ]] ; then
+    SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --step-id="${step_id}" --exit-code="${exit_code}"
+  fi
+}
+
+SAVVY_COMMANDS=()
+SAVVY_RUN_CURR=""
+SAVVY_NEXT_STEP=0
+
+# Set up a function to run the next command in the runbook when the user presses C-n
+savvy_runbook_runner() {
+  if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS[@]}" ]] ; then
+    next_step_idx=${SAVVY_NEXT_STEP}
+    READLINE_LINE="${SAVVY_COMMANDS[next_step_idx]}"
+    READLINE_POINT=${#READLINE_LINE}
+  fi
+}
+
+
+savvy_run_pre_exec() {
+  # we want the command as it was typed in.
+  local cmd=$1
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS[@]}" ]] ; then
+    if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
+      SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
+    fi
+  fi
+}
+
+PROMPT_GREEN="\[$(tput setaf 2)\]"
+PROMPT_BLUE="\[$(tput setaf 4)\]"
+PROMPT_BOLD="\[$(tput bold)\]"
+PROMPT_RED="\[$(tput setaf 1)\]"
+PROMPT_RESET="\[$(tput sgr0)\]"
+
+savvy_run_pre_cmd() {
+  local display_step=$((SAVVY_NEXT_STEP+1))
+  local size=${#SAVVY_COMMANDS[@]}
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${size}" && "${size}" -gt 0 ]] ; then
+    PS1="${orignal_ps1}\n${PROMPT_GREEN}[ctrl+n:get next step]${PROMPT_RESET}(running ${PROMPT_BOLD}${SAVVY_RUN_CURR} ${display_step}/${size}${PROMPT_RESET}) "
+  fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -ge "${size}" ]] ; then
+    # space at the end is important
+    PS1="${orignal_ps1} ${PROMPT_GREEN}done${PROMPT_RESET}"$' \U1f60e '
+  fi
+}
+
 
 if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-  IFS='COMMA' read -ra SAVVY_COMMANDS <<< "$SAVVY_RUNBOOK_COMMANDS"
+  mapfile -t SAVVY_COMMANDS < <(awk -F'COMMA' '{ for(i=1;i<=NF;i++) print $i }' <<< $SAVVY_RUNBOOK_COMMANDS)
   SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
 
   # Set up a keybinding to trigger the function
@@ -494,6 +491,9 @@ if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
 
   precmd_functions+=(savvy_run_pre_cmd)
   preexec_functions+=(savvy_run_pre_exec)
-fi
+fi;
 
-
+preexec_functions+=(savvy_cmd_pre_exec)
+# NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
+# TODO: use templates to avoid the need to manually change shell checks
+precmd_functions+=(savvy_cmd_pre_cmd)
