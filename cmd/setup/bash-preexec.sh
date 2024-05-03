@@ -100,6 +100,17 @@ savvy_cmd_pre_cmd() {
   fi
 }
 
+# Define a function to set the command line before user input
+set_command() {
+    echo "Setting command"
+    READLINE_LINE="your_command_here"
+    READLINE_POINT=${#READLINE_LINE}
+}
+
+# Set up a keybinding to trigger the function
+bind 'set keyseq-timeout 0'
+bind -x '"\C-x\C-t":set_command'
+
 # Avoid duplicate inclusion
 if [[ -n "${bash_preexec_imported:-}" || -n "${__bp_imported:-}" ]]; then
     preexec_functions+=(savvy_cmd_pre_exec)
