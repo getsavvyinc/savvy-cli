@@ -85,7 +85,7 @@ savvy_cmd_pre_exec() {
   local cmd="${expanded_command}"
   local prompt=$(get_user_prompt)
   step_id=""
-  if [[ "${SAVVY_CONTEXT}" == "1" ]] ; then
+  if [[ "${SAVVY_CONTEXT}" == "record" ]] ; then
     step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" "$cmd")
   fi
 }
@@ -93,12 +93,12 @@ savvy_cmd_pre_exec() {
 savvy_cmd_pre_cmd() {
   local exit_code=$?
 
-  if [[ "${SAVVY_CONTEXT}" == "1" && "$PS1" != *'recording'* ]]; then
+  if [[ "${SAVVY_CONTEXT}" == "record" && "$PS1" != *'recording'* ]]; then
     PS1+=$'\[\e[31m\]recording\[\e[0m\] \U1f60e '
   fi
 
   # if return code is not 0, send the return code to the server
-  if [[ "${SAVVY_CONTEXT}" == "1" && "${exit_code}" != "0" ]] ; then
+  if [[ "${SAVVY_CONTEXT}" == "record" && "${exit_code}" != "0" ]] ; then
     SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --step-id="${step_id}" --exit-code="${exit_code}"
   fi
 }
