@@ -55,6 +55,9 @@ export __bp_enable_subshells="true"
 
 SAVVY_INPUT_FILE=/tmp/savvy-socket
 
+# Save the original PS1
+orignal_ps1=$PS1
+original_rps1=$RPS1
 
 get_user_prompt() {
   local user_prompt
@@ -100,16 +103,46 @@ savvy_cmd_pre_cmd() {
   fi
 }
 
-# Define a function to set the command line before user input
-set_command() {
-    echo "Setting command"
-    READLINE_LINE="your_command_here"
+SAVVY_COMMANDS=()
+SAVVY_RUN_CURR=""
+SAVVY_NEXT_STEP=1
+
+# Set up a function to run the next command in the runbook when the user presses C-n
+savvy_runbook_runner() {
+  if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" ]] ; then
+    next_step_idx=${SAVVY_NEXT_STEP}
+    READLINE_LINE="${SAVVY_COMMANDS[next_step_idx]}"
     READLINE_POINT=${#READLINE_LINE}
+  fi
 }
 
-# Set up a keybinding to trigger the function
-bind 'set keyseq-timeout 0'
-bind -x '"\C-x\C-t":set_command'
+
+savvy_run_pre_exec() {
+  # we want the command as it was typed in.
+  local cmd=$1
+  if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
+    if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
+      SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
+    fi
+  fi
+}
+
+savvy_run_pre_cmd() {
+  if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
+    PS1="${orignal_ps1}"$'(%F{red}savvy run %f'" ${SAVVY_RUN_CURR})"" "
+  fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -gt "${#SAVVY_COMMANDS}" ]] ; then
+    # space at the end is important
+    PS1="${orignal_ps1}"$'%F{green} done%f \U1f60e '
+  fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
+    RPS1="${original_rps1} %F{green}(${SAVVY_NEXT_STEP}/${#SAVVY_COMMANDS})"
+  else
+    RPS1="${original_rps1}"
+  fi
+}
 
 # Avoid duplicate inclusion
 if [[ -n "${bash_preexec_imported:-}" || -n "${__bp_imported:-}" ]]; then
@@ -450,3 +483,17 @@ preexec_functions+=(savvy_cmd_pre_exec)
 # NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
 # TODO: use templates to avoid the need to manually change shell checks
 precmd_functions+=(savvy_cmd_pre_cmd)
+
+if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
+  IFS='COMMA' read -ra SAVVY_COMMANDS <<< "$SAVVY_RUNBOOK_COMMANDS"
+  SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
+
+  # Set up a keybinding to trigger the function
+  bind 'set keyseq-timeout 0'
+  bind -x '"\C-n":savvy_runbook_runner'
+
+  precmd_functions+=(savvy_run_pre_cmd)
+  preexec_functions+=(savvy_run_pre_exec)
+fi
+
+
