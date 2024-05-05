@@ -5,10 +5,11 @@ type Kind string
 
 // Define constants for ShellKind here, based on your needs, e.g., Bash, Zsh, etc.
 const (
-	Bash Kind = "bash"
-	Zsh  Kind = "zsh"
-	Dash Kind = "dash"
-	Fish Kind = "fish"
+	Bash    Kind = "bash"
+	Zsh     Kind = "zsh"
+	Dash    Kind = "dash"
+	Fish    Kind = "fish"
+	Unknown Kind = "unknown"
 )
 
 // ShellKindFromString tries to match a string to a shell Kind.
@@ -23,5 +24,5 @@ func ShellKindFromString(name string) (Kind, bool) {
 	case "fish":
 		return Fish, true
 	}
-	return "", false
+	return Unknown, false
 }
