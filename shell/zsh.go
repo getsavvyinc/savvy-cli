@@ -257,6 +257,7 @@ func computeRunbookAlias(runbook *client.Runbook) string {
 	lc := strings.ToLower(runbook.Title)
 	alias := strings.ReplaceAll(lc, " ", "-")
 	alias, _ = strings.CutPrefix(alias, "how-to-")
+	alias = strings.Trim(alias, "-")
 	return alias
 }
 
