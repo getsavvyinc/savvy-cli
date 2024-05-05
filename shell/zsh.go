@@ -248,9 +248,13 @@ func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (
 
 	cmd := exec.CommandContext(ctx, z.shellCmd)
 	cmd.Env = append(os.Environ(), "ZDOTDIR="+tmp)
-	cmd.Env = append(cmd.Env, runbookRunMetadata(runbook)...)
+	cmd.Env = append(cmd.Env, runbookRunMetadata(runbook, z)...)
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
+}
+
+func (z *zsh) DefaultStartingArrayIndex() int {
+	return 1
 }
 
 func computeRunbookAlias(runbook *client.Runbook) string {
@@ -261,28 +265,28 @@ func computeRunbookAlias(runbook *client.Runbook) string {
 	return alias
 }
 
-func nextRunbookStepToRun() int {
+func nextRunbookStepToRun(sh Shell) int {
 	// Inherit the next step from the environment if we are in a subshell
 	nextStep := os.Getenv("SAVVY_NEXT_STEP")
 	if nextStep == "" {
-		nextStep = "1"
+		return sh.DefaultStartingArrayIndex()
 	}
 
 	idx, err := strconv.Atoi(nextStep)
 	if err != nil {
-		return 1
+		return sh.DefaultStartingArrayIndex()
 	}
 	return idx
 }
 
-func runbookRunMetadata(runbook *client.Runbook) []string {
+func runbookRunMetadata(runbook *client.Runbook, sh Shell) []string {
 	runbookCommands := strings.Join(runbook.Commands(), RunbookCommandDelimiter)
 	runbookAlias := computeRunbookAlias(runbook)
 
 	return []string{
 		"SAVVY_CONTEXT=run",
 		fmt.Sprintf("SAVVY_RUNBOOK_COMMANDS=%s", runbookCommands),
-		fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextRunbookStepToRun()),
+		fmt.Sprintf("SAVVY_NEXT_STEP=%d", nextRunbookStepToRun(sh)),
 		fmt.Sprintf("SAVVY_RUNBOOK_ALIAS=%s", runbookAlias),
 	}
 }

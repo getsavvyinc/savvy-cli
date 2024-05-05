@@ -15,6 +15,7 @@ type Shell interface {
 	TailHistory(ctx context.Context) ([]string, error)
 	SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error)
 	SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error)
+	DefaultStartingArrayIndex() int
 }
 
 func New(logTarget string) Shell {
@@ -53,4 +54,8 @@ func (t *todo) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 
 func (t *todo) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
 	return nil, errors.New("savvy doesn't support your current shell")
+}
+
+func (t *todo) DefaultStartingArrayIndex() int {
+	return 0
 }
