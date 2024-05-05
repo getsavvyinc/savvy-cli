@@ -204,7 +204,11 @@ func (b *bash) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) 
 	}
 
 	cmd := exec.CommandContext(ctx, b.shellCmd, "--rcfile", bashrc.Name())
-	cmd.Env = append(os.Environ(), runbookRunMetadata(runbook)...)
+	cmd.Env = append(os.Environ(), runbookRunMetadata(runbook, b)...)
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
+}
+
+func (b *bash) DefaultStartingArrayIndex() int {
+	return 0
 }
