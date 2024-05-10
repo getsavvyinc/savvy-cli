@@ -3,16 +3,17 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/getsavvyinc/savvy-cli/ingest/parser"
+	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet"
+	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet/parser"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTLDRParser(t *testing.T) {
+func TestTLDR(t *testing.T) {
 	tests := []struct {
 		name       string
 		filepath   string
 		err        error
-		cheatSheet *parser.CheatSheet
+		cheatSheet *cheatsheet.CheatSheet
 	}{
 		{
 			name:     "Wrong File",
@@ -22,10 +23,10 @@ func TestTLDRParser(t *testing.T) {
 		{
 			name:     "sh.md",
 			filepath: "testdata/sh.md",
-			cheatSheet: &parser.CheatSheet{
+			cheatSheet: &cheatsheet.CheatSheet{
 				Title:       "sh",
 				Description: "Bourne shell, the standard command language interpreter. See also `histexpand` for history expansion. More information: <https://manned.org/sh>.",
-				Examples: []*parser.Example{
+				Examples: []*cheatsheet.Example{
 					{
 						Command:     "sh",
 						Explanation: "Start an interactive shell session",
@@ -47,7 +48,7 @@ func TestTLDRParser(t *testing.T) {
 		},
 	}
 
-	tldr := parser.New(parser.TLDR)
+	tldr := parser.New(cheatsheet.TLDR)
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			cs, err := tldr.Parse(tc.filepath)

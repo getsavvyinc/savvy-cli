@@ -9,7 +9,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/getsavvyinc/savvy-cli/ingest/parser"
+	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet"
+	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet/parser"
 )
 
 const tldrPath = "tldr/pages/"
@@ -18,7 +19,7 @@ const maxConcurrency = 500
 
 func main() {
 	logger := slog.Default()
-	cheatsheetParser := parser.New(parser.TLDR)
+	cheatsheetParser := parser.New(cheatsheet.TLDR)
 
 	var g errgroup.Group
 	g.SetLimit(maxConcurrency)
