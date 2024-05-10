@@ -25,6 +25,7 @@ func TestTLDR(t *testing.T) {
 			filepath: "testdata/sh.md",
 			cheatSheet: &cheatsheet.CheatSheet{
 				Title:       "sh",
+				Tags:        []string{"testdata"},
 				Description: "Bourne shell, the standard command language interpreter. See also `histexpand` for history expansion. More information: <https://manned.org/sh>.",
 				Examples: []*cheatsheet.Example{
 					{

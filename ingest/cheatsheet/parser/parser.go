@@ -48,6 +48,7 @@ func (t *tldr) Parse(path string) (*cheatsheet.CheatSheet, error) {
 	scanner := bufio.NewScanner(f)
 
 	cs := &cheatsheet.CheatSheet{}
+
 	var description []string
 	var explanations []string
 	var commands []string
@@ -71,6 +72,12 @@ func (t *tldr) Parse(path string) (*cheatsheet.CheatSheet, error) {
 			// empty lines, or lines that don't match the above
 			continue
 		}
+	}
+
+	dir, _ := filepath.Split(path)
+	// If the directory is not empty and not common, add it to the tags.
+	if tag := filepath.Base(dir); tag != "" && tag != "common" {
+		cs.Tags = append(cs.Tags, tag)
 	}
 
 	cs.Description = strings.Join(description, " ")
