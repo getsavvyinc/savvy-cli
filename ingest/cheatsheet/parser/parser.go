@@ -6,34 +6,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet"
 )
 
 type Parser interface {
-	Parse(path string) (*CheatSheet, error)
-	Provider() CheatSheetProvider
+	Parse(path string) (*cheatsheet.CheatSheet, error)
+	Provider() cheatsheet.Provider
 }
 
-type CheatSheet struct {
-	Title       string     `json:"title,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Examples    []*Example `json:"examples,omitempty"`
-	Tags        []string   `json:"tags,omitempty"`
-}
-
-type Example struct {
-	Explanation string `json:"explanation,omitempty"`
-	Command     string `json:"command,omitempty"`
-}
-
-type CheatSheetProvider string
-
-const (
-	TLDR CheatSheetProvider = "tldr"
-)
-
-func New(provider CheatSheetProvider) Parser {
+func New(provider cheatsheet.Provider) Parser {
 	switch provider {
-	case TLDR:
+	case cheatsheet.TLDR:
 		return &tldr{
 			provider: provider,
 		}
@@ -43,14 +27,14 @@ func New(provider CheatSheetProvider) Parser {
 }
 
 type tldr struct {
-	provider CheatSheetProvider
+	provider cheatsheet.Provider
 }
 
 var _ Parser = &tldr{}
 
 var ErrRequiredMdFile = fmt.Errorf("required markdown file")
 
-func (t *tldr) Parse(path string) (*CheatSheet, error) {
+func (t *tldr) Parse(path string) (*cheatsheet.CheatSheet, error) {
 	if ext := filepath.Ext(path); ext != ".md" && ext != ".markdown" {
 		return nil, fmt.Errorf("%w: invalid file extension: %s", ErrRequiredMdFile, ext)
 	}
@@ -63,7 +47,7 @@ func (t *tldr) Parse(path string) (*CheatSheet, error) {
 
 	scanner := bufio.NewScanner(f)
 
-	cs := &CheatSheet{}
+	cs := &cheatsheet.CheatSheet{}
 	var description []string
 	var explanations []string
 	var commands []string
@@ -94,14 +78,14 @@ func (t *tldr) Parse(path string) (*CheatSheet, error) {
 	return cs, nil
 }
 
-func (t *tldr) Provider() CheatSheetProvider {
+func (t *tldr) Provider() cheatsheet.Provider {
 	return t.provider
 }
 
-func zip(explanations, commands []string) []*Example {
-	examples := make([]*Example, 0, len(explanations))
+func zip(explanations, commands []string) []*cheatsheet.Example {
+	examples := make([]*cheatsheet.Example, 0, len(explanations))
 	for i := range explanations {
-		examples = append(examples, &Example{
+		examples = append(examples, &cheatsheet.Example{
 			Explanation: explanations[i],
 			Command:     commands[i],
 		})
