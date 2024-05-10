@@ -10,17 +10,20 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet"
 	"github.com/getsavvyinc/savvy-cli/ingest/cheatsheet/parser"
+	"github.com/getsavvyinc/savvy-cli/ingest/db"
 	"github.com/getsavvyinc/savvy-cli/ingest/llm"
 )
 
 const tldrPath = "tldr/pages/"
 
 const maxConcurrency = 500
+const maxDBConcurrency = 50
 
 func main() {
 	logger := slog.Default()
@@ -32,6 +35,13 @@ func main() {
 		return
 	}
 
+	db, err := db.NewDB()
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	defer db.Close()
+
 	llmClient := llm.NewOpenAIClient(authToken)
 	cheatsheetParser := parser.New(cheatsheet.TLDR)
 
@@ -41,7 +51,7 @@ func main() {
 	var mu sync.Mutex
 	var cheatsheets []*cheatsheet.CheatSheet
 
-	err := filepath.Walk(tldrPath, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(tldrPath, func(path string, info fs.FileInfo, err error) error {
 		logger := logger.With("path", path)
 		if err != nil {
 			logger.Error(err.Error())
@@ -81,29 +91,59 @@ func main() {
 		logger.Error(err.Error(), "component", "errgroup")
 	}
 
-	for i, cs := range cheatsheets {
-		if i > 10 {
-			logger.Info("breaking early")
-			return
+	var dbGroup errgroup.Group
+	dbGroup.SetLimit(maxDBConcurrency)
+
+	items := 0
+	lastIndex := 0
+	for _, cs := range cheatsheets {
+		if items-lastIndex >= 100 && items != 0 {
+			// wait a bit to avoid hitting the open ai rate limit
+			logger.Info("sleeping for two seconds", "cheatsheet", items)
+			time.Sleep(10 * time.Second)
+			lastIndex = items
 		}
 
 		prefix := cs.CommonEmbeddingPrefix()
 		for _, example := range cs.Examples {
-			command := example.Command
-			explanation := example.Explanation
-			if embedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{prefix, explanation}, " ")); err != nil {
-				logger.Error(err.Error(), "component", "llmClient.embed.explanation")
-				continue
-			} else {
-				logger.Info("embedding created", "embedding", embedding[:10])
-			}
-
-			if embedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{command}, " ")); err != nil {
-				logger.Error(err.Error(), "component", "llmClient.embed.command")
-				continue
-			} else {
-				logger.Info("embedding created", "embedding", embedding[:10])
-			}
+			example := example
+			prefix := prefix
+			dbGroup.Go(processExample(ctx, llmClient, logger, db, example, prefix))
 		}
+		items += len(cs.Examples)
+	}
+
+	if err := dbGroup.Wait(); err != nil {
+		logger.Error(err.Error(), "component", "errgroup")
+	}
+
+	logger.Info("done", "items", items)
+}
+
+func processExample(ctx context.Context, llmClient llm.Client, logger *slog.Logger, db *db.DB, example *cheatsheet.Example, prefix string) func() error {
+	return func() error {
+		command := example.Command
+		explanation := example.Explanation
+		explanationEmbedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{prefix, explanation}, " "))
+		if err != nil {
+			err = fmt.Errorf("failed to create embeddings for explanation:%s %w", explanation, err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		commandEmbedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{command}, " "))
+		if err != nil {
+			err = fmt.Errorf("failed to create embeddings for command:%s %w", command, err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		if err := db.StoreExampleEmbedding(ctx, example, explanationEmbedding, commandEmbedding); err != nil {
+			err = fmt.Errorf("failed to store example embedding: %w", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		return nil
 	}
 }
