@@ -13,4 +13,5 @@ bin/*
 
 .vscode/
 
+.plandex/
 dist/
