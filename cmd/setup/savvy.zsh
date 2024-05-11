@@ -4,6 +4,10 @@ SAVVY_INPUT_FILE=/tmp/savvy-socket
 autoload -Uz add-zsh-hook
 autoload -Uz add-zle-hook-widget
 
+# setup auto-completion
+autoload -U compinit; compinit
+source <(savvy completion zsh)
+
 step_id=""
 
 # This function fixes the prompt via a precmd hook.
