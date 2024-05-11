@@ -15,6 +15,7 @@ var askCmd = &cobra.Command{
 	Short: "Ask Savvy a question and it will generate a command",
 	Example: `
   savvy ask "how do I deploy a k8s daemonset?"
+  savvy ask "how do I parse a x509 cert"
   savvy ask "how do I find the process id listening on a port?"
   savvy ask "how do I quit vim?"
   `,
