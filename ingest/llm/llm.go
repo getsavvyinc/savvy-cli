@@ -12,7 +12,7 @@ type Client interface {
 }
 
 const (
-	embeddingModelName  = "text-embedding-3-small"
+	embeddingModelName  = openai.SmallEmbedding3
 	embeddingDimensions = 512
 )
 
