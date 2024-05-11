@@ -124,7 +124,7 @@ func processExample(ctx context.Context, llmClient llm.Client, logger *slog.Logg
 	return func() error {
 		command := example.Command
 		explanation := example.Explanation
-		explanationEmbedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{prefix, explanation}, " "))
+		explanationEmbedding, err := llmClient.CreateEmbeddings(ctx, strings.Join([]string{prefix, explanation, command}, " "))
 		if err != nil {
 			err = fmt.Errorf("failed to create embeddings for explanation:%s %w", explanation, err)
 			logger.Error(err.Error())
