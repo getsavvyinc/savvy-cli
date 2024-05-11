@@ -23,7 +23,7 @@ import (
 const tldrPath = "tldr/pages/"
 
 const maxConcurrency = 500
-const maxDBConcurrency = 50
+const maxDBConcurrency = 75
 
 func main() {
 	logger := slog.Default()
@@ -100,7 +100,7 @@ func main() {
 		if items-lastIndex >= 100 && items != 0 {
 			// wait a bit to avoid hitting the open ai rate limit
 			logger.Info("sleeping for two seconds", "cheatsheet", items)
-			time.Sleep(10 * time.Second)
+			time.Sleep(5 * time.Second)
 			lastIndex = items
 		}
 
