@@ -20,6 +20,7 @@ type Client interface {
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
+	Ask(ctx context.Context, question QuestionInfo) (*Answer, error)
 }
 
 type RecordedCommand struct {
@@ -230,4 +231,44 @@ func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 		return nil, err
 	}
 	return runbooks, nil
+}
+
+type QuestionInfo struct {
+	Question string            `json:"question"`
+	info     map[string]string `json:"metadata"`
+}
+
+type Answer struct {
+	Commands []*CommandExplanation `json:"commands"`
+}
+
+type CommandExplanation struct {
+	Command     string `json:"command"`
+	Explanation string `json:"explanation"`
+}
+
+func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Answer, error) {
+	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question)
+}
+
+func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo) (*Answer, error) {
+	bs, err := json.Marshal(question)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var answer Answer
+	if err := json.NewDecoder(resp.Body).Decode(&answer); err != nil {
+		return nil, err
+	}
+	return &answer, nil
 }
