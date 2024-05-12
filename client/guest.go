@@ -104,3 +104,7 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "list runbooks")
 }
+
+func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Answer, error) {
+	return ask(ctx, g.cl, g.apiURL("/api/v1/public/ask"), question)
+}
