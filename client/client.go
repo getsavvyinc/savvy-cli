@@ -235,7 +235,7 @@ func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 
 type QuestionInfo struct {
 	Question string            `json:"question"`
-	info     map[string]string `json:"metadata"`
+	Tags     map[string]string `json:"tags,omitempty"`
 }
 
 type Answer struct {
@@ -256,10 +256,12 @@ func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionI
 	if err != nil {
 		return nil, err
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := cl.Do(req)
 	if err != nil {
 		return nil, err
