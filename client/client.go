@@ -20,7 +20,7 @@ type Client interface {
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
-	Ask(ctx context.Context, question QuestionInfo) (*Answer, error)
+	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
 }
 
 type RecordedCommand struct {
@@ -247,11 +247,11 @@ type CommandExplanation struct {
 	Explanation string `json:"explanation"`
 }
 
-func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Answer, error) {
+func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
 	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question)
 }
 
-func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo) (*Answer, error) {
+func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo) (*Runbook, error) {
 	bs, err := json.Marshal(question)
 	if err != nil {
 		return nil, err
@@ -268,9 +268,9 @@ func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionI
 	}
 	defer resp.Body.Close()
 
-	var answer Answer
-	if err := json.NewDecoder(resp.Body).Decode(&answer); err != nil {
+	var runbook Runbook
+	if err := json.NewDecoder(resp.Body).Decode(&runbook); err != nil {
 		return nil, err
 	}
-	return &answer, nil
+	return &runbook, nil
 }
