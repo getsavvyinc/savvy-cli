@@ -238,15 +238,6 @@ type QuestionInfo struct {
 	Tags     map[string]string `json:"tags,omitempty"`
 }
 
-type Answer struct {
-	Commands []*CommandExplanation `json:"commands"`
-}
-
-type CommandExplanation struct {
-	Command     string `json:"command"`
-	Explanation string `json:"explanation"`
-}
-
 func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
 	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question)
 }
