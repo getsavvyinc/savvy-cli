@@ -33,7 +33,7 @@ else
 	savvy_uri="https://github.com/getsavvyinc/savvy-cli/releases/download/${1}/savvy_${os}_${arch}"
 fi
 
-savvy_install="${SAVVY_INSTALL:-$HOME}"
+savvy_install="${SAVVY_INSTALL:-$HOME/savvy}"
 bin_dir="${savvy_install}/bin"
 exe="${bin_dir}/savvy"
 
@@ -60,7 +60,7 @@ shell="${SHELL:-'zsh'}"
 case :$PATH:
   in *:${bin_dir}*) ;; # do nothing
      *) case :$shell:
-       in *zsh*) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zshrc${RESET}";;
+       in *zsh*) echo "${BLUE}> echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc${RESET}";;
           *bash*) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.bashrc${RESET}";;
      esac;;
 esac
