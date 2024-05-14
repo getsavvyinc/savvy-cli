@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
@@ -41,30 +43,44 @@ var askCmd = &cobra.Command{
 		question := strings.Join(args[:], " ")
 
 		// get info about the os from os pkg: mac/darwin, linux, windows
-		os := runtime.GOOS
-		if os == "darwin" {
-			os = "macos, darwin, osx"
+		goos := runtime.GOOS
+		if goos == "darwin" {
+			goos = "macos, darwin, osx"
 		}
 
 		qi := client.QuestionInfo{
 			Question: question,
 			Tags: map[string]string{
-				"os": os,
+				"os": goos,
 			},
 		}
 
-		answer, err := cl.Ask(ctx, qi)
+		runbook, err := cl.Ask(ctx, qi)
 		if err != nil {
 			display.ErrorWithSupportCTA(fmt.Errorf("error asking savvy: %w", err))
 			return
 		}
 
-		bs, err := json.Marshal(answer)
+		rb := component.NewRunbook(&client.GeneratedRunbook{
+			Runbook: *runbook,
+		})
+
+		m, err := newDisplayCommandsModel(rb)
 		if err != nil {
-			display.ErrorWithSupportCTA(fmt.Errorf("error encoding answer: %w", err))
-			return
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
 		}
-		fmt.Println(string(bs))
+
+		p := tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
+		if _, err := p.Run(); err != nil {
+			// TODO: fail gracefully and provide users a link to view the runbook
+			display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
+			os.Exit(1)
+		}
+		if rb.URL != "" {
+			display.Success("View and edit your runbook online at: " + rb.URL)
+		}
+		return
 	},
 }
 

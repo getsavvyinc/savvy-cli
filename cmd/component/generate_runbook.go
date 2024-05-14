@@ -92,6 +92,10 @@ type RunbookStep struct {
 	Description string
 }
 
+func NewRunbook(crb *client.GeneratedRunbook) *Runbook {
+	return toRunbook(crb)
+}
+
 func toRunbook(grb *client.GeneratedRunbook) *Runbook {
 	if grb == nil {
 		return nil
