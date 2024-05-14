@@ -3,6 +3,7 @@ module github.com/getsavvyinc/savvy-cli
 go 1.21.6
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/huh v0.3.0
@@ -10,19 +11,14 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/creack/pty v1.1.21
 	github.com/getsavvyinc/upgrade-cli v0.3.0
-	github.com/lib/pq v1.10.9
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.2
-	github.com/pgvector/pgvector-go v0.1.1
-	github.com/sashabaranov/go-openai v1.23.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/sync v0.6.0
 	golang.org/x/term v0.16.0
 )
 
 require (
-	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
@@ -39,6 +35,7 @@ require (
 	github.com/rivo/uniseg v0.4.6 // indirect
 	github.com/sahilm/fuzzy v0.1.1-0.20230530133925-c48e322e2a8f // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
