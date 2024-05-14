@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
+	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
@@ -65,23 +68,64 @@ var askCmd = &cobra.Command{
 			Runbook: *runbook,
 		})
 
-		m, err := newDisplayCommandsModel(rb)
+		m, err := newAskCommandsModel(rb)
 		if err != nil {
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
 
 		p := tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
-		if _, err := p.Run(); err != nil {
+		result, err := p.Run()
+		if err != nil {
 			// TODO: fail gracefully and provide users a link to view the runbook
 			display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 			os.Exit(1)
 		}
-		if rb.URL != "" {
-			display.Success("View and edit your runbook online at: " + rb.URL)
+
+		if m, ok := result.(*askCommands); ok {
+			selectedCommand := m.l.SelectedCommand()
+			if selectedCommand == "" {
+				return
+			}
+			if err := clipboard.WriteAll(selectedCommand); err != nil {
+				display.Info(selectedCommand)
+				return
+			}
+			display.Info(fmt.Sprintf("Copied to clipboard: %s", selectedCommand))
 		}
 		return
 	},
+}
+
+type askCommands struct {
+	l list.Model
+}
+
+func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
+	if runbook == nil {
+		return nil, errors.New("runbook is empty")
+	}
+
+	listItems := toItems(runbook.Steps)
+	l := list.NewModelWithDelegate(listItems, runbook.Title, runbook.URL, list.NewAskDelegate())
+	return &askCommands{l: l}, nil
+}
+func (dc *askCommands) Init() tea.Cmd {
+	// Just return `nil`, which means "no I/O right now, please."
+	dc.l.Init()
+	return nil
+}
+
+func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m, cmd := dc.l.Update(msg)
+	if m, ok := m.(list.Model); ok {
+		dc.l = m
+	}
+	return dc, cmd
+}
+
+func (dc *askCommands) View() string {
+	return dc.l.View()
 }
 
 func init() {

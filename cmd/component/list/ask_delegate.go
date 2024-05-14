@@ -85,11 +85,9 @@ func NewAskDelegate() list.DefaultDelegate {
 }
 
 func HandleSelectedCommand(selectedCommand string) tea.Cmd {
-	return tea.Sequence(
-		func() tea.Msg {
-			return SelectedCommandMsg{selectedCommand}
-		}, tea.Quit,
-	)
+	return func() tea.Msg {
+		return SelectedCommandMsg{selectedCommand}
+	}
 }
 
 type SelectedCommandMsg struct {
