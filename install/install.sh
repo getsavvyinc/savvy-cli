@@ -33,7 +33,7 @@ else
 	savvy_uri="https://github.com/getsavvyinc/savvy-cli/releases/download/${1}/savvy_${os}_${arch}"
 fi
 
-savvy_install="${SAVVY_INSTALL:-$HOME/savvy}"
+savvy_install="${SAVVY_INSTALL:-$HOME/.savvy}"
 bin_dir="${savvy_install}/bin"
 exe="${bin_dir}/savvy"
 
