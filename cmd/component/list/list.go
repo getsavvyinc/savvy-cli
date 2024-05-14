@@ -26,9 +26,10 @@ func (i Item) FilterValue() string {
 }
 
 type Model struct {
-	list        list.Model
-	url         string
-	editBinding key.Binding
+	list            list.Model
+	url             string
+	editBinding     key.Binding
+	selectedCommand string
 }
 
 func NewModelWithDelegate(items []Item, title string, url string, delegate list.ItemDelegate) Model {
@@ -101,6 +102,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 	case NopMsg:
+		return m, nil
+	case SelectedCommandMsg:
+		m.selectedCommand = msg.Command
 		return m, nil
 	}
 
