@@ -75,7 +75,7 @@ func newDelegateKeyMap() *delegateKeyMap {
 	return &delegateKeyMap{
 		choose: key.NewBinding(
 			key.WithKeys("enter"),
-			key.WithHelp("enter", "choose and quit"),
+			key.WithHelp("enter", "copy to clipboard"),
 		),
 	}
 }
