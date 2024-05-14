@@ -105,7 +105,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case SelectedCommandMsg:
 		m.selectedCommand = msg.Command
-		return m, nil
+		return m, tea.Quit
 	}
 
 	var cmd tea.Cmd
@@ -115,4 +115,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	return docStyle.Render(m.list.View())
+}
+
+func (m Model) SelectedCommand() string {
+	return m.selectedCommand
 }
