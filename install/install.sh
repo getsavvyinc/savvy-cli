@@ -60,14 +60,14 @@ shell="${SHELL:-'zsh'}"
 case :$PATH:
   in *:${bin_dir}*) ;; # do nothing
      *) case :$shell:
-       in *zsh*) echo "${BLUE}> echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc${RESET}";;
-          *bash*) echo "${BLUE}> echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.bashrc${RESET}";;
+       in *zsh*) echo "${BLUE}${BOLD} echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc${RESET}";;
+          *bash*) echo "${BLUE}${BOLD} echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.bashrc${RESET}";;
      esac;;
 esac
 
 case :$shell:
-  in  *zsh*) echo "${BLUE}> echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}";;
-      *bash*) echo "${BLUE}> echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}";;
+  in  *zsh*) echo "${BLUE}${BOLD} echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}";;
+      *bash*) echo "${BLUE}${BOLD} echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}";;
 esac
 
 
@@ -79,7 +79,7 @@ if [ "$shell" = "bash" ]; then
     # Look for lines that either use source /path/to/.bashrc or . /path/to/.bashrc, accounting for potential spaces.
     # The command following if is executed, and if its exit status is 0 (which indicates success), the then branch is executed.
     if ! grep -qE "^\s*(source|\.)\s*(.+\.bashrc)" "$BASH_PROFILE"; then
-      echo "${BLUE}> echo 'source ~/.bashrc' >> ~/.bash_profile${RESET}"
+      echo "${BLUE}${BOLD} echo 'source ~/.bashrc' >> ~/.bash_profile${RESET}"
     fi
   fi
 fi
@@ -88,12 +88,12 @@ fi
 
 
 case :$shell:
-  in  *zsh*) echo "${BLUE}> source ~/.zshrc # to pick up the new changes${RESET}";;
-      *bash*) echo "${BLUE}> source ~/.bashrc # to pick up the new changes${RESET}";;
+  in  *zsh*) echo "${BLUE}${BOLD} source ~/.zshrc # to pick up the new changes${RESET}";;
+      *bash*) echo "${BLUE}${BOLD} source ~/.bashrc # to pick up the new changes${RESET}";;
 esac
 
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
-echo "${RED}${BOLD}Stuck?${RESET} ${RED}We'd love to help. Just join our Discord https://getsavvy.so/discord${RESET}"
+echo "${RED}${BOLD}Stuck? We'd love to help. Just join our Discord https://getsavvy.so/discord${RESET}"
 
