@@ -1,4 +1,4 @@
-package component
+package list
 
 import (
 	"strings"
@@ -12,32 +12,32 @@ import (
 
 var docStyle = lipgloss.NewStyle().Margin(3, 3)
 
-type ListItem struct {
+type Item struct {
 	Command         string
 	DescriptionText string
 }
 
-var _ list.DefaultItem = ListItem{}
+var _ list.DefaultItem = Item{}
 
-func (i ListItem) Title() string       { return i.Command }
-func (i ListItem) Description() string { return i.DescriptionText }
-func (i ListItem) FilterValue() string {
+func (i Item) Title() string       { return i.Command }
+func (i Item) Description() string { return i.DescriptionText }
+func (i Item) FilterValue() string {
 	return strings.Join([]string{i.Command, i.DescriptionText}, " ")
 }
 
-type ListModel struct {
+type Model struct {
 	list        list.Model
 	url         string
 	editBinding key.Binding
 }
 
-func NewListModelWithDelegate(items []ListItem, title string, url string, delegate list.ItemDelegate) ListModel {
+func NewModelWithDelegate(items []Item, title string, url string, delegate list.ItemDelegate) Model {
 	var listItems []list.Item
 	for _, i := range items {
 		listItems = append(listItems, i)
 	}
 
-	m := ListModel{
+	m := Model{
 		list: list.New(listItems, delegate, 0, 0),
 	}
 	m.list.Title = title
@@ -56,11 +56,11 @@ func NewListModelWithDelegate(items []ListItem, title string, url string, delega
 	return m
 }
 
-func NewListModel(items []ListItem, title string, url string) ListModel {
-	return NewListModelWithDelegate(items, title, url, list.NewDefaultDelegate())
+func NewModel(items []Item, title string, url string) Model {
+	return NewModelWithDelegate(items, title, url, list.NewDefaultDelegate())
 }
 
-func (m ListModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
@@ -86,7 +86,7 @@ func OpenBrowser(url string, onComplete tea.Msg, onErr tea.Msg) tea.Cmd {
 
 type NopMsg struct{}
 
-func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
@@ -109,6 +109,6 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m ListModel) View() string {
+func (m Model) View() string {
 	return docStyle.Render(m.list.View())
 }

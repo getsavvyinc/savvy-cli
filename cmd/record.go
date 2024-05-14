@@ -15,6 +15,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
+	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/muesli/cancelreader"
@@ -183,13 +184,13 @@ func startRecording() ([]*server.RecordedCommand, error) {
 }
 
 type displayCommands struct {
-	l component.ListModel
+	l list.Model
 }
 
-func toListItems(steps []component.RunbookStep) []component.ListItem {
-	var items []component.ListItem
+func toItems(steps []component.RunbookStep) []list.Item {
+	var items []list.Item
 	for _, step := range steps {
-		items = append(items, component.ListItem{
+		items = append(items, list.Item{
 			Command:         step.Command,
 			DescriptionText: step.Description,
 		})
@@ -202,8 +203,8 @@ func newDisplayCommandsModel(runbook *component.Runbook) (*displayCommands, erro
 		return nil, errors.New("runbook is empty")
 	}
 
-	listItems := toListItems(runbook.Steps)
-	l := component.NewListModel(listItems, runbook.Title, runbook.URL)
+	listItems := toItems(runbook.Steps)
+	l := list.NewModel(listItems, runbook.Title, runbook.URL)
 	return &displayCommands{l: l}, nil
 }
 
