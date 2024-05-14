@@ -31,13 +31,12 @@ type ListModel struct {
 	editBinding key.Binding
 }
 
-func NewListModel(items []ListItem, title string, url string) ListModel {
+func NewListModelWithDelegate(items []ListItem, title string, url string, delegate list.ItemDelegate) ListModel {
 	var listItems []list.Item
 	for _, i := range items {
 		listItems = append(listItems, i)
 	}
 
-	delegate := list.NewDefaultDelegate()
 	m := ListModel{
 		list: list.New(listItems, delegate, 0, 0),
 	}
@@ -55,6 +54,10 @@ func NewListModel(items []ListItem, title string, url string) ListModel {
 	m.url = url
 
 	return m
+}
+
+func NewListModel(items []ListItem, title string, url string) ListModel {
+	return NewListModelWithDelegate(items, title, url, list.NewDefaultDelegate())
 }
 
 func (m ListModel) Init() tea.Cmd {
