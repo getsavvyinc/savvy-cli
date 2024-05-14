@@ -9,6 +9,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
+	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
@@ -58,10 +59,25 @@ var askCmd = &cobra.Command{
 			},
 		}
 
-		runbook, err := cl.Ask(ctx, qi)
-		if err != nil {
-			display.ErrorWithSupportCTA(fmt.Errorf("error asking savvy: %w", err))
-			return
+		var runbook *client.Runbook
+		if err := huhSpinner.New().Title("Savvy is generating an answer for you").Action(func() {
+			var err error
+
+			runbook, err = cl.Ask(ctx, qi)
+			if err != nil {
+				display.FatalErrWithSupportCTA(err)
+				return
+			}
+
+			if len(runbook.Steps) == 0 {
+				err := errors.New("No commands were generated. Please try again")
+				display.FatalErrWithSupportCTA(err)
+				return
+			}
+		}).Run(); err != nil {
+			logger.Debug("error asking savvy", "error", err.Error())
+			display.FatalErrWithSupportCTA(err)
+			os.Exit(1)
 		}
 
 		rb := component.NewRunbook(&client.GeneratedRunbook{
