@@ -3,7 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 
@@ -26,9 +28,12 @@ var askCmd = &cobra.Command{
   savvy ask "how do I parse a x509 cert"
   savvy ask "how do I find the process id listening on a port?"
   savvy ask "how do I quit vim?"
+  savvy ask "extract filenames from the name key in each line of li_ids.txt" --file /path/to/li_ids.txt
   `,
 	Long: `
   Ask Savvy a question and it will generate a command for you.
+
+  If a file path is provided, Savvy will use the contents of the file to generate a command.
   `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -52,11 +57,19 @@ var askCmd = &cobra.Command{
 			goos = "macos, darwin, osx"
 		}
 
+		fileData, err := fileData(filePath)
+		if err != nil {
+			display.Error(err)
+			os.Exit(1)
+		}
+
 		qi := client.QuestionInfo{
 			Question: question,
 			Tags: map[string]string{
 				"os": goos,
 			},
+			FileData: fileData,
+			FileName: path.Base(filePath),
 		}
 
 		var runbook *client.Runbook
@@ -144,6 +157,36 @@ func (dc *askCommands) View() string {
 	return dc.l.View()
 }
 
+func fileData(filePath string) ([]byte, error) {
+	if filePath == "" {
+		return nil, nil
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	if stat.Size() > 20*1024 {
+		return nil, errors.New("file must be less than 20KB")
+	}
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+var filePath string
+
 func init() {
 	rootCmd.AddCommand(askCmd)
+	askCmd.Flags().StringVarP(&filePath, "file", "f", "", "File path for ask to read and use while generating an answer")
 }

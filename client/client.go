@@ -236,6 +236,8 @@ func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 type QuestionInfo struct {
 	Question string            `json:"question"`
 	Tags     map[string]string `json:"tags,omitempty"`
+	FileData []byte            `json:"file_data,omitempty"`
+	FileName string            `json:"file_name,omitempty"`
 }
 
 func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
