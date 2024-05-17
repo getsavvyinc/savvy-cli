@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -21,6 +22,7 @@ type Client interface {
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
+	Explain(ctx context.Context, code CodeInfo) (io.ReadCloser, error)
 }
 
 type RecordedCommand struct {
@@ -266,4 +268,61 @@ func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionI
 		return nil, err
 	}
 	return &runbook, nil
+}
+
+type CodeInfo struct {
+	Code     string            `json:"code"`
+	Tags     map[string]string `json:"tags,omitempty"`
+	FileData []byte            `json:"file_data,omitempty"`
+	FileName string            `json:"file_name,omitempty"`
+}
+
+func (c *client) Explain(ctx context.Context, code CodeInfo) (io.ReadCloser, error) {
+	return explain(ctx, c.cl, c.apiURL("/api/v1/public/explain"), code)
+}
+
+func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo) (io.ReadCloser, error) {
+	bs, err := json.Marshal(code)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
+	}
+
+	// explain streams the response body.
+	stream, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if stream.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to explain code: %s", stream.Status)
+	}
+
+	pr, pw := io.Pipe()
+	// Read and print the streamed responses
+	scanner := bufio.NewScanner(stream.Body)
+
+	go func(scanner *bufio.Scanner) {
+		defer stream.Body.Close()
+		defer pw.Close()
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			if len(line) > 6 && line[:6] == "data: " {
+				io.WriteString(pw, line[6:])
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			err = fmt.Errorf("error reading stream: %w", err)
+			pw.CloseWithError(err)
+			return
+		}
+	}(scanner)
+
+	return pr, nil
 }

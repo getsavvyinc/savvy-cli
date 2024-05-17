@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -107,4 +108,8 @@ func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
 
 func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
 	return ask(ctx, g.cl, g.apiURL("/api/v1/public/ask"), question)
+}
+
+func (g *guest) Explain(ctx context.Context, code ExplainInfo) (io.ReadCloser, error) {
+	return explain(ctx, g.cl, g.apiURL("/api/v1/public/explain"), code)
 }
