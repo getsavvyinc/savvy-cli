@@ -133,7 +133,7 @@ func mdContent(content string, md *glamour.TermRenderer) string {
 	if md == nil {
 		return content
 	}
-	content = strings.ReplaceAll(content, "<br>", "\n\n")
+
 	out, err := md.Render(content)
 	if err != nil {
 		return content

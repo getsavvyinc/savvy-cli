@@ -311,9 +311,14 @@ func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo)
 		defer close(resultChan)
 
 		for scanner.Scan() {
+			var data streamData
 			line := scanner.Text()
 			if len(line) > 6 && line[:6] == "data: " {
-				resultChan <- line[6:]
+				if err := json.Unmarshal([]byte(line[6:]), &data); err != nil {
+					// TODO: add debug log stmt here.
+					continue
+				}
+				resultChan <- data.Data
 			}
 		}
 
@@ -326,4 +331,8 @@ func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo)
 	}(scanner)
 
 	return resultChan, nil
+}
+
+type streamData struct {
+	Data string `json:"data"`
 }
