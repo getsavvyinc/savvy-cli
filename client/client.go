@@ -22,7 +22,7 @@ type Client interface {
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
-	Explain(ctx context.Context, code CodeInfo) (io.ReadCloser, error)
+	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 }
 
 type RecordedCommand struct {
@@ -277,11 +277,11 @@ type CodeInfo struct {
 	FileName string            `json:"file_name,omitempty"`
 }
 
-func (c *client) Explain(ctx context.Context, code CodeInfo) (io.ReadCloser, error) {
+func (c *client) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {
 	return explain(ctx, c.cl, c.apiURL("/api/v1/public/explain"), code)
 }
 
-func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo) (io.ReadCloser, error) {
+func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo) (<-chan string, error) {
 	bs, err := json.Marshal(code)
 	if err != nil {
 		return nil, err
@@ -302,27 +302,26 @@ func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo)
 		return nil, fmt.Errorf("failed to explain code: %s", stream.Status)
 	}
 
-	pr, pw := io.Pipe()
+	resultChan := make(chan string, 1024)
 	// Read and print the streamed responses
 	scanner := bufio.NewScanner(stream.Body)
 
 	go func(scanner *bufio.Scanner) {
 		defer stream.Body.Close()
-		defer pw.Close()
+		defer close(resultChan)
 
 		for scanner.Scan() {
 			line := scanner.Text()
 			if len(line) > 6 && line[:6] == "data: " {
-				io.WriteString(pw, line[6:])
+				resultChan <- line[6:]
 			}
 		}
 
 		if err := scanner.Err(); err != nil {
 			err = fmt.Errorf("error reading stream: %w", err)
-			pw.CloseWithError(err)
 			return
 		}
 	}(scanner)
 
-	return pr, nil
+	return resultChan, nil
 }
