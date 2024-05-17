@@ -319,6 +319,8 @@ func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo)
 
 		if err := scanner.Err(); err != nil {
 			err = fmt.Errorf("error reading stream: %w", err)
+			// display the error message to the user
+			resultChan <- err.Error()
 			return
 		}
 	}(scanner)
