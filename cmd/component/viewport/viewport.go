@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -34,7 +35,8 @@ var (
 )
 
 type model struct {
-	content  strings.Builder
+	content  string
+	md       *glamour.TermRenderer
 	ready    bool
 	viewport viewport.Model
 }
@@ -67,8 +69,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case ContentMsg:
-		m.content.WriteString(msg.Content)
-		m.viewport.SetContent(m.content.String())
+		m.content += msg.Content
+		mdContent := mdContent(m.content, m.md)
+		m.viewport.SetContent(mdContent)
 		m.viewport.GotoBottom()
 		if useHighPerformanceRenderer {
 			cmds = append(cmds, viewport.Sync(m.viewport))
@@ -88,7 +91,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport = viewport.New(msg.Width-10, msg.Height-verticalMarginHeight)
 			m.viewport.YPosition = headerHeight
 			m.viewport.HighPerformanceRendering = useHighPerformanceRenderer
-			m.viewport.SetContent("Loading...")
+			md, err := glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(int(m.viewport.Width/2)),
+			)
+			if err != nil {
+				return m, tea.Quit
+			}
+			m.md = md
+			mdContent := mdContent("# Loading...", m.md)
+			m.viewport.SetContent(mdContent)
 			m.ready = true
 
 			// This is only necessary for high performance rendering, which in
@@ -115,6 +127,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func mdContent(content string, md *glamour.TermRenderer) string {
+	if md == nil {
+		return content
+	}
+	content = strings.ReplaceAll(content, "<br>", "\n\n")
+	out, err := md.Render(content)
+	if err != nil {
+		return content
+	}
+	return out
 }
 
 func (m model) View() string {
