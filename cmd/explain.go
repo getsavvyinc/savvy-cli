@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"path"
 	"runtime"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/cmd/component/viewport"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
@@ -63,14 +64,28 @@ var explainCmd = &cobra.Command{
 			FileName: path.Base(filePath),
 		}
 
-		resp, err := cl.Explain(ctx, ci)
+		explainCh, err := cl.Explain(ctx, ci)
 		if err != nil {
 			display.Error(err)
 			os.Exit(1)
 		}
-		defer resp.Close()
 
-		io.Copy(os.Stdout, resp)
+		m := viewport.NewModel(explainCh)
+		p := tea.NewProgram(
+			m,
+			tea.WithMouseCellMotion(),
+		)
+
+		go func() {
+			for explanation := range explainCh {
+				p.Send(viewport.ContentMsg{Content: explanation})
+			}
+		}()
+
+		if _, err := p.Run(); err != nil {
+			display.Error(err)
+			os.Exit(1)
+		}
 	},
 }
 
