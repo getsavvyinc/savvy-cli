@@ -20,7 +20,7 @@ var explainCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Example: `
   savvy explain 'openssl x509 -text -in ./ca.crt -noout | grep --color=auto -C 2 "Valid"'
-  savvy explain sort file.txt | awk '{print "{\"question\": \"" $0 "\"}"}' > output.jsonl
+  savvy explain cat "file.txt | sort | uniq -c | sort -nr | head -n 10"
   `,
 	Long: `
   Explain helps you understand shell commands and functions.
