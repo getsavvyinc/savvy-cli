@@ -11,6 +11,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
@@ -22,8 +23,8 @@ import (
 var askCmd = &cobra.Command{
 	Use:   "ask",
 	Short: "Ask Savvy a question and it will generate a command",
-	Args:  cobra.MinimumNArgs(1),
 	Example: `
+  savvy ask # interactive mode
   savvy ask "how do I deploy a k8s daemonset?"
   savvy ask "how do I parse a x509 cert"
   savvy ask "how do I find the process id listening on a port?"
@@ -48,8 +49,26 @@ var askCmd = &cobra.Command{
 			cl = client.NewGuest()
 		}
 
+		var question string
+		if len(args) == 0 {
+			// interactive mode
+			text := huh.NewText().Title("Ask Savvy a question").Value(&question)
+			form := huh.NewForm(huh.NewGroup(text))
+			if err := form.Run(); err != nil {
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
+			}
+		}
+
+		if len(question) == 0 && len(args) == 0 {
+			display.Info("Please provide a question")
+			os.Exit(0)
+		}
+
 		// be defensive: users can pass questions as one string or multiple strings
-		question := strings.Join(args[:], " ")
+		if len(question) == 0 {
+			question = strings.Join(args[:], " ")
+		}
 
 		// get info about the os from os pkg: mac/darwin, linux, windows
 		goos := runtime.GOOS
