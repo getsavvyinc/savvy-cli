@@ -3,9 +3,8 @@ package cmd
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"os"
+	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/display"
@@ -35,7 +34,7 @@ var fileCmd = &cobra.Command{
 			return
 		}
 
-		filePath := args[0]
+		filePath := strings.TrimSpace(args[0])
 		fi, err := os.Stat(filePath)
 		if err != nil {
 			display.Error(err)
@@ -52,26 +51,13 @@ var fileCmd = &cobra.Command{
 			return
 		}
 
-		file, err := os.Open(filePath)
-		if err != nil {
-			display.Error(err)
-			return
-		}
-		defer file.Close()
-
 		cl, err := server.NewDefaultClient(context.Background())
 		if err != nil {
 			display.Error(err)
 			return
 		}
 
-		command, err := recordFile(file, fi)
-		if err != nil {
-			display.Error(err)
-			return
-		}
-
-		if err := cl.Send(command); err != nil {
+		if err := cl.SendFileInfo(filePath); err != nil {
 			display.ErrorWithSupportCTA(err)
 			return
 		}
@@ -80,17 +66,4 @@ var fileCmd = &cobra.Command{
 
 func init() {
 	recordCmd.AddCommand(fileCmd)
-}
-
-func recordFile(file *os.File, fi os.FileInfo) (string, error) {
-	bs, err := io.ReadAll(file)
-	if err != nil {
-		return "", err
-	}
-
-	fileMetadata := fmt.Sprintf("Filename: %s\nPermission: %s", fi.Name(), fi.Mode().String())
-
-	command := fmt.Sprintf("%s\n%s", fileMetadata, string(bs))
-
-	return command, nil
 }
