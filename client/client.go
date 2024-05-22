@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"strings"
 
@@ -26,8 +27,15 @@ type Client interface {
 }
 
 type RecordedCommand struct {
-	Command string `json:"command"`
-	Prompt  string `json:"prompt,omitempty"`
+	Command  string    `json:"command"`
+	Prompt   string    `json:"prompt,omitempty"`
+	FileInfo *FileInfo `json:"file_info,omitempty"`
+}
+
+type FileInfo struct {
+	Mode    fs.FileMode `json:"mode,omitempty"`
+	Content []byte      `json:"content,omitempty"`
+	Path    string      `json:"path,omitempty"`
 }
 
 type client struct {

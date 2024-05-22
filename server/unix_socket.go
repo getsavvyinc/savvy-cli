@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net"
 	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/getsavvyinc/savvy-cli/idgen"
 )
 
 type UnixSocketServer struct {
@@ -86,8 +89,15 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 }
 
 type RecordedCommand struct {
-	Command string `json:"command"`
-	Prompt  string `json:"prompt,omitempty"`
+	Command  string    `json:"command"`
+	Prompt   string    `json:"prompt,omitempty"`
+	FileInfo *FileInfo `json:"file_info,omitempty"`
+}
+
+type FileInfo struct {
+	Path    string      `json:"path,omitempty"`
+	Mode    fs.FileMode `json:"mode,omitempty"`
+	Content []byte      `json:"content,omitempty"`
 }
 
 func (s *UnixSocketServer) Commands() []*RecordedCommand {
@@ -100,6 +110,19 @@ func (s *UnixSocketServer) Commands() []*RecordedCommand {
 		if s.ignoreErrors && cmd.ExitCode != 0 {
 			continue
 		}
+
+		if cmd.HasFileData() {
+			recordedFile := &RecordedCommand{
+				FileInfo: &FileInfo{
+					Path:    cmd.Filepath,
+					Mode:    cmd.FileMode,
+					Content: cmd.FileData,
+				},
+			}
+			commands = append(commands, recordedFile)
+			continue
+		}
+
 		commands = append(commands, &RecordedCommand{
 			Command: cmd.Command,
 			Prompt:  cmd.Prompt,
@@ -134,10 +157,17 @@ func (s *UnixSocketServer) ListenAndServe() {
 }
 
 type RecordedData struct {
-	Command  string `json:"command"`
-	StepID   string `json:"step_id"`
-	ExitCode int    `json:"exit_code"`
-	Prompt   string `json:"prompt,omitempty"`
+	Command  string      `json:"command"`
+	StepID   string      `json:"step_id"`
+	ExitCode int         `json:"exit_code"`
+	Prompt   string      `json:"prompt,omitempty"`
+	Filepath string      `json:"filepath,omitempty"`
+	FileData []byte      `json:"file_data,omitempty"`
+	FileMode fs.FileMode `json:"file_mode,omitempty"`
+}
+
+func (rd *RecordedData) HasFileData() bool {
+	return strings.HasPrefix(rd.StepID, idgen.FilePrefix)
 }
 
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
@@ -152,6 +182,11 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	var data RecordedData
 	if err := json.Unmarshal(bs, &data); err != nil {
 		s.logger.Debug("Failed to unmarshal data", "error", err.Error(), "component", "server", "input", string(bs))
+		return
+	}
+
+	if data.HasFileData() {
+		s.recordFile(data)
 		return
 	}
 
@@ -188,6 +223,11 @@ func (s *UnixSocketServer) maybeAppendData(data RecordedData) bool {
 		return false
 	}
 
+	// do not record ignore savvy record file commands
+	if strings.HasPrefix(cmd, "savvy record file") {
+		return false
+	}
+
 	if _, ok := s.lookupCommand[data.StepID]; ok {
 		return false
 	}
@@ -196,4 +236,47 @@ func (s *UnixSocketServer) maybeAppendData(data RecordedData) bool {
 	s.lookupCommand[data.StepID] = &data
 	s.logger.Debug("command recorded", "command", data.Command)
 	return true
+}
+
+func (s *UnixSocketServer) recordFile(data RecordedData) {
+	filePath := data.Filepath
+
+	if err := checkFile(filePath); err != nil {
+		s.logger.Debug("file checks failed", "error", err.Error())
+		return
+	}
+
+	fd, err := os.Open(filePath)
+	if err != nil {
+		s.logger.Debug("failed to open file", "error", err.Error())
+		return
+	}
+	defer fd.Close()
+
+	bs, err := io.ReadAll(fd)
+	if err != nil {
+		s.logger.Debug("failed to read file", "error", err.Error())
+		return
+	}
+
+	fi, err := fd.Stat()
+	if err != nil {
+		s.logger.Debug("failed to get file info", "error", err.Error())
+		return
+	}
+
+	data.FileData = bs
+	data.Filepath = filePath
+	data.FileMode = fi.Mode()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.lookupCommand[data.StepID]; ok {
+		return
+	}
+
+	s.commands = append(s.commands, &data)
+	s.lookupCommand[data.StepID] = &data
+	s.logger.Debug("file recorded", "file", data.Filepath)
 }
