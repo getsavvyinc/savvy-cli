@@ -47,10 +47,20 @@ func (m *GenerateRunbookModel) IsDone() bool {
 func (m *GenerateRunbookModel) Generate() tea.Msg {
 	var commands []client.RecordedCommand
 	for _, cmd := range m.commands {
-		commands = append(commands, client.RecordedCommand{
+		clientCmd := client.RecordedCommand{
 			Command: cmd.Command,
 			Prompt:  cmd.Prompt,
-		})
+		}
+
+		if cmd.FileInfo != nil {
+			clientCmd.FileInfo = &client.FileInfo{
+				Path:    cmd.FileInfo.Path,
+				Mode:    cmd.FileInfo.Mode,
+				Content: cmd.FileInfo.Content,
+			}
+		}
+
+		commands = append(commands, clientCmd)
 	}
 
 	generatedRunbook, err := m.cl.GenerateRunbookV2(context.Background(), commands)
