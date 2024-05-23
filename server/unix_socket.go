@@ -113,6 +113,7 @@ func (s *UnixSocketServer) Commands() []*RecordedCommand {
 
 		if cmd.HasFileData() {
 			recordedFile := &RecordedCommand{
+				Command: cmd.Command,
 				FileInfo: &FileInfo{
 					Path:    cmd.Filepath,
 					Mode:    cmd.FileMode,
