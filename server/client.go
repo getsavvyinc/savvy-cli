@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 
@@ -39,6 +40,7 @@ func (c *client) SendFileInfo(filePath string) error {
 	}
 
 	data := RecordedData{
+		Command:  fmt.Sprintf("savvy record file %s", filePath),
 		Filepath: filePath,
 		StepID:   idgen.New(idgen.FilePrefix),
 	}
