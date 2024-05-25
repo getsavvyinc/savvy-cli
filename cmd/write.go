@@ -1,8 +1,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
+	huhSpinner "github.com/charmbracelet/huh/spinner"
+	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/spf13/cobra"
 )
 
@@ -19,10 +24,34 @@ var writeCmd = &cobra.Command{
   Write is used while running a runbook to write important data to your filesystem.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("write called")
+		cl, err := client.New()
+		if err != nil && errors.Is(err, client.ErrInvalidClient) {
+			display.Error(errors.New("You must be logged in to use savvy write. Please run `savvy login`"))
+			os.Exit(1)
+		}
+
+		var stepContent *client.StepContent
+
+		if err := huhSpinner.New().Title("Fetching recorded data...").Action(func() {
+			var err error
+			stepContent, err = cl.StepContentByStepID(cmd.Context(), writeStepID)
+
+			if err != nil {
+				display.FatalErrWithSupportCTA(err)
+				return
+			}
+		}).Run(); err != nil {
+			display.FatalErrWithSupportCTA(err)
+			return
+		}
+
+		fmt.Println("StepContent:\n", string(stepContent.Content))
 	},
 }
 
+var writeStepID string
+
 func init() {
 	rootCmd.AddCommand(writeCmd)
+	writeCmd.Flags().StringVar(&stepID, "step-id", "", "The step id linked to the file")
 }
