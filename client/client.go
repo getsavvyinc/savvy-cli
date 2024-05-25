@@ -24,12 +24,20 @@ type Client interface {
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
+	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
 
 type RecordedCommand struct {
 	Command  string    `json:"command"`
 	Prompt   string    `json:"prompt,omitempty"`
 	FileInfo *FileInfo `json:"file_info,omitempty"`
+}
+
+type StepContent struct {
+	Content     []byte      `json:"content"`
+	Mode        fs.FileMode `json:"mode"`
+	FileName    string      `json:"file_name"`
+	FileDirPath string      `json:"file_dir_path"`
 }
 
 type FileInfo struct {
