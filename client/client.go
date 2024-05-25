@@ -301,6 +301,27 @@ type CodeInfo struct {
 	FileName string            `json:"file_name,omitempty"`
 }
 
+func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
+
+	cl := c.cl
+	apiPath := fmt.Sprintf("/api/v1/step/content/%s", stepID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var stepContent StepContent
+	if err := json.NewDecoder(resp.Body).Decode(&stepContent); err != nil {
+		return nil, err
+	}
+	return &stepContent, nil
+}
+
 func (c *client) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {
 	return explain(ctx, c.cl, c.apiURL("/api/v1/public/explain"), code)
 }
