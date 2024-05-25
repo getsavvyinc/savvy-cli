@@ -112,3 +112,7 @@ func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error
 func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {
 	return explain(ctx, g.cl, g.apiURL("/api/v1/public/explain"), code)
 }
+
+func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
+	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "get step content")
+}
