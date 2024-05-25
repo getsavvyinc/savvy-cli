@@ -53,5 +53,5 @@ var writeStepID string
 
 func init() {
 	rootCmd.AddCommand(writeCmd)
-	writeCmd.Flags().StringVar(&stepID, "step-id", "", "The step id linked to the file")
+	writeCmd.Flags().StringVar(&sendStepID, "step-id", "", "The step id linked to the file")
 }
