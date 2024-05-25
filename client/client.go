@@ -34,10 +34,10 @@ type RecordedCommand struct {
 }
 
 type StepContent struct {
-	Content     []byte      `json:"content"`
-	Mode        fs.FileMode `json:"mode"`
-	FileName    string      `json:"file_name"`
-	FileDirPath string      `json:"file_dir_path"`
+	Content []byte      `json:"content"`
+	Mode    fs.FileMode `json:"mode"`
+	Name    string      `json:"name"`
+	DirPath string      `json:"dir_path"`
 }
 
 type FileInfo struct {
@@ -302,7 +302,6 @@ type CodeInfo struct {
 }
 
 func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
-
 	cl := c.cl
 	apiPath := fmt.Sprintf("/api/v1/step/content/%s", stepID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiPath, nil)
