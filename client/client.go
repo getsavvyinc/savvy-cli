@@ -40,6 +40,26 @@ type StepContent struct {
 	DirPath string      `json:"dir_path"`
 }
 
+// UnmarshalJSON is a custom unmarshaler for StepContent that handles the mode as a float64.
+func (sc *StepContent) UnmarshalJSON(data []byte) error {
+	// Create a temporary structure that mirrors StepContent but with Mode as float64.
+	type Alias StepContent
+	aux := &struct {
+		Mode float64 `json:"mode"`
+		*Alias
+	}{
+		Alias: (*Alias)(sc),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Convert the float64 mode to fs.FileMode and assign it to StepContent.Mode.
+	sc.Mode = fs.FileMode(int64(aux.Mode))
+	return nil
+}
+
 type FileInfo struct {
 	Mode    fs.FileMode `json:"mode,omitempty"`
 	Content []byte      `json:"content,omitempty"`
@@ -304,7 +324,7 @@ type CodeInfo struct {
 func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
 	cl := c.cl
 	apiPath := fmt.Sprintf("/api/v1/step/content/%s", stepID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiPath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL(apiPath), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -315,6 +335,7 @@ func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepC
 	}
 
 	var stepContent StepContent
+
 	if err := json.NewDecoder(resp.Body).Decode(&stepContent); err != nil {
 		return nil, err
 	}
