@@ -141,9 +141,17 @@ type RunbookInfo struct {
 	Title     string `json:"title"`
 }
 
+type StepTypeEnum string
+
+const (
+	StepTypeCode StepTypeEnum = "code"
+	StepTypeFile StepTypeEnum = "file"
+)
+
 type Step struct {
-	Description string `json:"description"`
-	Command     string `json:"command"`
+	Type        StepTypeEnum `json:"type"`
+	Description string       `json:"description"`
+	Command     string       `json:"command"`
 }
 
 func (rb *Runbook) Commands() []string {
