@@ -36,7 +36,7 @@ var sendCmd = &cobra.Command{
 		}
 		defer conn.Close()
 		message := strings.Join(args[:], " ") // ["echo hello world"] -> "echo hello world"
-		if len(message) == 0 && (exitCode == 0 && stepID == "") {
+		if len(message) == 0 && (exitCode == 0 && sendStepID == "") {
 			// nothing to do.
 			return
 		}
@@ -44,15 +44,15 @@ var sendCmd = &cobra.Command{
 		message = expansion.IgnoreGrep(message)
 
 		var quite bool
-		if stepID == "" {
-			stepID = idgen.New(idgen.CommandPrefix)
+		if sendStepID == "" {
+			sendStepID = idgen.New(idgen.CommandPrefix)
 		} else {
 			quite = true
 		}
 
 		data := server.RecordedData{
 			Command:  message,
-			StepID:   stepID,
+			StepID:   sendStepID,
 			ExitCode: exitCode,
 			Prompt:   prompt,
 		}
@@ -64,12 +64,12 @@ var sendCmd = &cobra.Command{
 		}
 
 		if !quite {
-			fmt.Print(stepID)
+			fmt.Print(sendStepID)
 		}
 	},
 }
 
-var stepID string
+var sendStepID string
 var exitCode int
 var prompt string
 
@@ -77,7 +77,7 @@ func init() {
 	rootCmd.AddCommand(sendCmd)
 	// add flags to accept step_id as string and
 	// exit_code as int from the command line
-	sendCmd.Flags().StringVar(&stepID, "step-id", "", "Step ID")
+	sendCmd.Flags().StringVar(&sendStepID, "step-id", "", "Step ID")
 	sendCmd.Flags().IntVar(&exitCode, "exit-code", 0, "Exit code")
 	sendCmd.Flags().StringVar(&prompt, "prompt", "", "record shell prompt while command is executed")
 }
