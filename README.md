@@ -75,6 +75,19 @@ Savvy automatically fills in the next command to execute. Just press enter to ru
 
 ![savvy run](demos/savvy-run.gif)
 
+
+## Savvy Explain
+
+
+## FAQ
+
+1. How do I uninstall Savvy?
+2. How do I upgrade Savvy?
+3. How do I login?
+4. I'm stuck. How do I get help?
+5. What shells do you supports?
+6. Does it work on Windows?
+
 ## Quick Start
 
 Follow these steps to get started:
