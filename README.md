@@ -11,6 +11,11 @@ Savvy is the easiest way to create, share and run runbooks from your terminal.
 
 Savvy's CLI generates runbooks with AI or from your provided commands.
 
+## Install Savvy's CLI
+
+```sh
+curl -fsSL https://install.getsavvy.so | sh
+```
 
 ## Generate Runbooks with AI
 
@@ -18,13 +23,7 @@ Generate runbooks using natural language or get help crafting a single command u
 
 Any one can use it, there's no need to signup for an account or provide a credit card.
 
-1. **Install Savvy CLI**
-
-```sh
-curl -fsSL https://install.getsavvy.so | sh
-```
-
-2. Run `savvy ask` and provide a prompt.
+Just run `savvy ask` and provide a prompt.
 
 ### Examples
 
@@ -38,8 +37,29 @@ curl -fsSL https://install.getsavvy.so | sh
 ![Ask Savvy to help you with a tricky shell command](demos/ask-command.gif)
 
 
+## Generate Runbooks using your commands
 
-## Demo
+Use `savvy record` or `savvy record history` to create a runbook using commands you provide.
+
+You don't have to change anything about your shell or aliases, savvy auto expands all aliases to make sure your runbook runs reliably on any machine.
+
+### Create Runbooks from your Shell History
+
+Use `savvy record history` to go back in time and create a runbooks by selecting just the commands you want.
+
+Savvy will never execute any command you select.
+
+
+![savvy record history](demos/savvy-history.gif)
+
+
+### Create Runbooks with Savvy Record
+
+`savvy record` starts a new shell and all commands in this shell are recorded and sent to an LLM to generate a runbook.
+
+
+> [!NOTE]
+> Creating a runbook with savvy record requires you to signup for a free account.
 
 ![Savvy Runbook](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
 
