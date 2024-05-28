@@ -96,58 +96,31 @@ Savvy explain generates a simple and easy to understand explanation for any comm
 ## FAQ
 
 1. How do I uninstall Savvy?
+
+```sh
+
+rm -rf ~/.savvy
+rm -rf ~/.config/savvy
+
+```
+
 2. How do I upgrade Savvy?
+
+Run `savvy upgrade` to get the latest version of the CLI.
+
 3. How do I login?
-4. I'm stuck. How do I get help?
-5. What shells do you supports?
-6. Does it work on Windows?
 
-## Quick Start
+Run `savvy login` to start the login flow.
 
-Follow these steps to get started:
+4. What shells does Savvy support?
 
-1. **Install Savvy CLI**
+Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
 
-Run the following command in your terminal
+5. Does Savvy work on Windows?
 
-```sh
-curl -fsSL https://install.getsavvy.so | sh
-```
+Not yet.
 
-Follow the on-screen instructions to complete the installation.
-
-2. **Login**
-
-Before you can create runbooks using the CLI you need to login. Use the following command:
-
-```sh
-savvy login
-```
-
-3. **Create a Runbook**
-
-Run the following command to start creating a runbook from your terminal:
-
-```sh
-savvy record
-```
-
-Perform the tasks you wish to record in your terminal. When you're done, you can stop the recording by typing `exit` or pressing `ctrl-D`.
-
-4. **Upgrade CLI**
-
-```sh
-savvy upgrade
-```
-
-## Limitations
-
-Currently, Savvy does not support the following:
-
-* Windows
-* Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support another shell.
-
-## Getting Help
+6. I'm stuck. How do I get help?
 
 If you need assistance or have questions:
 
