@@ -78,6 +78,20 @@ Savvy automatically fills in the next command to execute. Just press enter to ru
 
 ## Savvy Explain
 
+Not sure what a particular command or flag does? Don't want to research an opaque error message? then `savvy explain` is for you.
+
+Savvy explain generates a simple and easy to understand explanation for any command or error message before you can say RTFM!
+
+
+### Examples
+
+1. Use `savvy explain` to understand everything that goes into parsing a x509 certificate with openssl
+
+![savvy explain openssl](demos/savvy-explain-openssl.gif)
+
+2. Dive into an error message and learn troubleshooting next steps.
+
+![savvy explain errors](demos/savvy-explain-errors.gif)
 
 ## FAQ
 
