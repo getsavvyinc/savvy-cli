@@ -14,7 +14,7 @@ Savvy's CLI generates runbooks with AI or from your provided commands.
 
 ## Generate Runbooks with AI
 
-You can generate runbooks using natural language or get help with a single command using `savvy ask`.
+Generate runbooks using natural language or get help crafting a single command using `savvy ask`.
 
 Any one can use it, there's no need to signup for an account or provide a credit card.
 
@@ -32,6 +32,11 @@ curl -fsSL https://install.getsavvy.so | sh
 
 
 ![Ask Savvy to create a runbook for publishing a new go module.](demos/ask-runbook.gif)
+
+2. Ask Savvy to help you with a tricky sequence of shell commands.
+
+![Ask Savvy to help you with a tricky shell command](demos/ask-command.gif)
+
 
 
 ## Demo
