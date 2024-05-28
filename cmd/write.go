@@ -50,32 +50,46 @@ var writeCmd = &cobra.Command{
 		// Write to the file system at the specified place.
 		// Allow the user to overwrite the name/path of the file
 		filename := stepContent.Name
-
 		dirPath := stepContent.DirPath
-		if len(stepContent.DirPath) == 0 {
-			dirPath = "."
-		}
+		safeToWriteFile := false
+		for safeToWriteFile != true {
+			if len(stepContent.DirPath) == 0 {
+				dirPath = "."
+			}
 
-		maybeEditFileName := huh.NewInput().
-			Title("Confirm or Edit File name").
-			Description("Press enter to confirm or edit the file name").
-			Prompt("> ").
-			Value(&filename)
+			maybeEditFileName := huh.NewInput().
+				Title("Confirm or Edit File name").
+				Description("Press enter to confirm or edit the file name").
+				Prompt("> ").
+				Value(&filename)
 
-		maybeEditDirPath := huh.NewInput().
-			Title("Confrim or Edit Directory Path").
-			Prompt("> ").
-			Value(&dirPath)
+			maybeEditDirPath := huh.NewInput().
+				Title("Confrim or Edit Directory Path").
+				Prompt("> ").
+				Value(&dirPath)
 
-		form := huh.NewForm(huh.NewGroup(maybeEditFileName, maybeEditDirPath))
-		if err := form.Run(); err != nil {
-			display.FatalErrWithSupportCTA(err)
-			return
+			form := huh.NewForm(huh.NewGroup(maybeEditFileName, maybeEditDirPath))
+			if err := form.Run(); err != nil {
+				display.FatalErrWithSupportCTA(err)
+				return
+			}
+
+			if fileExists(filepath.Join(dirPath, filename)) {
+				var confirmation bool
+				confirmOverwrite := huh.NewConfirm().Title("File already exists").Description("Overwrite existing file?").Value(&confirmation)
+				if err := huh.NewForm(huh.NewGroup(confirmOverwrite)).Run(); err != nil {
+					display.FatalErrWithSupportCTA(err)
+					return
+				}
+				if !confirmation {
+					continue
+				}
+			}
+			safeToWriteFile = true
 		}
 
 		buf := bytes.NewBuffer(stepContent.Content)
 		writeFile(filepath.Join(dirPath, filename), buf)
-
 	},
 }
 
@@ -86,10 +100,18 @@ func init() {
 	writeCmd.Flags().StringVar(&writeStepID, "step-id", "", "The step id linked to the file")
 }
 
+// fileExists checks if a file exists and returns a boolean value.
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func writeFile(path string, buf *bytes.Buffer) {
 	// TODO: create dir if required
 	// TODO: use the same mode as the original file
-	// TODO: confrim with the user before overwriting
 	f, err := os.Create(path)
 	if err != nil {
 		display.Error(err)
