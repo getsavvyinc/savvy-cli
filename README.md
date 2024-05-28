@@ -9,7 +9,7 @@
 Savvy is the easiest way to create, share and run runbooks from your terminal.
 
 
-Savvy's CLI generates runbooks with AI or from your provided commands.
+Savvy's CLI generates runbooks with AI or from commands you provide.
 
 ## Install Savvy's CLI
 
@@ -19,16 +19,15 @@ curl -fsSL https://install.getsavvy.so | sh
 
 ## Generate Runbooks with AI
 
-Generate runbooks using natural language or get help crafting a single command using `savvy ask`.
-
-Any one can use it, there's no need to signup for an account or provide a credit card.
+Use `savvy ask` to generate entire runbooks or a single command using natural language.
 
 Just run `savvy ask` and provide a prompt.
+
+Any one can use it, there's no need to signup for an account or provide a credit card.
 
 ### Examples
 
 1. Ask Savvy to create a runbook for publishing a new go module.
-
 
 ![Ask Savvy to create a runbook for publishing a new go module.](demos/ask-runbook.gif)
 
@@ -95,7 +94,13 @@ Savvy explain generates a simple and easy to understand explanation for any comm
 
 ## FAQ
 
-1. How do I uninstall Savvy?
+1. How do I Install Savvy?
+
+```sh
+curl -fsSL https://install.getsavvy.so | sh
+```
+
+2. How do I uninstall Savvy?
 
 ```sh
 
@@ -104,23 +109,23 @@ rm -rf ~/.config/savvy
 
 ```
 
-2. How do I upgrade Savvy?
+3. How do I upgrade Savvy?
 
 Run `savvy upgrade` to get the latest version of the CLI.
 
-3. How do I login?
+4. How do I login?
 
 Run `savvy login` to start the login flow.
 
-4. What shells does Savvy support?
+5. What shells does Savvy support?
 
 Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
 
-5. Does Savvy work on Windows?
+6. Does Savvy work on Windows?
 
 Not yet.
 
-6. I'm stuck. How do I get help?
+7. I'm stuck. How do I get help?
 
 If you need assistance or have questions:
 
