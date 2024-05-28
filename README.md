@@ -52,16 +52,23 @@ Savvy will never execute any command you select.
 
 ![savvy record history](demos/savvy-history.gif)
 
+### Sharing Runbooks
+
+Runbooks are private by default, but you can share them using a public or unlisted link from Savvy's dashboard.
+
+You can also export runbooks to markdown and paste them in your existing docs.
 
 ### Create Runbooks with Savvy Record
 
 `savvy record` starts a new shell and all commands in this shell are recorded and sent to an LLM to generate a runbook.
 
+![Savvy Runbook](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
 
 > [!NOTE]
 > Creating a runbook with savvy record requires you to signup for a free account.
 
-![Savvy Runbook](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
+
+##
 
 ## Quick Start
 
