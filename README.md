@@ -67,8 +67,13 @@ You can also export runbooks to markdown and paste them in your existing docs.
 > [!NOTE]
 > Creating a runbook with savvy record requires you to signup for a free account.
 
+## Automatically Run Runbooks
 
-##
+Use `savvy run` to search and run runbooks right from your terminal.
+
+Savvy automatically fills in the next command to execute. Just press enter to run it.
+
+![savvy run](demos/savvy-run.gif)
 
 ## Quick Start
 
