@@ -8,8 +8,9 @@ bin/*
 
 *.prof 
 *.out
-*.gif 
 *.tape 
+
+ignored-gifs/*.gif
 
 .vscode/
 

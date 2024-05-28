@@ -8,6 +8,32 @@
 
 Savvy is the easiest way to create, share and run runbooks from your terminal.
 
+
+Savvy's CLI generates runbooks with AI or from your provided commands.
+
+
+## Generate Runbooks with AI
+
+You can generate runbooks using natural language or get help with a single command using `savvy ask`.
+
+Any one can use it, there's no need to signup for an account or provide a credit card.
+
+1. **Install Savvy CLI**
+
+```sh
+curl -fsSL https://install.getsavvy.so | sh
+```
+
+2. Run `savvy ask` and provide a prompt.
+
+### Examples
+
+1. Ask Savvy to create a runbook for publishing a new go module.
+
+
+![Ask Savvy to create a runbook for publishing a new go module.](demos/ask-runbook.gif)
+
+
 ## Demo
 
 ![Savvy Runbook](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
