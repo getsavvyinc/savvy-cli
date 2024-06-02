@@ -1,0 +1,9 @@
+package slice
+
+func Map[T, U any](s []T, f func(T) U) []U {
+	var result []U
+	for _, v := range s {
+		result = append(result, f(v))
+	}
+	return result
+}
