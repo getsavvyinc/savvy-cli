@@ -56,11 +56,22 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		commandProcessedChan <- true
 	}
 
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
 	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
 	if errors.Is(err, server.ErrAbortRecording) {
 		display.Info("Recording aborted")
 		return
 	}
+	defer ss.Close()
+
+	go func() {
+		ss.ListenAndServe()
+		// kill b/g shell if we exit early
+		cancelCtx()
+		os.Exit(1)
+	}()
 
 	if err != nil {
 		display.FatalErrWithSupportCTA(err)
@@ -177,14 +188,6 @@ func expandHistory(ctx context.Context,
 
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
-
-	go func() {
-		srv.ListenAndServe()
-		// kill b/g shell if we exit early
-		cancelCtx()
-	}()
-
-	defer srv.Close()
 
 	c, err := sh.SpawnHistoryExpander(ctx)
 	if err != nil {
