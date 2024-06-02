@@ -14,6 +14,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/charmbracelet/huh"
 	"github.com/getsavvyinc/savvy-cli/idgen"
 )
 
@@ -33,6 +34,8 @@ type UnixSocketServer struct {
 
 var ErrStartingRecordingSession = errors.New("failed to start recording session")
 
+var ErrAbortRecording = errors.New("abort recording")
+
 type ErrConcurrentRecordingSession struct {
 	SocketPath string
 }
@@ -41,7 +44,7 @@ func (e *ErrConcurrentRecordingSession) Error() string {
 	return fmt.Sprintf("%v: concurrent recording session not supported", ErrStartingRecordingSession)
 }
 
-const defaultSocketPath = "/tmp/savvy-socket"
+const DefaultSocketPath = "/tmp/savvy-socket"
 
 type Option func(*UnixSocketServer)
 
@@ -57,18 +60,16 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
-func CleanupSocket(ctx context.Context, path string) error {
-	if _, err := os.Stat(path); err != nil {
-		return err
-	}
-
-	cl, err := NewDefaultClient(ctx)
+// cleanupSocket is an internal function.
+// It is the callers responsibility to ensure the socketPath exists.
+func cleanupSocket(socketPath string) error {
+	cl, err := NewDefaultClient(context.Background())
 	if err != nil {
 		return err
 	}
 	cl.SendShutdown()
 
-	if err := os.Remove(path); err != nil {
+	if err := os.Remove(socketPath); err != nil {
 		return err
 	}
 	return nil
@@ -83,16 +84,41 @@ func WithIgnoreErrors(ignoreErrors bool) Option {
 var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
 func NewUnixSocketServerWithDefaultPath(opts ...Option) (*UnixSocketServer, error) {
-	return NewUnixSocketServer(defaultSocketPath, opts...)
+	return NewUnixSocketServer(DefaultSocketPath, opts...)
 }
 
 func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	return newUnixSocketServer(socketPath, opts...)
 }
 
+func getCleanupPermission() (bool, error) {
+	var confirmation bool
+	confirmCleanup := huh.NewConfirm().
+		Title("Multiple recording sessions detected").
+		Affirmative("Continue here and kill other sessions").
+		Negative("Quit this session").
+		Value(&confirmation)
+	if err := huh.NewForm(huh.NewGroup(confirmCleanup)).Run(); err != nil {
+		return false, err
+	}
+	return confirmation, nil
+}
+
+// newUnixSocketServer creates a unix socet server.
+// If the socketPath exists, it will prompt the user to continue or abort the recording session.
 func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
-		return nil, &ErrConcurrentRecordingSession{SocketPath: socketPath}
+
+		cleanup, cerr := getCleanupPermission()
+		if cerr != nil {
+			return nil, cerr
+		}
+
+		if !cleanup {
+			return nil, ErrAbortRecording
+		}
+
+		cleanupSocket(socketPath)
 	}
 
 	listener, err := net.Listen("unix", socketPath)
