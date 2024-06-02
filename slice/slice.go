@@ -7,3 +7,12 @@ func Map[T, U any](s []T, f func(T) U) []U {
 	}
 	return result
 }
+
+func Has[T comparable](s []T, v T) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
