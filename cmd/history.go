@@ -48,6 +48,24 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
+	commandProcessedChan := make(chan bool, 1)
+	defer close(commandProcessedChan)
+
+	hook := func(cmd string) {
+		logger.Debug("command recorded", "command", cmd)
+		commandProcessedChan <- true
+	}
+
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
+	if errors.Is(err, server.ErrAbortRecording) {
+		display.Info("Recording aborted")
+		return
+	}
+
+	if err != nil {
+		display.FatalErrWithSupportCTA(err)
+	}
+
 	sh := shell.New("/tmp/savvy-socket")
 	lines, err := sh.TailHistory(ctx)
 	if err != nil {
@@ -64,7 +82,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
 		var err error
 
-		commands, err = expandHistory(ctx, logger, sh, selectedHistory)
+		commands, err = expandHistory(ctx, logger, ss, sh, selectedHistory, commandProcessedChan)
 		if err != nil {
 			display.FatalErrWithSupportCTA(err)
 		}
@@ -148,24 +166,25 @@ func allowUserToSelectCommands(history []string) []string {
 	return commands
 }
 
-func expandHistory(ctx context.Context, logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]*server.RecordedCommand, error) {
+func expandHistory(ctx context.Context,
+	logger *slog.Logger,
+	srv *server.UnixSocketServer,
+	sh shell.Shell,
+	rawCommands []string,
+	cmdProcessedCh <-chan bool,
+) ([]*server.RecordedCommand, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
 
-	commandProcessedChan := make(chan bool, 1)
-
-	hook := func(cmd string) {
-		logger.Debug("command recorded", "command", cmd)
-		commandProcessedChan <- true
-	}
-	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
-	if err != nil {
-		return nil, err
-	}
-	go ss.ListenAndServe()
-	defer ss.Close()
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
+	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
+
+	go func() {
+		srv.ListenAndServe()
+		// kill b/g shell if we exit early
+		cancelCtx()
+	}()
+
+	defer srv.Close()
 
 	c, err := sh.SpawnHistoryExpander(ctx)
 	if err != nil {
@@ -201,7 +220,7 @@ func expandHistory(ctx context.Context, logger *slog.Logger, sh shell.Shell, raw
 		}
 		// Wait for the command to be processed by the server.
 		select {
-		case <-commandProcessedChan:
+		case <-cmdProcessedCh:
 			logger.Debug("command processed", "command", cmd, "index", i, "cmd", "history")
 		case <-time.After(5 * time.Second):
 			logger.Debug("timeout waiting for command to be processed", "command", cmd, "index", i)
@@ -220,5 +239,5 @@ func expandHistory(ctx context.Context, logger *slog.Logger, sh shell.Shell, raw
 	logger.Debug("waitng for c.Wait()")
 	c.Wait()
 	logger.Debug("c.Wait() finished")
-	return ss.Commands(), nil
+	return srv.Commands(), nil
 }
