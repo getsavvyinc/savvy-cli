@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ type UnixSocketServer struct {
 var ErrStartingRecordingSession = errors.New("failed to start recording session")
 
 type ErrConcurrentRecordingSession struct {
-	Path string
+	SocketPath string
 }
 
 func (e *ErrConcurrentRecordingSession) Error() string {
@@ -56,12 +57,21 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
-func RemoveSocket() Option {
-	return func(s *UnixSocketServer) {
-		if err := os.Remove(s.socketPath); err != nil {
-			s.logger.Debug("failed to remove socket file", "error", err.Error())
-		}
+func CleanupSocket(ctx context.Context, path string) error {
+	if _, err := os.Stat(path); err != nil {
+		return err
 	}
+
+	cl, err := NewDefaultClient(ctx)
+	if err != nil {
+		return err
+	}
+	cl.SendShutdown()
+
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	return nil
 }
 
 func WithIgnoreErrors(ignoreErrors bool) Option {
@@ -81,8 +91,18 @@ func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 }
 
 func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
+	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
+		return nil, &ErrConcurrentRecordingSession{SocketPath: socketPath}
+	}
+
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create listener: %w", err)
+	}
+
 	srv := &UnixSocketServer{
 		socketPath:    socketPath,
+		listener:      listener,
 		logger:        defaultLogger,
 		ignoreErrors:  false,
 		lookupCommand: make(map[string]*RecordedData),
@@ -92,15 +112,6 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 		opt(srv)
 	}
 
-	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
-		return nil, &ErrConcurrentRecordingSession{Path: socketPath}
-	}
-
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create listener: %w", err)
-	}
-	srv.listener = listener
 	return srv, nil
 }
 
@@ -164,13 +175,6 @@ func (s *UnixSocketServer) ListenAndServe() {
 			if s.closed.Load() {
 				return
 			}
-			var netErr *net.OpError
-			if errors.As(err, &netErr) && !netErr.Temporary() {
-				slog.Debug("Fatal error", "error", err.Error())
-				s.Close()
-				return
-			}
-
 			slog.Debug("Failed to accept connection:", "error", err.Error())
 			continue
 		}
@@ -194,6 +198,12 @@ func (rd *RecordedData) HasFileData() bool {
 	return strings.HasPrefix(rd.StepID, idgen.FilePrefix)
 }
 
+const shutdownCommand = "savvy shutdown"
+
+func (rd *RecordedData) IsShutdown() bool {
+	return rd.Command == shutdownCommand
+}
+
 func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	defer c.Close()
 
@@ -206,6 +216,11 @@ func (s *UnixSocketServer) handleConnection(c net.Conn) {
 	var data RecordedData
 	if err := json.Unmarshal(bs, &data); err != nil {
 		s.logger.Debug("Failed to unmarshal data", "error", err.Error(), "component", "server", "input", string(bs))
+		return
+	}
+
+	if data.IsShutdown() {
+		s.Close()
 		return
 	}
 

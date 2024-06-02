@@ -134,7 +134,9 @@ func startRecording(ctx context.Context) ([]*server.RecordedCommand, error) {
 			return nil, errAbortRecording
 		}
 
-		ss, err = server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors), server.RemoveSocket())
+		server.CleanupSocket(ctx, concurrentErr.SocketPath)
+
+		ss, err = server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors))
 		if err != nil {
 			err := fmt.Errorf("failed to cleanup previous session: %w", err)
 			return nil, err
