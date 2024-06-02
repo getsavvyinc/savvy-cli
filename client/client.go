@@ -22,9 +22,14 @@ type Client interface {
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
-	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
+	Ask(ctx context.Context, question QuestionInfo, history []History) (*Runbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
+}
+
+type History struct {
+	question QuestionInfo
+	answer   *Runbook
 }
 
 type RecordedCommand struct {
@@ -286,11 +291,11 @@ type QuestionInfo struct {
 	FileName string            `json:"file_name,omitempty"`
 }
 
-func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
-	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question)
+func (c *client) Ask(ctx context.Context, question QuestionInfo, history []History) (*Runbook, error) {
+	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question, history)
 }
 
-func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo) (*Runbook, error) {
+func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo, history []History) (*Runbook, error) {
 	bs, err := json.Marshal(question)
 	if err != nil {
 		return nil, err

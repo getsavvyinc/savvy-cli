@@ -95,7 +95,7 @@ var askCmd = &cobra.Command{
 		if err := huhSpinner.New().Title("Savvy is generating an answer for you").Action(func() {
 			var err error
 
-			runbook, err = cl.Ask(ctx, qi)
+			runbook, err = cl.Ask(ctx, qi, nil)
 			if err != nil {
 				display.FatalErrWithSupportCTA(err)
 				return
