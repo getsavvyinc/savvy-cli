@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -49,27 +50,6 @@ var askCmd = &cobra.Command{
 			cl = client.NewGuest()
 		}
 
-		var question string
-		if len(args) == 0 {
-			// interactive mode
-			text := huh.NewText().Title("Ask Savvy a question").Value(&question)
-			form := huh.NewForm(huh.NewGroup(text))
-			if err := form.Run(); err != nil {
-				display.ErrorWithSupportCTA(err)
-				os.Exit(1)
-			}
-		}
-
-		if len(question) == 0 && len(args) == 0 {
-			display.Info("Please provide a question")
-			os.Exit(0)
-		}
-
-		// be defensive: users can pass questions as one string or multiple strings
-		if len(question) == 0 {
-			question = strings.Join(args[:], " ")
-		}
-
 		// get info about the os from os pkg: mac/darwin, linux, windows
 		goos := runtime.GOOS
 		if goos == "darwin" {
@@ -82,72 +62,120 @@ var askCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		qi := client.QuestionInfo{
-			Question: question,
-			Tags: map[string]string{
-				"os": goos,
-			},
-			FileData: fileData,
-			FileName: path.Base(filePath),
+		var question string
+		if len(args) > 0 {
+			// be defensive: users can pass questions as one string or multiple strings
+			question = strings.Join(args[:], " ")
 		}
 
-		var runbook *client.Runbook
-		if err := huhSpinner.New().Title("Savvy is generating an answer for you").Action(func() {
-			var err error
-
-			runbook, err = cl.Ask(ctx, qi, nil)
-			if err != nil {
-				display.FatalErrWithSupportCTA(err)
-				return
-			}
-
-			if len(runbook.Steps) == 0 {
-				err := errors.New("No commands were generated. Please try again")
-				display.FatalErrWithSupportCTA(err)
-				return
-			}
-		}).Run(); err != nil {
-			logger.Debug("error asking savvy", "error", err.Error())
-			display.FatalErrWithSupportCTA(err)
-			os.Exit(1)
+		params := AskParams{
+			goos:     goos,
+			fileData: fileData,
+			filePath: filePath,
 		}
 
-		rb := component.NewRunbook(&client.GeneratedRunbook{
-			Runbook: *runbook,
-		})
-
-		m, err := newAskCommandsModel(rb)
-		if err != nil {
-			display.ErrorWithSupportCTA(err)
-			os.Exit(1)
+		var selectedCommand string
+		refine := true
+		for refine {
+			selectedCommand, refine = runAsk(ctx, cl, question, params)
 		}
 
-		p := tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
-		result, err := p.Run()
-		if err != nil {
-			// TODO: fail gracefully and provide users a link to view the runbook
-			display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
-			os.Exit(1)
+		if selectedCommand == "" {
+			return
 		}
-
-		if m, ok := result.(*askCommands); ok {
-			selectedCommand := m.l.SelectedCommand()
-			if selectedCommand == "" {
-				return
-			}
-			if err := clipboard.WriteAll(selectedCommand); err != nil {
-				display.Info(selectedCommand)
-				return
-			}
-			display.Info(fmt.Sprintf("Copied to clipboard: %s", selectedCommand))
+		if err := clipboard.WriteAll(selectedCommand); err != nil {
+			display.Info(selectedCommand)
+			return
 		}
-		return
+		display.Info(fmt.Sprintf("Copied to clipboard: %s", selectedCommand))
 	},
 }
 
-type askCommands struct {
-	l list.Model
+type AskParams struct {
+	goos     string
+	fileData []byte
+	filePath string
 }
+
+func runAsk(ctx context.Context, cl client.Client, question string, askParams AskParams) (string, bool) {
+	logger := loggerFromCtx(ctx).With("command", "ask", "method", "runAsk")
+	if len(question) == 0 {
+		// interactive mode
+		text := huh.NewText().Title("Ask Savvy a question").Value(&question)
+		form := huh.NewForm(huh.NewGroup(text))
+		if err := form.Run(); err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+	}
+
+	if len(question) == 0 {
+		display.Info("Exiting...")
+		return "", false
+	}
+
+	qi := client.QuestionInfo{
+		Question: question,
+		Tags: map[string]string{
+			"os": askParams.goos,
+		},
+		FileData: askParams.fileData,
+		FileName: path.Base(askParams.filePath),
+	}
+
+	var runbook *client.Runbook
+	if err := huhSpinner.New().Title("Savvy is generating an answer for you").Action(func() {
+		var err error
+
+		runbook, err = cl.Ask(ctx, qi, nil)
+		if err != nil {
+			display.FatalErrWithSupportCTA(err)
+			return
+		}
+
+		if len(runbook.Steps) == 0 {
+			err := errors.New("No commands were generated. Please try again")
+			display.FatalErrWithSupportCTA(err)
+			return
+		}
+	}).Run(); err != nil {
+		logger.Debug("error asking savvy", "error", err.Error())
+		display.FatalErrWithSupportCTA(err)
+		os.Exit(1)
+	}
+
+	rb := component.NewRunbook(&client.GeneratedRunbook{
+		Runbook: *runbook,
+	})
+
+	m, err := newAskCommandsModel(rb)
+	if err != nil {
+		display.ErrorWithSupportCTA(err)
+		os.Exit(1)
+	}
+
+	p := tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
+	result, err := p.Run()
+	if err != nil {
+		// TODO: fail gracefully and provide users a link to view the runbook
+		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
+		os.Exit(1)
+	}
+	if m, ok := result.(*askCommands); ok {
+		selectedCommand := m.l.SelectedCommand()
+		refinePrompt := m.refinePrompt
+
+		return selectedCommand, refinePrompt
+	}
+	return "", false
+}
+
+type askCommands struct {
+	l            list.Model
+	refinePrompt bool
+}
+
+var RefinePromptHelpBinding = list.NewHelpBinding("p", "refine prompt")
 
 func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	if runbook == nil {
@@ -155,7 +183,7 @@ func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	}
 
 	listItems := toItems(runbook.Steps)
-	l := list.NewModelWithDelegate(listItems, runbook.Title, runbook.URL, list.NewAskDelegate())
+	l := list.NewModelWithDelegate(listItems, runbook.Title, runbook.URL, list.NewAskDelegate(), RefinePromptHelpBinding)
 	return &askCommands{l: l}, nil
 }
 func (dc *askCommands) Init() tea.Cmd {
@@ -165,6 +193,12 @@ func (dc *askCommands) Init() tea.Cmd {
 }
 
 func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg.(type) {
+	case list.RefinePromptMsg:
+		dc.refinePrompt = true
+		return dc, tea.Quit
+	}
+
 	m, cmd := dc.l.Update(msg)
 	if m, ok := m.(list.Model); ok {
 		dc.l = m
