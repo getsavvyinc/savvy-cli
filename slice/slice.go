@@ -16,3 +16,4 @@ func Has[T comparable](s []T, v T) bool {
 	}
 	return false
 }
+

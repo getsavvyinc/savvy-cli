@@ -32,6 +32,7 @@ type Model struct {
 	list            list.Model
 	url             string
 	helpBindings    []HelpBinding
+	helpKeys        []string
 	selectedCommand string
 }
 
@@ -61,6 +62,13 @@ func NewModelWithDelegate(items []Item, title string, url string, delegate list.
 		return h.Binding
 	})
 
+	m.helpKeys = slice.Map(helpBindings, func(h HelpBinding) string {
+		if len(h.Binding.Keys()) > 0 {
+			return h.Binding.Keys()[0]
+		}
+		return ""
+	})
+
 	if len(keyBindings) > 0 {
 		m.list.AdditionalFullHelpKeys = func() []key.Binding {
 			return keyBindings
@@ -78,6 +86,12 @@ func NewModelWithDelegate(items []Item, title string, url string, delegate list.
 
 var EditOnlineBinding = HelpBinding{
 	Binding: key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online")),
+}
+
+func NewHelpBinding(k, description string) HelpBinding {
+	return HelpBinding{
+		Binding: key.NewBinding(key.WithKeys(k), key.WithHelp(k, description)),
+	}
 }
 
 func NewModel(items []Item, title string, url string, helpBindings ...HelpBinding) Model {
@@ -110,6 +124,8 @@ func OpenBrowser(url string, onComplete tea.Msg, onErr tea.Msg) tea.Cmd {
 
 type NopMsg struct{}
 
+type RefinePromptMsg struct{}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -118,8 +134,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle the "e" key binding
-		if msg.String() == "e" {
+		if msg.String() == "e" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "e") {
 			return m, OpenBrowser(m.url, NopMsg{}, NopMsg{})
+		}
+
+		if msg.String() == "p" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "p") {
+			return m, func() tea.Msg { return RefinePromptMsg{} }
 		}
 
 	case tea.WindowSizeMsg:
