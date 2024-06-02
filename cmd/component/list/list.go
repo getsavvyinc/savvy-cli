@@ -12,6 +12,8 @@ import (
 
 var docStyle = lipgloss.NewStyle().Margin(3, 3)
 
+var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"})
+
 type Item struct {
 	Command         string
 	DescriptionText string
@@ -42,6 +44,11 @@ func NewModelWithDelegate(items []Item, title string, url string, delegate list.
 		list: list.New(listItems, delegate, 0, 0),
 	}
 	m.list.Title = title
+	m.list.Styles.HelpStyle = helpStyle
+	m.list.Help.Styles.ShortKey = helpStyle
+	m.list.Help.Styles.FullKey = helpStyle
+	m.list.Help.Styles.ShortDesc = helpStyle
+	m.list.Help.Styles.FullDesc = helpStyle
 
 	m.editBinding = key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online"))
 	m.list.AdditionalFullHelpKeys = func() []key.Binding {
