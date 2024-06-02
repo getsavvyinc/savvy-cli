@@ -14,6 +14,8 @@ import (
 type Client interface {
 	// SendFileInfo tells the server to read the file at the given path
 	SendFileInfo(filePath string) error
+	// SendShutdown tells the server to shutdown.
+	SendShutdown()
 }
 
 func NewDefaultClient(ctx context.Context) (Client, error) {
@@ -27,6 +29,20 @@ type client struct {
 }
 
 var _ Client = &client{}
+
+func (c *client) SendShutdown() {
+	conn, err := net.Dial("unix", c.socketPath)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	data := RecordedData{
+		Command: shutdownCommand,
+	}
+
+	json.NewEncoder(conn).Encode(data)
+}
 
 func (c *client) SendFileInfo(filePath string) error {
 	conn, err := net.Dial("unix", c.socketPath)
