@@ -64,7 +64,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
 		var err error
 
-		commands, err = expandHistory(logger, sh, selectedHistory)
+		commands, err = expandHistory(ctx, logger, sh, selectedHistory)
 		if err != nil {
 			display.FatalErrWithSupportCTA(err)
 		}
@@ -148,7 +148,7 @@ func allowUserToSelectCommands(history []string) []string {
 	return commands
 }
 
-func expandHistory(logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]*server.RecordedCommand, error) {
+func expandHistory(ctx context.Context, logger *slog.Logger, sh shell.Shell, rawCommands []string) ([]*server.RecordedCommand, error) {
 	logger.Debug("expanding history", "commands", rawCommands)
 
 	commandProcessedChan := make(chan bool, 1)

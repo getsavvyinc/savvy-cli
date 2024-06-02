@@ -46,14 +46,20 @@ var recordCmd = &cobra.Command{
 
 var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
-func runRecordCmd(_ *cobra.Command, _ []string) {
+func runRecordCmd(cmd *cobra.Command, _ []string) {
 	cl, err := client.New()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
 		os.Exit(1)
 	}
+	ctx := cmd.Context()
 
-	recordedCommands, err := startRecording()
+	recordedCommands, err := startRecording(ctx)
+	if errors.Is(err, errAbortRecording) {
+		display.Info("Recording aborted")
+		return
+	}
+
 	if err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
@@ -64,7 +70,6 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 		return
 	}
 
-	ctx := context.Background()
 	gctx, cancel := context.WithCancel(ctx)
 	gm := component.NewGenerateRunbookModel(recordedCommands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
@@ -96,13 +101,12 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 	}
 }
 
-func getCleanupPermission(path string) (bool, error) {
+func getCleanupPermission() (bool, error) {
 	var confirmation bool
 	confirmCleanup := huh.NewConfirm().
 		Title("Multiple recording sessions detected").
-		Description("Either a previous record session didn't exit cleanly or another savvy-cli instance is recording commands.").
-		Affirmative("Continue with this session and kill previous sessions").
-		Negative("Abort this session and exit").
+		Affirmative("Continue here and kill other sessions").
+		Negative("Quit this session").
 		Value(&confirmation)
 	if err := huh.NewForm(huh.NewGroup(confirmCleanup)).Run(); err != nil {
 		return false, err
@@ -110,7 +114,9 @@ func getCleanupPermission(path string) (bool, error) {
 	return confirmation, nil
 }
 
-func startRecording() ([]*server.RecordedCommand, error) {
+var errAbortRecording = errors.New("abort recording")
+
+func startRecording(ctx context.Context) ([]*server.RecordedCommand, error) {
 	// TODO: Make this unique for each invokation
 	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors))
 	if err != nil {
@@ -119,13 +125,13 @@ func startRecording() ([]*server.RecordedCommand, error) {
 			return nil, err
 		}
 
-		cleanup, cerr := getCleanupPermission(concurrentErr.Path)
+		cleanup, cerr := getCleanupPermission()
 		if cerr != nil {
 			return nil, cerr
 		}
 
 		if !cleanup {
-			return nil, errors.New("aborting recording session")
+			return nil, errAbortRecording
 		}
 
 		ss, err = server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors), server.RemoveSocket())
@@ -135,16 +141,19 @@ func startRecording() ([]*server.RecordedCommand, error) {
 		}
 	}
 
-	go ss.ListenAndServe()
-	defer func() {
-		ss.Close()
-	}()
-	// Create arbitrary command.
-	sh := shell.New(ss.SocketPath())
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer func() {
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
+	go func() {
+		ss.ListenAndServe()
+		// if the server shut down, cancel the shell context
 		cancelCtx()
 	}()
+	defer ss.Close()
+
+	// Create arbitrary command.
+	sh := shell.New(ss.SocketPath())
+
 	c, err := sh.Spawn(ctx)
 	if err != nil {
 		err := fmt.Errorf("failed to start recording: %w", err)
