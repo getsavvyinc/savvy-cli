@@ -101,7 +101,6 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}
 	srv.listener = listener
-
 	return srv, nil
 }
 
@@ -165,6 +164,13 @@ func (s *UnixSocketServer) ListenAndServe() {
 			if s.closed.Load() {
 				return
 			}
+			var netErr *net.OpError
+			if errors.As(err, &netErr) && !netErr.Temporary() {
+				slog.Debug("Fatal error", "error", err.Error())
+				s.Close()
+				return
+			}
+
 			slog.Debug("Failed to accept connection:", "error", err.Error())
 			continue
 		}
