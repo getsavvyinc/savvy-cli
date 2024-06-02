@@ -67,17 +67,23 @@ var askCmd = &cobra.Command{
 			// be defensive: users can pass questions as one string or multiple strings
 			question = strings.Join(args[:], " ")
 		}
+		var selectedCommand string
+		var refine bool
 
-		params := AskParams{
+		params := &AskParams{
 			goos:     goos,
 			fileData: fileData,
 			filePath: filePath,
+			refine:   false,
 		}
 
-		var selectedCommand string
-		refine := true
-		for refine {
+		for {
 			selectedCommand, refine = runAsk(ctx, cl, question, params)
+			if !refine {
+				break
+			}
+			params.refine = true
+			question = ""
 		}
 
 		if selectedCommand == "" {
@@ -92,16 +98,22 @@ var askCmd = &cobra.Command{
 }
 
 type AskParams struct {
-	goos     string
-	fileData []byte
-	filePath string
+	goos              string
+	fileData          []byte
+	filePath          string
+	refine            bool
+	previousQuestions []string
 }
 
-func runAsk(ctx context.Context, cl client.Client, question string, askParams AskParams) (string, bool) {
+func runAsk(ctx context.Context, cl client.Client, question string, askParams *AskParams) (string, bool) {
 	logger := loggerFromCtx(ctx).With("command", "ask", "method", "runAsk")
 	if len(question) == 0 {
 		// interactive mode
-		text := huh.NewText().Title("Ask Savvy a question").Value(&question)
+		title := "Ask Savvy a question"
+		if askParams.refine {
+			title = "Refine your question"
+		}
+		text := huh.NewText().Title(title).Value(&question)
 		form := huh.NewForm(huh.NewGroup(text))
 		if err := form.Run(); err != nil {
 			display.ErrorWithSupportCTA(err)
@@ -119,15 +131,17 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams As
 		Tags: map[string]string{
 			"os": askParams.goos,
 		},
-		FileData: askParams.fileData,
-		FileName: path.Base(askParams.filePath),
+		FileData:          askParams.fileData,
+		FileName:          path.Base(askParams.filePath),
+		PreviousQuestions: askParams.previousQuestions[:],
 	}
+	askParams.previousQuestions = append(askParams.previousQuestions, question)
 
 	var runbook *client.Runbook
 	if err := huhSpinner.New().Title("Savvy is generating an answer for you").Action(func() {
 		var err error
 
-		runbook, err = cl.Ask(ctx, qi, nil)
+		runbook, err = cl.Ask(ctx, qi)
 		if err != nil {
 			display.FatalErrWithSupportCTA(err)
 			return
