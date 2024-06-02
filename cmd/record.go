@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
@@ -95,12 +96,45 @@ func runRecordCmd(_ *cobra.Command, _ []string) {
 	}
 }
 
+func getCleanupPermission(path string) (bool, error) {
+	var confirmation bool
+	confirmCleanup := huh.NewConfirm().
+		Title("Multiple recording sessions detected").
+		Description("Either a previous record session didn't exit cleanly or another savvy-cli instance is recording commands.").
+		Affirmative("Continue with this session and kill previous sessions").
+		Negative("Abort this session and exit").
+		Value(&confirmation)
+	if err := huh.NewForm(huh.NewGroup(confirmCleanup)).Run(); err != nil {
+		return false, err
+	}
+	return confirmation, nil
+}
+
 func startRecording() ([]*server.RecordedCommand, error) {
 	// TODO: Make this unique for each invokation
 	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors))
 	if err != nil {
-		return nil, err
+		var concurrentErr *server.ErrConcurrentRecordingSession
+		if !errors.As(err, &concurrentErr) {
+			return nil, err
+		}
+
+		cleanup, cerr := getCleanupPermission(concurrentErr.Path)
+		if cerr != nil {
+			return nil, cerr
+		}
+
+		if !cleanup {
+			return nil, errors.New("aborting recording session")
+		}
+
+		ss, err = server.NewUnixSocketServerWithDefaultPath(server.WithIgnoreErrors(ignoreErrors), server.RemoveSocket())
+		if err != nil {
+			err := fmt.Errorf("failed to cleanup previous session: %w", err)
+			return nil, err
+		}
 	}
+
 	go ss.ListenAndServe()
 	defer func() {
 		ss.Close()

@@ -32,6 +32,14 @@ type UnixSocketServer struct {
 
 var ErrStartingRecordingSession = errors.New("failed to start recording session")
 
+type ErrConcurrentRecordingSession struct {
+	Path string
+}
+
+func (e *ErrConcurrentRecordingSession) Error() string {
+	return fmt.Sprintf("%v: concurrent recording session not supported", ErrStartingRecordingSession)
+}
+
 const defaultSocketPath = "/tmp/savvy-socket"
 
 type Option func(*UnixSocketServer)
@@ -48,6 +56,14 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
+func RemoveSocket() Option {
+	return func(s *UnixSocketServer) {
+		if err := os.Remove(s.socketPath); err != nil {
+			s.logger.Debug("failed to remove socket file", "error", err.Error())
+		}
+	}
+}
+
 func WithIgnoreErrors(ignoreErrors bool) Option {
 	return func(s *UnixSocketServer) {
 		s.ignoreErrors = ignoreErrors
@@ -61,21 +77,12 @@ func NewUnixSocketServerWithDefaultPath(opts ...Option) (*UnixSocketServer, erro
 }
 
 func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
-	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
-		return nil, fmt.Errorf("%w: concurrent recording sessions are not supported yet", ErrStartingRecordingSession)
-	}
 	return newUnixSocketServer(socketPath, opts...)
 }
 
 func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create listener: %w", err)
-	}
-
 	srv := &UnixSocketServer{
 		socketPath:    socketPath,
-		listener:      listener,
 		logger:        defaultLogger,
 		ignoreErrors:  false,
 		lookupCommand: make(map[string]*RecordedData),
@@ -84,6 +91,16 @@ func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 	for _, opt := range opts {
 		opt(srv)
 	}
+
+	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
+		return nil, &ErrConcurrentRecordingSession{Path: socketPath}
+	}
+
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create listener: %w", err)
+	}
+	srv.listener = listener
 
 	return srv, nil
 }
