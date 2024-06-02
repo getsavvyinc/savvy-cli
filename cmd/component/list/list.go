@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
+	"github.com/getsavvyinc/savvy-cli/slice"
 )
 
 var docStyle = lipgloss.NewStyle().Margin(3, 3)
@@ -30,18 +31,24 @@ func (i Item) FilterValue() string {
 type Model struct {
 	list            list.Model
 	url             string
-	editBinding     key.Binding
+	helpBindings    []HelpBinding
 	selectedCommand string
 }
 
-func NewModelWithDelegate(items []Item, title string, url string, delegate list.ItemDelegate) Model {
+// TODO: we should be able to specify handlers for key bindings here
+type HelpBinding struct {
+	Binding key.Binding
+}
+
+func NewModelWithDelegate(items []Item, title string, url string, delegate list.ItemDelegate, helpBindings ...HelpBinding) Model {
 	var listItems []list.Item
 	for _, i := range items {
 		listItems = append(listItems, i)
 	}
 
 	m := Model{
-		list: list.New(listItems, delegate, 0, 0),
+		list:         list.New(listItems, delegate, 0, 0),
+		helpBindings: helpBindings,
 	}
 	m.list.Title = title
 	m.list.Styles.HelpStyle = helpStyle
@@ -50,13 +57,18 @@ func NewModelWithDelegate(items []Item, title string, url string, delegate list.
 	m.list.Help.Styles.ShortDesc = helpStyle
 	m.list.Help.Styles.FullDesc = helpStyle
 
-	m.editBinding = key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online"))
-	m.list.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{m.editBinding}
-	}
+	keyBindings := slice.Map(helpBindings, func(h HelpBinding) key.Binding {
+		return h.Binding
+	})
 
-	m.list.AdditionalShortHelpKeys = func() []key.Binding {
-		return []key.Binding{m.editBinding}
+	if len(keyBindings) > 0 {
+		m.list.AdditionalFullHelpKeys = func() []key.Binding {
+			return keyBindings
+		}
+
+		m.list.AdditionalShortHelpKeys = func() []key.Binding {
+			return keyBindings
+		}
 	}
 
 	m.url = url
@@ -64,8 +76,12 @@ func NewModelWithDelegate(items []Item, title string, url string, delegate list.
 	return m
 }
 
-func NewModel(items []Item, title string, url string) Model {
-	return NewModelWithDelegate(items, title, url, list.NewDefaultDelegate())
+var EditOnlineBinding = HelpBinding{
+	Binding: key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online")),
+}
+
+func NewModel(items []Item, title string, url string, helpBindings ...HelpBinding) Model {
+	return NewModelWithDelegate(items, title, url, list.NewDefaultDelegate(), helpBindings...)
 }
 
 func (m Model) Init() tea.Cmd {
@@ -101,7 +117,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		if msg.String() == "e" && m.list.FilterState() == list.Unfiltered {
+		// Handle the "e" key binding
+		if msg.String() == "e" {
 			return m, OpenBrowser(m.url, NopMsg{}, NopMsg{})
 		}
 
