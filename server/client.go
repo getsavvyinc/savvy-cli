@@ -20,7 +20,7 @@ type Client interface {
 
 func NewDefaultClient(ctx context.Context) (Client, error) {
 	return &client{
-		socketPath: defaultSocketPath,
+		socketPath: DefaultSocketPath,
 	}, nil
 }
 
