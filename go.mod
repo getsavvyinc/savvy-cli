@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20240306161957-71f31c155b08
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/creack/pty v1.1.21
-	github.com/getsavvyinc/upgrade-cli v0.3.0
+	github.com/getsavvyinc/upgrade-cli v0.4.0
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.2
 	github.com/spf13/cobra v1.8.0
@@ -28,7 +28,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/hashicorp/go-version v1.6.0 // indirect
+	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
