@@ -26,10 +26,10 @@ step_id=""
 function __savvy_record_pre_exec__() {
   # $2 is the command with all the aliases expanded
   local cmd=$3
-  local prompt=$(print -rP ${PROMPT})
   # clear step_id
   step_id=""
   if [[ "${SAVVY_CONTEXT}" == "record" ]] ; then
+    local prompt=$(print -rP ${PROMPT})
     step_id=$(SAVVY_SOCKET_PATH=${SAVVY_INPUT_FILE} savvy send --prompt="${prompt}" $cmd)
   fi
 }
