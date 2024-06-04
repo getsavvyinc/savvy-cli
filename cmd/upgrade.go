@@ -7,6 +7,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/upgrade-cli"
+	"github.com/getsavvyinc/upgrade-cli/release/asset"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,10 @@ var upgradeCmd = &cobra.Command{
 		}
 		version := config.Version()
 
-		upgrader := upgrade.NewUpgrader(owner, repo, executablePath)
+		assetDownloader := asset.NewAssetDownloader(executablePath, asset.WithLookupArchFallback(map[string]string{
+			"amd64": "x86_64",
+		}))
+		upgrader := upgrade.NewUpgrader(owner, repo, executablePath, upgrade.WithAssetDownloader(assetDownloader))
 
 		if ok, err := upgrader.IsNewVersionAvailable(context.Background(), version); err != nil {
 			display.Error(err)
