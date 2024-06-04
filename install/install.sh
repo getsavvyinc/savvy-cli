@@ -27,6 +27,10 @@ if [ "$arch" = "aarch64" ]; then
 	arch="arm64"
 fi
 
+if [ "$arch" = "amd64" ]; then
+  arch="x86_64"
+fi
+
 if [ $# -eq 0 ]; then
 	savvy_uri="https://github.com/getsavvyinc/savvy-cli/releases/latest/download/savvy_${os}_${arch}"
 else
