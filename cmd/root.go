@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/getsavvyinc/savvy-cli/cmd/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +49,7 @@ func init() {
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.savvy.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "d", false, "Enable debug mode")
+	rootCmd.AddCommand(internal.InternalCmd)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
