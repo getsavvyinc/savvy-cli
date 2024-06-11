@@ -24,6 +24,12 @@ func NewDefaultClient(ctx context.Context) (Client, error) {
 	}, nil
 }
 
+func NewClient(ctx context.Context, socketPath string) (Client, error) {
+	return &client{
+		socketPath: socketPath,
+	}, nil
+}
+
 type client struct {
 	socketPath string
 }
