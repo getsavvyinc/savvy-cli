@@ -14,7 +14,11 @@ import (
 type Client interface {
 	// SendFileInfo tells the server to read the file at the given path
 	SendFileInfo(filePath string) error
-	// SendShutdown tells the server to shutdown.
+	ShutdownSender
+}
+
+type ShutdownSender interface {
+	// Shutdown tells the server to shutdown.
 	SendShutdown()
 }
 
