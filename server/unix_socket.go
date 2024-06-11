@@ -14,8 +14,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/charmbracelet/huh"
 	"github.com/getsavvyinc/savvy-cli/idgen"
+	"github.com/getsavvyinc/savvy-cli/server/cleanup"
+	"github.com/getsavvyinc/savvy-cli/server/mode"
 )
 
 type UnixSocketServer struct {
@@ -91,30 +92,17 @@ func NewUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, 
 	return newUnixSocketServer(socketPath, opts...)
 }
 
-func getCleanupPermission() (bool, error) {
-	var confirmation bool
-	confirmCleanup := huh.NewConfirm().
-		Title("Multiple recording sessions detected").
-		Affirmative("Continue here and kill other sessions").
-		Negative("Quit this session").
-		Value(&confirmation)
-	if err := huh.NewForm(huh.NewGroup(confirmCleanup)).Run(); err != nil {
-		return false, err
-	}
-	return confirmation, nil
-}
-
 // newUnixSocketServer creates a unix socet server.
 // If the socketPath exists, it will prompt the user to continue or abort the recording session.
 func newUnixSocketServer(socketPath string, opts ...Option) (*UnixSocketServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 
-		cleanup, cerr := getCleanupPermission()
+		cleanupOK, cerr := cleanup.GetPermission(mode.Record)
 		if cerr != nil {
 			return nil, cerr
 		}
 
-		if !cleanup {
+		if !cleanupOK {
 			return nil, ErrAbortRecording
 		}
 
