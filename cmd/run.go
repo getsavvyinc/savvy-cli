@@ -16,6 +16,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/server/run"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/muesli/cancelreader"
 	"github.com/spf13/cobra"
@@ -88,7 +89,13 @@ func savvyRun(cmd *cobra.Command, args []string) {
 }
 
 func runRunbook(ctx context.Context, runbook *client.Runbook) error {
-	sh := shell.New("/tmp/savvy-socket")
+	rsrv, err := run.NewServerWithDefaultSocketPath(runbook)
+	if err != nil {
+		return err
+	}
+
+	sh := shell.New(rsrv.SocketPath())
+
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
 

@@ -12,9 +12,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/server/cleanup"
 	"github.com/getsavvyinc/savvy-cli/server/mode"
+	"github.com/getsavvyinc/savvy-cli/slice"
 )
 
 type RunServer struct {
@@ -60,13 +62,13 @@ func cleanupSocket(socketPath string) error {
 	return nil
 }
 
-func NewServerWithDefaultSocketPath(commands []*RunCommand, opts ...Option) (*RunServer, error) {
-	return newRunServer(DefaultRunSocketPath, commands, opts...)
+func NewServerWithDefaultSocketPath(rb *client.Runbook, opts ...Option) (*RunServer, error) {
+	return newRunServer(DefaultRunSocketPath, rb, opts...)
 }
 
 var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
-func newRunServer(socketPath string, commands []*RunCommand, opts ...Option) (*RunServer, error) {
+func newRunServer(socketPath string, rb *client.Runbook, opts ...Option) (*RunServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 
 		cleanupOK, cerr := cleanup.GetPermission(mode.Run)
@@ -85,10 +87,18 @@ func newRunServer(socketPath string, commands []*RunCommand, opts ...Option) (*R
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}
 
+	steps := rb.Steps
+
+	cmds := slice.Map(steps, func(step client.Step) *RunCommand {
+		return &RunCommand{
+			Command: step.Command,
+		}
+	})
+
 	rs := &RunServer{
 		socketPath: socketPath,
 		logger:     defaultLogger,
-		commands:   commands,
+		commands:   cmds,
 		listener:   listener,
 	}
 
@@ -163,6 +173,10 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
 	}
+}
+
+func (rs *RunServer) SocketPath() string {
+	return rs.socketPath
 }
 
 const (

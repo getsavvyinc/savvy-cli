@@ -38,9 +38,10 @@ function __savvy_run_pre_exec__() {
   # we want the command as it was typed in.
   local cmd=$1
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-    if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
-      SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
-    fi
+    SAVVY_NEXT_STEP=$(savvy internal next --cmd="${cmd}")
+    #if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
+      #SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
+    #fi
   fi
 }
 
@@ -64,8 +65,9 @@ function __savvy_run_pre_cmd__() {
 function __savvy_runbook_runner__() {
 
   if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" ]] ; then
-    next_step_idx=${SAVVY_NEXT_STEP}
-    BUFFER="${SAVVY_COMMANDS[next_step_idx]}"
+    #next_step_idx=${SAVVY_NEXT_STEP}
+    cmd=$(savvy internal fetch)
+    BUFFER="${cmd}"
     zle end-of-line  # Accept the line for editing
   fi
 }
