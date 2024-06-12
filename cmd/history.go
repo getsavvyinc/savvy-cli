@@ -64,6 +64,11 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		display.Info("Recording aborted")
 		return
 	}
+
+	if err != nil {
+		display.FatalErrWithSupportCTA(err)
+		return
+	}
 	defer ss.Close()
 
 	go func() {
