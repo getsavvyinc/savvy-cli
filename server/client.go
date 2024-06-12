@@ -19,7 +19,7 @@ type Client interface {
 
 type ShutdownSender interface {
 	// Shutdown tells the server to shutdown.
-	SendShutdown()
+	SendShutdown() error
 }
 
 func NewDefaultClient(ctx context.Context) (Client, error) {
@@ -40,10 +40,10 @@ type client struct {
 
 var _ Client = &client{}
 
-func (c *client) SendShutdown() {
+func (c *client) SendShutdown() error {
 	conn, err := net.Dial("unix", c.socketPath)
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 
@@ -51,7 +51,7 @@ func (c *client) SendShutdown() {
 		Command: shutdownCommand,
 	}
 
-	json.NewEncoder(conn).Encode(data)
+	return json.NewEncoder(conn).Encode(data)
 }
 
 func (c *client) SendFileInfo(filePath string) error {
