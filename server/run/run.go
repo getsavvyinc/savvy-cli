@@ -12,7 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/getsavvyinc/savvy-cli/client"
+	savvy_client "github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/server/cleanup"
 	"github.com/getsavvyinc/savvy-cli/server/mode"
@@ -62,13 +62,13 @@ func cleanupSocket(socketPath string) error {
 	return nil
 }
 
-func NewServerWithDefaultSocketPath(rb *client.Runbook, opts ...Option) (*RunServer, error) {
+func NewServerWithDefaultSocketPath(rb *savvy_client.Runbook, opts ...Option) (*RunServer, error) {
 	return newRunServer(DefaultRunSocketPath, rb, opts...)
 }
 
 var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
-func newRunServer(socketPath string, rb *client.Runbook, opts ...Option) (*RunServer, error) {
+func newRunServer(socketPath string, rb *savvy_client.Runbook, opts ...Option) (*RunServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 
 		cleanupOK, cerr := cleanup.GetPermission(mode.Run)
@@ -89,7 +89,7 @@ func newRunServer(socketPath string, rb *client.Runbook, opts ...Option) (*RunSe
 
 	steps := rb.Steps
 
-	cmds := slice.Map(steps, func(step client.Step) *RunCommand {
+	cmds := slice.Map(steps, func(step savvy_client.Step) *RunCommand {
 		return &RunCommand{
 			Command: step.Command,
 		}
