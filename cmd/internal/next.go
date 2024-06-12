@@ -30,6 +30,7 @@ var nextCmd = &cobra.Command{
 
 		if state.Command != executedCommand {
 			fmt.Printf("%d", state.Index)
+			return
 		}
 
 		if err := cl.NextCommand(); err != nil {
