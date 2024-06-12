@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -89,15 +90,28 @@ func savvyRun(cmd *cobra.Command, args []string) {
 }
 
 func runRunbook(ctx context.Context, runbook *client.Runbook) error {
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
 	rsrv, err := run.NewServerWithDefaultSocketPath(runbook)
+	if errors.Is(err, run.ErrAbortRun) {
+		display.Info("Run aborted")
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
+	defer rsrv.Close()
+
+	go func() {
+		rsrv.ListenAndServe()
+		// kill b/g shell if we exit early
+		cancelCtx()
+		os.Exit(1)
+	}()
 
 	sh := shell.New(rsrv.SocketPath())
-
-	ctx, cancelCtx := context.WithCancel(ctx)
-	defer cancelCtx()
 
 	c, err := sh.SpawnRunbookRunner(ctx, runbook)
 	if err != nil {

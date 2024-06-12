@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 
 	savvy_client "github.com/getsavvyinc/savvy-cli/client"
-	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/server/cleanup"
 	"github.com/getsavvyinc/savvy-cli/server/mode"
 	"github.com/getsavvyinc/savvy-cli/slice"
@@ -73,6 +72,8 @@ func NewServerWithDefaultSocketPath(rb *savvy_client.Runbook, opts ...Option) (*
 
 var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
+var ErrAbortRun = errors.New("abort running runbook")
+
 func newRunServer(socketPath string, rb *savvy_client.Runbook, opts ...Option) (*RunServer, error) {
 	if fileInfo, _ := os.Stat(socketPath); fileInfo != nil {
 
@@ -82,7 +83,7 @@ func newRunServer(socketPath string, rb *savvy_client.Runbook, opts ...Option) (
 		}
 
 		if !cleanupOK {
-			return nil, server.ErrAbortRecording
+			return nil, ErrAbortRun
 		}
 
 		cleanupSocket(socketPath)
@@ -119,6 +120,23 @@ func (rs *RunServer) Close() error {
 	}
 	rs.closed.Store(true)
 	return rs.listener.Close()
+}
+
+func (rs *RunServer) ListenAndServe() {
+	for {
+		// Accept new connections
+		conn, err := rs.listener.Accept()
+		if err != nil {
+			if rs.closed.Load() {
+				return
+			}
+			slog.Debug("Failed to accept connection:", "error", err.Error())
+			continue
+		}
+
+		// Handle the connection
+		go rs.handleConnection(conn)
+	}
 }
 
 func (rs *RunServer) handleConnection(c net.Conn) {
