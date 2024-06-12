@@ -66,8 +66,8 @@ function __savvy_runbook_runner__() {
 
   if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" ]] ; then
     #next_step_idx=${SAVVY_NEXT_STEP}
-    cmd=$(savvy internal current)
-    BUFFER="${cmd}"
+    run_cmd=$(savvy internal current)
+    BUFFER="${run_cmd}"
     zle end-of-line  # Accept the line for editing
   fi
 }
