@@ -20,8 +20,13 @@ var currentCmd = &cobra.Command{
 			return
 		}
 
-		curr := cl.CurrentCommand()
-		fmt.Printf("%s", curr)
+		state, err := cl.CurrentState()
+		if err != nil {
+			display.ErrorWithSupportCTA(err)
+			return
+		}
+
+		fmt.Printf("%s", state.Command)
 	},
 }
 
