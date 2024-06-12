@@ -1,11 +1,11 @@
 package run
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -142,20 +142,10 @@ func (rs *RunServer) ListenAndServe() {
 func (rs *RunServer) handleConnection(c net.Conn) {
 	defer c.Close()
 
-	bs, err := io.ReadAll(c)
-	if err != nil {
-		rs.logger.Error("failed to read from connection: %s\n", err)
-		return
-	}
-
 	var data RunCommand
-	if err := json.Unmarshal(bs, &data); err != nil {
-		rs.logger.Error("failed to unmarshal data", "error", err.Error(), "component", "run", "input", string(bs))
-		return
-	}
 
-	if data.IsShutdown() {
-		rs.Close()
+	if err := json.NewDecoder(c).Decode(&data); err != nil {
+		rs.logger.Error("failed to unmarshal data", "error", err.Error())
 		return
 	}
 
@@ -199,7 +189,11 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 		response.Index = rs.currIndex
 		rs.mu.Unlock()
 		rs.logger.Debug("fetching command", "command", cmd)
-		json.NewEncoder(c).Encode(response)
+		bs, _ := json.Marshal(response)
+		bs = append(bs, '\n')
+		writer := bufio.NewWriter(c)
+		writer.Write(bs)
+		writer.Flush()
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
 	}
