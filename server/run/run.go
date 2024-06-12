@@ -50,7 +50,7 @@ func WithLogger(logger *slog.Logger) Option {
 // cleanupSocket is an internal function.
 // It is the callers responsibility to ensure the socketPath exists.
 func cleanupSocket(socketPath string) error {
-	cl, err := server.NewClient(context.Background(), socketPath)
+	cl, err := NewClient(context.Background(), socketPath)
 	if err != nil {
 		return err
 	}
@@ -140,16 +140,23 @@ func (rs *RunServer) handleConnection(c net.Conn) {
 	rs.handleCommand(cmd, c)
 }
 
+type RunCommandIndexResponse struct {
+	Index int `json:"index"`
+}
+
 func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	switch cmd {
 	case shutdownCommand:
 		rs.Close()
 	case nextCommand:
+		var resp RunCommandIndexResponse
 		rs.mu.Lock()
 		rs.currIndex++
 		if rs.currIndex >= len(rs.commands) {
 			rs.currIndex = len(rs.commands) - 1
 		}
+		resp.Index = rs.currIndex
+		json.NewEncoder(c).Encode(resp)
 		rs.mu.Unlock()
 	case previousCommand:
 		rs.mu.Lock()
@@ -158,7 +165,7 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 			rs.currIndex = 0
 		}
 		rs.mu.Unlock()
-	case fetchCommand:
+	case currentCommand:
 		rs.mu.Lock()
 		if rs.currIndex >= len(rs.commands) {
 			rs.currIndex = len(rs.commands) - 1
@@ -182,8 +189,8 @@ func (rs *RunServer) SocketPath() string {
 const (
 	shutdownCommand = "savvy shutdown"
 	nextCommand     = "savvy internal next"
-	previousCommand = "savvy internal prev"
-	fetchCommand    = "savvy internal fetch"
+	previousCommand = "savvy internal previous"
+	currentCommand  = "savvy internal current"
 )
 
 func (rc *RunCommand) IsShutdown() bool {
