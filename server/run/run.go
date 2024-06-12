@@ -35,6 +35,11 @@ type RunCommand struct {
 	Command string `json:"command,omitempty"`
 }
 
+type State struct {
+	Command string `json:"command"`
+	Index   int    `json:"index"`
+}
+
 const DefaultRunSocketPath = "/tmp/savvy-run-socket"
 
 var ErrStartingRunSession = errors.New("failed to start run session")
@@ -149,14 +154,11 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case shutdownCommand:
 		rs.Close()
 	case nextCommand:
-		var resp RunCommandIndexResponse
 		rs.mu.Lock()
 		rs.currIndex++
 		if rs.currIndex >= len(rs.commands) {
 			rs.currIndex = len(rs.commands) - 1
 		}
-		resp.Index = rs.currIndex
-		json.NewEncoder(c).Encode(resp)
 		rs.mu.Unlock()
 	case previousCommand:
 		rs.mu.Lock()
@@ -166,6 +168,7 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 		}
 		rs.mu.Unlock()
 	case currentCommand:
+		var response State
 		rs.mu.Lock()
 		if rs.currIndex >= len(rs.commands) {
 			rs.currIndex = len(rs.commands) - 1
@@ -174,9 +177,11 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 			rs.currIndex = 0
 		}
 		cmd := rs.commands[rs.currIndex]
+		response.Command = cmd.Command
+		response.Index = rs.currIndex
 		rs.mu.Unlock()
 		rs.logger.Debug("fetching command", "command", cmd)
-		json.NewEncoder(c).Encode(cmd)
+		json.NewEncoder(c).Encode(response)
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
 	}

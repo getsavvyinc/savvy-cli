@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/server/run"
@@ -21,16 +22,29 @@ var nextCmd = &cobra.Command{
 			return
 		}
 
-		curr := cl.CurrentCommand()
-		if curr != executedCommand {
-			return
-		}
-
-		idx, err := cl.NextCommand()
+		state, err := cl.CurrentState()
 		if err != nil {
 			display.ErrorWithSupportCTA(err)
-			return
+			os.Exit(1)
 		}
+
+		if state.Command != executedCommand {
+			fmt.Printf("%d", state.Index)
+		}
+
+		if err := cl.NextCommand(); err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+
+		state, err = cl.CurrentState()
+		if err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+
+		// Required as arrays are 0-indexed
+		idx := state.Index + 1
 
 		fmt.Printf("%d", idx)
 	},
