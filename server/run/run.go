@@ -1,7 +1,6 @@
 package run
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -189,11 +188,7 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 		response.Index = rs.currIndex
 		rs.mu.Unlock()
 		rs.logger.Debug("fetching command", "command", cmd)
-		bs, _ := json.Marshal(response)
-		bs = append(bs, '\n')
-		writer := bufio.NewWriter(c)
-		writer.Write(bs)
-		writer.Flush()
+		json.NewEncoder(c).Encode(response)
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
 	}
