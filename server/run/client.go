@@ -68,6 +68,7 @@ func (c *client) PreviousCommand() error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	data := RunCommand{
 		Command: previousCommand,
@@ -81,6 +82,7 @@ func (c *client) CurrentState() (*State, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Close()
 
 	data := RunCommand{
 		Command: currentCommand,
@@ -94,6 +96,5 @@ func (c *client) CurrentState() (*State, error) {
 	if err := json.NewDecoder(conn).Decode(&response); err != nil {
 		return nil, err
 	}
-
 	return &response, nil
 }
