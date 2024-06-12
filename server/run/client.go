@@ -10,9 +10,9 @@ import (
 
 type Client interface {
 	server.ShutdownSender
-	NextCommand() error
+	NextCommand() (int, error)
 	PreviousCommand() error
-	FetchCommand() string
+	CurrentCommand() string
 }
 
 func NewDefaultClient(ctx context.Context) (Client, error) {
@@ -45,10 +45,10 @@ func (c *client) SendShutdown() error {
 	return json.NewEncoder(conn).Encode(data)
 }
 
-func (c *client) NextCommand() error {
+func (c *client) NextCommand() (int, error) {
 	conn, err := net.Dial("unix", c.socketPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer conn.Close()
 
@@ -56,7 +56,16 @@ func (c *client) NextCommand() error {
 		Command: nextCommand,
 	}
 
-	return json.NewEncoder(conn).Encode(data)
+	if err := json.NewEncoder(conn).Encode(data); err != nil {
+		return 0, err
+	}
+
+	var response RunCommandIndexResponse
+	if err := json.NewDecoder(conn).Decode(&response); err != nil {
+		return 0, err
+	}
+
+	return response.Index, nil
 }
 
 func (c *client) PreviousCommand() error {
@@ -72,14 +81,14 @@ func (c *client) PreviousCommand() error {
 	return json.NewEncoder(conn).Encode(data)
 }
 
-func (c *client) FetchCommand() string {
+func (c *client) CurrentCommand() string {
 	conn, err := net.Dial("unix", c.socketPath)
 	if err != nil {
 		return err.Error()
 	}
 
 	data := RunCommand{
-		Command: fetchCommand,
+		Command: currentCommand,
 	}
 
 	if err := json.NewEncoder(conn).Encode(data); err != nil {
