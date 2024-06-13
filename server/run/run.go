@@ -163,8 +163,9 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case nextCommand:
 		rs.mu.Lock()
 		rs.currIndex++
-		if rs.currIndex >= len(rs.commands) {
-			rs.currIndex = len(rs.commands) - 1
+		// NOTE: we intentionally allow currIndex to = len(rs.commands) that's how we know we're done
+		if rs.currIndex > len(rs.commands) {
+			rs.currIndex = len(rs.commands)
 		}
 		rs.mu.Unlock()
 	case previousCommand:
@@ -177,16 +178,16 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case currentCommand:
 		var response State
 		rs.mu.Lock()
+		defer rs.mu.Unlock()
 		if rs.currIndex >= len(rs.commands) {
-			rs.currIndex = len(rs.commands) - 1
-		}
-		if rs.currIndex < 0 {
-			rs.currIndex = 0
+			response.Command = ""
+			response.Index = rs.currIndex
+			json.NewEncoder(c).Encode(response)
+			return
 		}
 		cmd := rs.commands[rs.currIndex]
 		response.Command = cmd.Command
 		response.Index = rs.currIndex
-		rs.mu.Unlock()
 		rs.logger.Debug("fetching command", "command", cmd)
 		json.NewEncoder(c).Encode(response)
 	default:
