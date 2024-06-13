@@ -36,7 +36,7 @@ type State struct {
 	Index   int    `json:"index"`
 }
 
-const DefaultRunSocketPath = "/tmp/savvy-run-socket"
+const DefaultRunSocketPath = "/tmp/savvy-run.sock"
 
 var ErrStartingRunSession = errors.New("failed to start run session")
 
