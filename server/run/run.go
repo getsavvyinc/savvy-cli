@@ -66,7 +66,11 @@ func cleanupSocket(socketPath string) error {
 }
 
 func NewServerWithDefaultSocketPath(rb *savvy_client.Runbook, opts ...Option) (*RunServer, error) {
-	return newRunServer(DefaultRunSocketPath, rb, opts...)
+	return NewServerWithSocketPath(DefaultRunSocketPath, rb, opts...)
+}
+
+func NewServerWithSocketPath(socketPath string, rb *savvy_client.Runbook, opts ...Option) (*RunServer, error) {
+	return newRunServer(socketPath, rb, opts...)
 }
 
 var defaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
@@ -149,11 +153,9 @@ func (rs *RunServer) handleConnection(c net.Conn) {
 	}
 
 	cmd := data.Command
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
 	rs.handleCommand(cmd, c)
-}
-
-type RunCommandIndexResponse struct {
-	Index int `json:"index"`
 }
 
 func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
@@ -161,24 +163,19 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case shutdownCommand:
 		rs.Close()
 	case nextCommand:
-		rs.mu.Lock()
-		rs.currIndex++
+		rs.currIndex += 1
 		// NOTE: we intentionally allow currIndex to = len(rs.commands) that's how we know we're done
 		if rs.currIndex > len(rs.commands) {
 			rs.currIndex = len(rs.commands)
 		}
-		rs.mu.Unlock()
 	case previousCommand:
-		rs.mu.Lock()
 		rs.currIndex--
 		if rs.currIndex < 0 {
 			rs.currIndex = 0
 		}
-		rs.mu.Unlock()
+		return
 	case currentCommand:
 		var response State
-		rs.mu.Lock()
-		defer rs.mu.Unlock()
 		if rs.currIndex >= len(rs.commands) {
 			response.Command = ""
 			response.Index = rs.currIndex
@@ -197,6 +194,10 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 
 func (rs *RunServer) SocketPath() string {
 	return rs.socketPath
+}
+
+func (rs *RunServer) Commands() []*RunCommand {
+	return rs.commands
 }
 
 const (
