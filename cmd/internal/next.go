@@ -28,7 +28,7 @@ var nextCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if state.Command != executedCommand {
+		if state.CommandWithSetParams() != executedCommand {
 			fmt.Printf("%d", state.Index)
 			return
 		}
