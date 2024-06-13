@@ -39,10 +39,6 @@ function __savvy_run_pre_exec__() {
   local cmd=$1
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
     SAVVY_NEXT_STEP=$(savvy internal next --cmd="${cmd}")
-    echo "SAVVY_NEXT_STEP: ${SAVVY_NEXT_STEP}"
-    #if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
-      #SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
-    #fi
   fi
 }
 
@@ -68,7 +64,6 @@ function __savvy_run_pre_cmd__() {
 function __savvy_runbook_runner__() {
 
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-    #next_step_idx=${SAVVY_NEXT_STEP}
     run_cmd=$(savvy internal current)
     BUFFER="${run_cmd}"
     zle end-of-line  # Accept the line for editing
