@@ -2,10 +2,14 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/server/run"
+	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +19,36 @@ var subcommandCmd = &cobra.Command{
 	Short: "Prompt the user to set one ore parameters for their runbook",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		fields := ParamFields(ctx, params)
+		cl, err := run.NewDefaultClient(ctx)
+		if err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+
+		state, err := cl.CurrentState()
+		if err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
+		}
+
+		command := state.Command
+		params := extractParams(command)
+		// Exit early
+		if len(params) == 0 {
+			return
+		}
+
+		unsetParams := slice.Filter(params, func(p string) bool {
+			_, ok := state.Params[p]
+			return ok
+		})
+
+		if len(unsetParams) == 0 {
+			return
+		}
+
+		fields := ParamFields(ctx, unsetParams)
+
 		var fs []huh.Field
 		for _, param := range params {
 			fs = append(fs, fields[param])
@@ -28,18 +61,44 @@ var subcommandCmd = &cobra.Command{
 		param := huh.NewGroup(fs...).Title(title)
 
 		if err := huh.NewForm(param).Run(); err != nil {
-			// TODO: handle error
-			panic(err)
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
 		}
 
+		newParams := map[string]string{}
 		for _, f := range fs {
 			i, ok := f.(*huh.Input)
 			if !ok {
 				continue
 			}
-			fmt.Println(i.GetKey(), i.GetValue())
+			strVal, ok := i.GetValue().(string)
+			if !ok {
+				continue
+			}
+			newParams[i.GetKey()] = strVal
+		}
+
+		if err := cl.SetParams(newParams); err != nil {
+			display.ErrorWithSupportCTA(err)
+			os.Exit(1)
 		}
 	},
+}
+
+var paramRegex = regexp.MustCompile(`<([a-zA-Z0-9-_]+)>`)
+
+func extractParams(input string) []string {
+	// Define a regular expression to match parameters in the form of <alphanumericchars>
+	matches := paramRegex.FindAllStringSubmatch(input, -1)
+
+	// Extract the matched parameters
+	var params []string
+	for _, match := range matches {
+		if len(match) >= 1 {
+			params = append(params, match[0])
+		}
+	}
+	return params
 }
 
 var title string
