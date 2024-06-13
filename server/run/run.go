@@ -39,6 +39,10 @@ type State struct {
 	Params  map[string]string `json:"params"`
 }
 
+func (s *State) CommandWithSetParams() string {
+	return s.Command
+}
+
 const DefaultRunSocketPath = "/tmp/savvy-run.sock"
 
 var ErrStartingRunSession = errors.New("failed to start run session")
