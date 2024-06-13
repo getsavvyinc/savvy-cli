@@ -23,17 +23,20 @@ type RunServer struct {
 
 	currIndex int
 	commands  []*RunCommand
+	params    map[string]string
 
 	closed atomic.Bool
 }
 
 type RunCommand struct {
-	Command string `json:"command,omitempty"`
+	Command string            `json:"command,omitempty"`
+	Params  map[string]string `json:"params,omitempty"`
 }
 
 type State struct {
-	Command string `json:"command"`
-	Index   int    `json:"index"`
+	Command string            `json:"command"`
+	Index   int               `json:"index"`
+	Params  map[string]string `json:"params"`
 }
 
 const DefaultRunSocketPath = "/tmp/savvy-run.sock"
@@ -107,6 +110,7 @@ func newRunServer(socketPath string, rb *savvy_client.Runbook, opts ...Option) (
 		logger:     defaultLogger,
 		commands:   cmds,
 		listener:   listener,
+		params:     make(map[string]string),
 	}
 
 	for _, opt := range opts {
@@ -151,11 +155,11 @@ func (rs *RunServer) handleConnection(c net.Conn) {
 		return
 	}
 
-	cmd := data.Command
-	rs.handleCommand(cmd, c)
+	rs.handleCommand(data, c)
 }
 
-func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
+func (rs *RunServer) handleCommand(runCommand RunCommand, c net.Conn) {
+	cmd := runCommand.Command
 	switch cmd {
 	case shutdownCommand:
 		rs.Close()
@@ -167,7 +171,8 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 		}
 	case currentCommand:
 		response := State{
-			Index: rs.currIndex,
+			Index:  rs.currIndex,
+			Params: rs.params,
 		}
 		if rs.currIndex < len(rs.commands) {
 			cmd := rs.commands[rs.currIndex]
@@ -175,6 +180,13 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 			rs.logger.Debug("fetching command", "command", cmd)
 		}
 		json.NewEncoder(c).Encode(response)
+	case paramCommand:
+		params := runCommand.Params
+		for k, v := range params {
+			if _, ok := rs.params[k]; !ok {
+				rs.params[k] = v
+			}
+		}
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
 	}
@@ -193,6 +205,7 @@ const (
 	nextCommand     = "savvy internal next"
 	previousCommand = "savvy internal previous"
 	currentCommand  = "savvy internal current"
+	paramCommand    = "savvy internal param"
 )
 
 func (rc *RunCommand) IsShutdown() bool {
