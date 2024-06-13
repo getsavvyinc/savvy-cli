@@ -77,7 +77,7 @@ var writeCmd = &cobra.Command{
 			if fileExists(filepath.Join(dirPath, filename)) {
 				var confirmation bool
 				confirmOverwrite := huh.NewConfirm().Title("File already exists").Description("Overwrite existing file?").Value(&confirmation)
-				if err := huh.NewForm(huh.NewGroup(confirmOverwrite)).Run(); err != nil {
+				if err := huh.NewForm(huh.NewGroup(confirmOverwrite)).WithTheme(huh.ThemeDracula()).Run(); err != nil {
 					display.FatalErrWithSupportCTA(err)
 					return
 				}
