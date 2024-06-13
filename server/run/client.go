@@ -13,6 +13,7 @@ type Client interface {
 	NextCommand() error
 	PreviousCommand() error
 	CurrentState() (*State, error)
+	SetParams(params map[string]string) error
 }
 
 func NewDefaultClient(ctx context.Context) (Client, error) {
@@ -79,6 +80,24 @@ func (c *client) PreviousCommand() error {
 	}
 
 	return json.NewEncoder(conn).Encode(data)
+}
+
+func (c *client) SetParams(params map[string]string) error {
+	conn, err := net.Dial("unix", c.socketPath)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	data := RunCommand{
+		Command: paramCommand,
+		Params:  params,
+	}
+
+	if err := json.NewEncoder(conn).Encode(data); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *client) CurrentState() (*State, error) {
