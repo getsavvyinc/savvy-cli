@@ -160,9 +160,7 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case shutdownCommand:
 		rs.Close()
 	case nextCommand:
-		rs.logger.Info("before inc: ", "currIndex", rs.currIndex)
 		rs.currIndex += 1
-		rs.logger.Info("after inc: ", "currIndex", rs.currIndex)
 		// NOTE: we intentionally allow currIndex to = len(rs.commands) that's how we know we're done
 		if rs.currIndex > len(rs.commands) {
 			rs.currIndex = len(rs.commands)
