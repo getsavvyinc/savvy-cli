@@ -3,11 +3,11 @@ package internal
 import (
 	"context"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/param"
 	"github.com/getsavvyinc/savvy-cli/server/run"
 	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/spf13/cobra"
@@ -32,7 +32,7 @@ var subcommandCmd = &cobra.Command{
 		}
 
 		command := state.Command
-		params := extractParams(command)
+		params := param.Extract(command)
 		// Exit early
 		if len(params) == 0 {
 			return
@@ -83,22 +83,6 @@ var subcommandCmd = &cobra.Command{
 			os.Exit(1)
 		}
 	},
-}
-
-var paramRegex = regexp.MustCompile(`<([a-zA-Z0-9-_]+)>`)
-
-func extractParams(input string) []string {
-	// Define a regular expression to match parameters in the form of <alphanumericchars>
-	matches := paramRegex.FindAllStringSubmatch(input, -1)
-
-	// Extract the matched parameters
-	var params []string
-	for _, match := range matches {
-		if len(match) >= 1 {
-			params = append(params, match[0])
-		}
-	}
-	return params
 }
 
 var title string

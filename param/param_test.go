@@ -1,8 +1,10 @@
-package internal
+package param_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/getsavvyinc/savvy-cli/param"
 )
 
 func TestExtractParams(t *testing.T) {
@@ -40,7 +42,7 @@ func TestExtractParams(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := extractParams(tc.input)
+			actual := param.Extract(tc.input)
 			if !reflect.DeepEqual(actual, tc.expected) {
 				t.Errorf("expected %v; got %v", tc.expected, actual)
 			}
