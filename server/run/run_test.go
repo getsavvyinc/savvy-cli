@@ -73,6 +73,47 @@ func TestRunServer(t *testing.T) {
 		assert.NotNil(t, st)
 		assert.Zero(t, st.Index)
 		assert.Len(t, st.Params, 0)
+		t.Run("TestSetParam", func(t *testing.T) {
+			assert.NoError(t, cl.SetParams(map[string]string{"<param>": "value"}))
+			st, err := cl.CurrentState()
+			assert.NoError(t, err)
+			assert.NotNil(t, st)
+			assert.Zero(t, st.Index)
+			assert.Len(t, st.Params, 1)
+			assert.Equal(t, "value", st.Params["<param>"])
+			t.Run("TestNoOverwriteParam", func(t *testing.T) {
+				assert.NoError(t, cl.SetParams(map[string]string{"<param>": "anotherValue"}))
+				st, err := cl.CurrentState()
+				assert.NoError(t, err)
+				assert.NotNil(t, st)
+				assert.Zero(t, st.Index)
+				assert.Len(t, st.Params, 1)
+				assert.Equal(t, "value", st.Params["<param>"])
+			})
+			t.Run("TestParamStateIsMaintained", func(t *testing.T) {
+				t.Run("WithNextCommand", func(t *testing.T) {
+					assert.NoError(t, cl.NextCommand())
+					st, err := cl.CurrentState()
+					assert.NoError(t, err)
+					assert.NotNil(t, st)
+					assert.Equal(t, 1, st.Index)
+					assert.Equal(t, "idx_1", st.Command)
+					assert.Len(t, st.Params, 1)
+					assert.Equal(t, "value", st.Params["<param>"])
+				})
+				t.Run("WithMoreParamsAdded", func(t *testing.T) {
+					assert.NoError(t, cl.SetParams(map[string]string{"<param2>": "value2"}))
+					st, err := cl.CurrentState()
+					assert.NoError(t, err)
+					assert.NotNil(t, st)
+					assert.Equal(t, st.Index, 1)
+					assert.Len(t, st.Params, 2)
+					assert.Equal(t, "value", st.Params["<param>"])
+					assert.Equal(t, "value2", st.Params["<param2>"])
+				})
+			})
+		})
+
 	})
 }
 
