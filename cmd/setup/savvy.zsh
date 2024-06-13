@@ -59,6 +59,10 @@ function __savvy_run_pre_cmd__() {
   else 
     RPS1="${original_rps1}"
   fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS}" ]] ; then
+    savvy internal set-param
+  fi
 }
 
 function __savvy_runbook_runner__() {
