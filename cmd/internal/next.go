@@ -38,16 +38,12 @@ var nextCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		state, err = cl.CurrentState()
+		updated, err := cl.CurrentState()
 		if err != nil {
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
-
-		// Required as arrays are 0-indexed
-		idx := state.Index + 1
-
-		fmt.Printf("%d", idx)
+		fmt.Printf("%d", updated.Index)
 	},
 }
 
