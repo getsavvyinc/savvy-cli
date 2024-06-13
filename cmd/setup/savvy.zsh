@@ -51,13 +51,15 @@ function __savvy_run_pre_cmd__() {
     PS1="${orignal_ps1}"$'(%F{red}savvy run %f'" ${SAVVY_RUN_CURR})"" "
   fi
 
-  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -gt "${#SAVVY_COMMANDS}" ]] ; then
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -ge "${#SAVVY_COMMANDS}" ]] ; then
     # space at the end is important
     PS1="${orignal_ps1}"$'%F{green} done%f \U1f60e '
   fi
 
-  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
-    RPS1="${original_rps1} %F{green}(${SAVVY_NEXT_STEP}/${#SAVVY_COMMANDS})"
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
+    # translate 0-based index to 1-based index
+    num=$((SAVVY_NEXT_STEP+1))
+    RPS1="${original_rps1} %F{green}(${num}/${#SAVVY_COMMANDS})"
   else 
     RPS1="${original_rps1}"
   fi
@@ -83,7 +85,7 @@ original_rps1=$RPS1
 
 SAVVY_COMMANDS=()
 SAVVY_RUN_CURR=""
-SAVVY_NEXT_STEP=1
+SAVVY_NEXT_STEP=0
 if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
   zle -N zle-line-init __savvy_runbook_runner__
   # add-zle-hook-widget line-init __savvy_runbook_runner__

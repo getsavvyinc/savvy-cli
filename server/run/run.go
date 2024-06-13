@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"sync"
 	"sync/atomic"
 
 	savvy_client "github.com/getsavvyinc/savvy-cli/client"
@@ -22,7 +21,6 @@ type RunServer struct {
 	logger     *slog.Logger
 	listener   net.Listener
 
-	mu        sync.Mutex
 	currIndex int
 	commands  []*RunCommand
 
@@ -138,7 +136,8 @@ func (rs *RunServer) ListenAndServe() {
 		}
 
 		// Handle the connection
-		go rs.handleConnection(conn)
+		// Intentionally single threaded
+		rs.handleConnection(conn)
 	}
 }
 
@@ -153,8 +152,6 @@ func (rs *RunServer) handleConnection(c net.Conn) {
 	}
 
 	cmd := data.Command
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
 	rs.handleCommand(cmd, c)
 }
 
@@ -163,29 +160,22 @@ func (rs *RunServer) handleCommand(cmd string, c net.Conn) {
 	case shutdownCommand:
 		rs.Close()
 	case nextCommand:
+		rs.logger.Info("before inc: ", "currIndex", rs.currIndex)
 		rs.currIndex += 1
+		rs.logger.Info("after inc: ", "currIndex", rs.currIndex)
 		// NOTE: we intentionally allow currIndex to = len(rs.commands) that's how we know we're done
 		if rs.currIndex > len(rs.commands) {
 			rs.currIndex = len(rs.commands)
 		}
-	case previousCommand:
-		rs.currIndex--
-		if rs.currIndex < 0 {
-			rs.currIndex = 0
-		}
-		return
 	case currentCommand:
-		var response State
-		if rs.currIndex >= len(rs.commands) {
-			response.Command = ""
-			response.Index = rs.currIndex
-			json.NewEncoder(c).Encode(response)
-			return
+		response := State{
+			Index: rs.currIndex,
 		}
-		cmd := rs.commands[rs.currIndex]
-		response.Command = cmd.Command
-		response.Index = rs.currIndex
-		rs.logger.Debug("fetching command", "command", cmd)
+		if rs.currIndex < len(rs.commands) {
+			cmd := rs.commands[rs.currIndex]
+			response.Command = cmd.Command
+			rs.logger.Debug("fetching command", "command", cmd)
+		}
 		json.NewEncoder(c).Encode(response)
 	default:
 		rs.logger.Debug("unknown command", "command", cmd)
