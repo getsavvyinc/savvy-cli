@@ -443,8 +443,8 @@ SAVVY_NEXT_STEP=0
 # Set up a function to run the next command in the runbook when the user presses C-n
 savvy_runbook_runner() {
   if [[ "${SAVVY_CONTEXT}" == "run"  && "${SAVVY_NEXT_STEP}" -le "${#SAVVY_COMMANDS[@]}" ]] ; then
-    next_step_idx=${SAVVY_NEXT_STEP}
-    READLINE_LINE="${SAVVY_COMMANDS[next_step_idx]}"
+    next_step=$(savvy internal current)
+    READLINE_LINE="${next_step}"
     READLINE_POINT=${#READLINE_LINE}
   fi
 }
@@ -454,9 +454,7 @@ savvy_run_pre_exec() {
   # we want the command as it was typed in.
   local cmd=$1
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS[@]}" ]] ; then
-    if [[ "${cmd}" == "${SAVVY_COMMANDS[SAVVY_NEXT_STEP]}" ]] ; then
-      SAVVY_NEXT_STEP=$((SAVVY_NEXT_STEP+1))
-    fi
+    SAVVY_NEXT_STEP=$(savvy internal next --cmd="${cmd}")
   fi
 }
 
@@ -467,6 +465,7 @@ PROMPT_RED="\[$(tput setaf 1)\]"
 PROMPT_RESET="\[$(tput sgr0)\]"
 
 savvy_run_pre_cmd() {
+  # transorm 0 based index to 1 based index
   local display_step=$((SAVVY_NEXT_STEP+1))
   local size=${#SAVVY_COMMANDS[@]}
 
