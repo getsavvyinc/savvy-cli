@@ -45,6 +45,10 @@ func (c *client) SendShutdown() error {
 	return json.NewEncoder(conn).Encode(data)
 }
 
+// NOTE: If we don't wait for the response and if the server has go-routines for each connection, we might have race conditions.
+// e.g: c.NextCommand() and c.CurrentState() might be called sequentially, but the server might schedule the go-routines such that c.CurrentState() completes before c.NextCommand()
+// Then we might get the wrong state.
+// To avoid this, for now, the server is single threaded.
 func (c *client) NextCommand() error {
 	conn, err := net.Dial("unix", c.socketPath)
 	if err != nil {
