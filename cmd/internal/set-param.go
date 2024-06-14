@@ -40,6 +40,8 @@ var subcommandCmd = &cobra.Command{
 		fields := ParamFields(ctx, params)
 
 		var fs []huh.Field
+		note := huh.NewNote().Title(command).Description("Set Parameteres")
+		fs = append(fs, note)
 		for _, param := range params {
 			fs = append(fs, fields[param])
 		}
