@@ -48,7 +48,7 @@ var subcommandCmd = &cobra.Command{
 			return
 		}
 
-		paramGroup := huh.NewGroup(fs...).Title(command)
+		paramGroup := huh.NewGroup(fs...).Title(command).WithTheme(huh.ThemeDracula())
 
 		if err := huh.NewForm(paramGroup).Run(); err != nil {
 			display.ErrorWithSupportCTA(err)
