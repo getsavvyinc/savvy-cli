@@ -38,6 +38,11 @@ func TestExtractParams(t *testing.T) {
 			input:    `script --id="<id-1>" --name="<name_2>"`,
 			expected: []string{"<id-1>", "<name_2>"},
 		},
+		{
+			name:     "dedupe params",
+			input:    `script --id="<id-1>" --name="<id-1>"`,
+			expected: []string{"<id-1>"},
+		},
 	}
 
 	for _, tc := range testCases {
