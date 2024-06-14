@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	savvy_client "github.com/getsavvyinc/savvy-cli/client"
@@ -40,7 +41,15 @@ type State struct {
 }
 
 func (s *State) CommandWithSetParams() string {
-	return s.Command
+	if s.Params == nil || len(s.Params) == 0 {
+		return s.Command
+	}
+
+	cmd := s.Command
+	for k, v := range s.Params {
+		cmd = strings.ReplaceAll(cmd, k, v)
+	}
+	return cmd
 }
 
 const DefaultRunSocketPath = "/tmp/savvy-run.sock"

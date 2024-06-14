@@ -135,3 +135,63 @@ func newTestServerWithClient(t *testing.T, rb *savvy_client.Runbook) (*RunServer
 	go srv.ListenAndServe()
 	return srv, cl, srv.Close
 }
+
+func TestCommandWithSetParams(t *testing.T) {
+	testCases := []struct {
+		name     string
+		state    *State
+		expected string
+	}{
+		{
+			name: "no params",
+			state: &State{
+				Command: "echo hello",
+				Index:   0,
+				Params:  nil,
+			},
+			expected: "echo hello",
+		},
+		{
+			name: "no params in command",
+			state: &State{
+				Command: "echo hello",
+				Index:   0,
+				Params:  map[string]string{"<param>": "world"},
+			},
+			expected: "echo hello",
+		},
+		{
+			name: "single param",
+			state: &State{
+				Command: "echo <param>",
+				Index:   0,
+				Params:  map[string]string{"<param>": "world"},
+			},
+			expected: "echo world",
+		},
+		{
+			name: "multiple instance of same param",
+			state: &State{
+				Command: "echo <param> <param>",
+				Index:   0,
+				Params:  map[string]string{"<param>": "world"},
+			},
+			expected: "echo world world",
+		},
+		{
+			name: "multiple params",
+			state: &State{
+				Command: "echo <param1> <param2>",
+				Index:   0,
+				Params:  map[string]string{"<param1>": "hello", "<param2>": "world"},
+			},
+			expected: "echo hello world",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.state.CommandWithSetParams())
+		})
+	}
+}
