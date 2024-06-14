@@ -477,6 +477,10 @@ savvy_run_pre_cmd() {
     # space at the end is important
     PS1="${orignal_ps1} ${PROMPT_GREEN}done${PROMPT_RESET}"$' \U1f60e '
   fi
+
+  if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${size}" ]] ; then
+    savvy internal set-param
+  fi
 }
 
 
