@@ -37,14 +37,14 @@ func TestRunServer(t *testing.T) {
 		st, err := cl.CurrentState()
 		assert.NoError(t, err)
 		assert.NotNil(t, st)
-		assert.Equal(t, "idx_0", st.Command)
+		assert.Equal(t, "idx_0", st.CommandWithSetParams())
 
 		t.Run("TestCurrentCommandIdempotent", func(t *testing.T) {
 			// test current command
 			st, err := cl.CurrentState()
 			assert.NoError(t, err)
 			assert.NotNil(t, st)
-			assert.Equal(t, "idx_0", st.Command)
+			assert.Equal(t, "idx_0", st.CommandWithSetParams())
 		})
 	})
 	t.Run("TestNextCommand", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestRunServer(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, st)
 		assert.Equal(t, 1, st.Index)
-		assert.Equal(t, "idx_1", st.Command)
+		assert.Equal(t, "idx_1", st.CommandWithSetParams())
 	})
 	t.Run("TestParam", func(t *testing.T) {
 		_, cl, cleanup := newTestServerWithClient(t, rb)
@@ -97,7 +97,7 @@ func TestRunServer(t *testing.T) {
 					assert.NoError(t, err)
 					assert.NotNil(t, st)
 					assert.Equal(t, 1, st.Index)
-					assert.Equal(t, "idx_1", st.Command)
+					assert.Equal(t, "idx_1", st.CommandWithSetParams())
 					assert.Len(t, st.Params, 1)
 					assert.Equal(t, "value", st.Params["<param>"])
 				})
