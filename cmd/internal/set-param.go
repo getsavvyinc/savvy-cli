@@ -48,7 +48,7 @@ var subcommandCmd = &cobra.Command{
 			return
 		}
 
-		paramGroup := huh.NewGroup(fs...).Title(title)
+		paramGroup := huh.NewGroup(fs...).Title(command)
 
 		if err := huh.NewForm(paramGroup).Run(); err != nil {
 			display.ErrorWithSupportCTA(err)
@@ -80,11 +80,6 @@ var params []string
 
 func init() {
 	InternalCmd.AddCommand(subcommandCmd)
-
-	// title flag
-	subcommandCmd.Flags().StringVarP(&title, "title", "t", "Set Params", "form title")
-	// params flag. This is a slice of strings
-	subcommandCmd.Flags().StringSliceVarP(&params, "params", "p", []string{}, "form params")
 }
 
 func ParamFields(ctx context.Context, params []string) map[string]huh.Field {
