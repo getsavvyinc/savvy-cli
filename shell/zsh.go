@@ -229,6 +229,7 @@ fi
 
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop running."
+echo
 `
 
 func (z *zsh) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
