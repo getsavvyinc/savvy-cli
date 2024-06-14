@@ -26,7 +26,7 @@ var currentCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("%s", state.Command)
+		fmt.Printf("%s", state.CommandWithSetParams())
 	},
 }
 
