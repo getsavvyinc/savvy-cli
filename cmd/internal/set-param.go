@@ -9,7 +9,6 @@ import (
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/param"
 	"github.com/getsavvyinc/savvy-cli/server/run"
-	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/spf13/cobra"
 )
 
@@ -31,23 +30,14 @@ var subcommandCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		command := state.Command
+		command := state.CommandWithSetParams()
 		params := param.Extract(command)
 		// Exit early
 		if len(params) == 0 {
 			return
 		}
 
-		unsetParams := slice.Filter(params, func(p string) bool {
-			_, ok := state.Params[p]
-			return ok
-		})
-
-		if len(unsetParams) == 0 {
-			return
-		}
-
-		fields := ParamFields(ctx, unsetParams)
+		fields := ParamFields(ctx, params)
 
 		var fs []huh.Field
 		for _, param := range params {
@@ -58,9 +48,9 @@ var subcommandCmd = &cobra.Command{
 			return
 		}
 
-		param := huh.NewGroup(fs...).Title(title)
+		paramGroup := huh.NewGroup(fs...).Title(title)
 
-		if err := huh.NewForm(param).Run(); err != nil {
+		if err := huh.NewForm(paramGroup).Run(); err != nil {
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
