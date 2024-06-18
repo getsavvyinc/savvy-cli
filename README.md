@@ -109,31 +109,23 @@ rm -rf ~/.config/savvy
 
 ```
 
-3. How do I fix the "concurrent recording sessions are not yet supported" error?
-
-This will be fixed soon. In the meantime you can fix this error by running:
-
-```sh
-rm -rf /tmp/savvy-socket
-```
-
-4. How do I upgrade Savvy?
+3. How do I upgrade Savvy?
 
 Run `savvy upgrade` to get the latest version of the CLI.
 
-5. How do I login?
+4. How do I login?
 
 Run `savvy login` to start the login flow.
 
-6. What shells does Savvy support?
+5. What shells does Savvy support?
 
 Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
 
-7. Does Savvy work on Windows?
+6. Does Savvy work on Windows?
 
 Not yet.
 
-8. I'm stuck. How do I get help?
+7. I'm stuck. How do I get help?
 
 If you need assistance or have questions:
 
