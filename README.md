@@ -4,6 +4,7 @@
   | <a href="https://getsavvy.so/discord">Discord</a> |
   <a href="https://twitter.com/savvyoncall">Twitter</a> |
   <a href="https://www.getsavvy.so/">Website</a> |
+  <a href="https://docs.getsavvy.so">Docs</a> |
 </h3>
 
 Savvy is the easiest way to create, share and run runbooks from your terminal.
