@@ -475,7 +475,7 @@ savvy_run_pre_cmd() {
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -ge "${size}" ]] ; then
     # space at the end is important
-    PS1="${orignal_ps1} ${PROMPT_GREEN}done${PROMPT_RESET}"$' \U1f60e '
+    PS1="${orignal_ps1}\n(${PROMPT_GREEN}done${PROMPT_RESET}"$' \U1f60e '"${PROMPT_BOLD}${SAVVY_RUN_CURR}${PROMPT_RESET})${PROMPT_GREEN}[exit/ctrl+d to exit]${PROMPT_RESET} "
   fi
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${size}" ]] ; then
