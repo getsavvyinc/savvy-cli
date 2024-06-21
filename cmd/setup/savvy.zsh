@@ -49,16 +49,16 @@ function __savvy_run_pre_cmd__() {
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -ge "${#SAVVY_COMMANDS}" ]] ; then
     # space at the end is important
-    PS1="${orignal_ps1}"$'%F{green} done%f \U1f60e '
+    PS1="${orignal_ps1}($SAVVY_RUN_CURR "$'%F{green} done%f \U1f60e)(%F{red}ctrl-d/exit to exit%f)'" "
   fi
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS}" && "${#SAVVY_COMMANDS}" -gt 0 ]] ; then
     # translate 0-based index to 1-based index
     num=$((SAVVY_NEXT_STEP+1))
     RPS1="${original_rps1} %F{green}(${num}/${#SAVVY_COMMANDS})"
-  else 
+  else
     RPS1="${original_rps1}"
-  fi
+  fi 
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -lt "${#SAVVY_COMMANDS}" ]] ; then
     savvy internal set-param
