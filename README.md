@@ -75,6 +75,19 @@ Savvy automatically fills in the next command to execute. Just press enter to ru
 
 ![savvy run](demos/savvy-run.gif)
 
+## Runbook Parameterization
+
+Parameterizing runbooks is very easy with Savvy.
+
+Replace hardcoded values with `<parameters>` from the dashboard for any step. Savvy takes care of the rest.
+
+`savvy run` automatically detects any `<parameters>` and prompts users to fill in the value only once per parameter.
+
+![set param dashboard][demos/savvy-param-dashboard.jpeg]
+![set param runtime][demos/savvy-param-run.jpeg]
+
+
+Check our [docs for more details on runbook parameterization](https://docs.getsavvy.so/guides/parameterize_runbooks/)
 
 ## Savvy Explain
 
