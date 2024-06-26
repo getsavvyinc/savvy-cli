@@ -83,8 +83,8 @@ Replace hardcoded values with `<parameters>` from the dashboard for any step. Sa
 
 `savvy run` automatically detects any `<parameters>` and prompts users to fill in the value only once per parameter.
 
-![set param dashboard][demos/savvy-param-dashboard.jpeg]
-![set param runtime][demos/savvy-param-run.jpeg]
+![set param dashboard](demos/savvy-param-dashboard.jpeg)
+![set param runtime](demos/savvy-param-run.jpeg)
 
 
 Check our [docs for more details on runbook parameterization](https://docs.getsavvy.so/guides/parameterize_runbooks/)
