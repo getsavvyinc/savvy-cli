@@ -194,27 +194,50 @@ func (z *zsh) TailHistory(ctx context.Context) ([]string, error) {
 	}
 	defer rc.Close()
 
-	var lines []string
+	var result []string
+	var currentCommand strings.Builder
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line != "" {
-			lines = append(lines, line)
+		if strings.HasPrefix(line, ": ") {
+			// New command starts
+			if currentCommand.Len() > 0 {
+				result = append(result, strings.TrimSpace(currentCommand.String()))
+				currentCommand.Reset()
+			}
+			// Remove timestamp and semicolon
+			parts := strings.SplitN(line, ";", 2)
+			if len(parts) > 1 {
+				currentCommand.WriteString(strings.TrimSpace(parts[1]))
+			} else {
+				result = append(result, parts[:]...)
+			}
+		} else {
+			// Continuation of a multiline command
+			if strings.HasSuffix(currentCommand.String(), "\\\\") {
+				// If the command so far ends with an escaped backslash, we know that there was a newline that the scanner removed.
+				// So we remove the escaped backslash, so the command is runnable ( this is a zsh specific behavior) and ctrl-r does something similar as well.
+				// We also add the newline back at the end of the branch and keep goin.
+				escapedCommand := currentCommand.String()[0 : len(currentCommand.String())-1]
+				currentCommand.Reset()
+				currentCommand.WriteString(escapedCommand)
+			}
+			currentCommand.WriteString("\n" + line)
 		}
+	}
+
+	// Add the last command if there is one
+	if currentCommand.Len() > 0 {
+		result = append(result, strings.TrimSpace(currentCommand.String()))
+	}
+
+	if err := scanner.Err(); err != nil {
+		err = fmt.Errorf("error reading history file: %w", err)
+		return nil, err
 	}
 	// reverse the result
-	slices.Reverse(lines)
-	// extract the command from the history
+	slices.Reverse(result)
 	// TODO: handle more history formats for zsh here.
-	var result []string
-	for _, line := range lines {
-		parts := strings.SplitN(line, ";", 2)
-		if len(parts) > 1 {
-			result = append(result, parts[1])
-		} else {
-			result = append(result, parts[:]...)
-		}
-	}
 	return result, nil
 }
 
