@@ -104,7 +104,7 @@ func (m Model) Init() tea.Cmd {
 
 // TODO: handle errors by passing in a better error message
 func OpenBrowser(url string, onComplete tea.Msg, onErr tea.Msg) tea.Cmd {
-	cmd := browser.Open(url)
+	cmd := browser.OpenCmd(url)
 	if cmd == nil {
 		return func() tea.Msg {
 			return onErr
