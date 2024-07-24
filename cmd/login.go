@@ -85,16 +85,8 @@ func runLoginCmd(cmd *cobra.Command, args []string) {
 }
 
 func runLogin() {
-	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
-	display.Info(fmt.Sprintf("Opening your default browser to %s", savvyLoginURL))
-	browserCmd := browser.OpenCmd(savvyLoginURL)
-	if browserCmd == nil {
-		display.Error(browserOpenError)
-	} else {
-		if err := browserCmd.Start(); err != nil {
-			display.Error(browserOpenError)
-		}
-	}
+	browser.Open(savvyLoginURL)
+
 	p := tea.NewProgram(initialModel())
 
 	m, err := p.Run()
