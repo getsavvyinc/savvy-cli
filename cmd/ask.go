@@ -67,8 +67,6 @@ var askCmd = &cobra.Command{
 			// be defensive: users can pass questions as one string or multiple strings
 			question = strings.Join(args[:], " ")
 		}
-		var selectedCommand string
-		var refine bool
 
 		params := &AskParams{
 			goos:     goos,
@@ -77,23 +75,34 @@ var askCmd = &cobra.Command{
 			refine:   false,
 		}
 
+		var state *runAskTerminalState
 		for {
-			selectedCommand, refine = runAsk(ctx, cl, question, params)
-			if !refine {
+			state = runAsk(ctx, cl, question, params)
+			if state == nil || !state.refinePrompt {
 				break
 			}
 			params.refine = true
 			question = ""
 		}
 
-		if selectedCommand == "" {
-			return
+		selectedCommand := state.selectedCommand
+		if selectedCommand != "" {
+			if err := clipboard.WriteAll(selectedCommand); err != nil {
+				display.Info(selectedCommand)
+				return
+			}
+			display.Info(fmt.Sprintf("Copied to clipboard: %s", selectedCommand))
 		}
-		if err := clipboard.WriteAll(selectedCommand); err != nil {
-			display.Info(selectedCommand)
-			return
+
+		if state.createRunbook {
+			result, err := cl.SaveRunbook(ctx, state.runbook)
+			if err != nil && errors.Is(err, client.ErrCannotUseGuest) {
+				runLogin(cmd, args)
+			}
+			// login if required.
+			// then create Runbook
+			// display success Message
 		}
-		display.Info(fmt.Sprintf("Copied to clipboard: %s", selectedCommand))
 	},
 }
 
@@ -105,7 +114,15 @@ type AskParams struct {
 	previousQuestions []string
 }
 
-func runAsk(ctx context.Context, cl client.Client, question string, askParams *AskParams) (string, bool) {
+type runAskTerminalState struct {
+	selectedCommand string
+	refinePrompt    bool
+	createRunbook   bool
+	execute         bool
+	runbook         *client.Runbook
+}
+
+func runAsk(ctx context.Context, cl client.Client, question string, askParams *AskParams) *runAskTerminalState {
 	logger := loggerFromCtx(ctx).With("command", "ask", "method", "runAsk")
 	if len(question) == 0 {
 		// interactive mode
@@ -123,7 +140,7 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 
 	if len(question) == 0 {
 		display.Info("Exiting...")
-		return "", false
+		return nil
 	}
 
 	qi := client.QuestionInfo{
@@ -175,21 +192,29 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
 		os.Exit(1)
 	}
-	if m, ok := result.(*askCommands); ok {
-		selectedCommand := m.l.SelectedCommand()
-		refinePrompt := m.refinePrompt
 
-		return selectedCommand, refinePrompt
+	if m, ok := result.(*askCommands); ok {
+		return &runAskTerminalState{
+			selectedCommand: m.l.SelectedCommand(),
+			refinePrompt:    m.refinePrompt,
+			createRunbook:   m.saveAsRunbook,
+			execute:         m.executeCommands,
+			runbook:         runbook,
+		}
 	}
-	return "", false
+	return nil
 }
 
 type askCommands struct {
-	l            list.Model
-	refinePrompt bool
+	l               list.Model
+	refinePrompt    bool
+	saveAsRunbook   bool
+	executeCommands bool
 }
 
 var RefinePromptHelpBinding = list.NewHelpBinding("p", "refine prompt")
+var SaveAsRunbookHelpBinding = list.NewHelpBinding("s", "save as runbook")
+var ExecuteCommandsHelpBinding = list.NewHelpBinding("x", "execute commands")
 
 func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	if runbook == nil {
@@ -197,7 +222,8 @@ func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	}
 
 	listItems := toItems(runbook.Steps)
-	l := list.NewModelWithDelegate(listItems, runbook.Title, runbook.URL, list.NewAskDelegate(), RefinePromptHelpBinding)
+
+	l := list.NewModelWithDelegate(listItems, runbook.Title, runbook.URL, list.NewAskDelegate(), RefinePromptHelpBinding, SaveAsRunbookHelpBinding, ExecuteCommandsHelpBinding)
 	return &askCommands{l: l}, nil
 }
 func (dc *askCommands) Init() tea.Cmd {
@@ -210,6 +236,12 @@ func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 	case list.RefinePromptMsg:
 		dc.refinePrompt = true
+		return dc, tea.Quit
+	case list.SaveAsRunbookMsg:
+		dc.saveAsRunbook = true
+		return dc, tea.Quit
+	case list.ExecuteCommandsMsg:
+		dc.executeCommands = true
 		return dc, tea.Quit
 	}
 
