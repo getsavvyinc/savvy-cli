@@ -1,8 +1,11 @@
 package browser
 
 import (
+	"fmt"
 	"os/exec"
 	"runtime"
+
+	"github.com/getsavvyinc/savvy-cli/display"
 )
 
 func OpenCmd(url string) *exec.Cmd {
@@ -16,4 +19,19 @@ func OpenCmd(url string) *exec.Cmd {
 	default:
 	}
 	return nil
+}
+
+func Open(url string) {
+	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", url)
+
+	cmd := OpenCmd(url)
+	if cmd == nil {
+		display.Error(browserOpenError)
+		return
+	}
+
+	if err := cmd.Start(); err != nil {
+		display.Error(browserOpenError)
+		return
+	}
 }
