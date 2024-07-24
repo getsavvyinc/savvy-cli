@@ -5,7 +5,7 @@ import (
 	"runtime"
 )
 
-func Open(url string) *exec.Cmd {
+func OpenCmd(url string) *exec.Cmd {
 	switch runtime.GOOS {
 	case "linux":
 		return exec.Command("xdg-open", url)
