@@ -23,6 +23,7 @@ type Client interface {
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
 	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
+	SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
@@ -197,6 +198,29 @@ func (c *client) GenerateRunbookV2(ctx context.Context, commands []RecordedComma
 		return nil, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiURL("/api/v1/generate_runbookv2"), bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var generatedRunbook GeneratedRunbook
+	if err := json.NewDecoder(resp.Body).Decode(&generatedRunbook); err != nil {
+		return nil, err
+	}
+	return &generatedRunbook, nil
+}
+
+func (c *client) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
+	cl := c.cl
+	bs, err := json.Marshal(runbook)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiURL("/api/v1/runbook"), bytes.NewReader(bs))
 	if err != nil {
 		return nil, err
 	}

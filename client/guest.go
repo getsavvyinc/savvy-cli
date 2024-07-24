@@ -116,3 +116,7 @@ func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, erro
 func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
 	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "get step content")
 }
+
+func (g *guest) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
+	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "save runbook")
+}

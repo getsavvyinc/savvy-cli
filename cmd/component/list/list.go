@@ -125,6 +125,8 @@ func OpenBrowser(url string, onComplete tea.Msg, onErr tea.Msg) tea.Cmd {
 type NopMsg struct{}
 
 type RefinePromptMsg struct{}
+type SaveAsRunbookMsg struct{}
+type ExecuteCommandsMsg struct{}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -140,6 +142,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.String() == "p" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "p") {
 			return m, func() tea.Msg { return RefinePromptMsg{} }
+		}
+
+		if msg.String() == "s" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "s") {
+			return m, func() tea.Msg { return SaveAsRunbookMsg{} }
+		}
+
+		if msg.String() == "x" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "x") {
+			return m, func() tea.Msg { return ExecuteCommandsMsg{} }
 		}
 
 	case tea.WindowSizeMsg:
