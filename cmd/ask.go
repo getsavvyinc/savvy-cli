@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
@@ -96,14 +97,39 @@ var askCmd = &cobra.Command{
 
 		if state.createRunbook {
 			result, err := cl.SaveRunbook(ctx, state.runbook)
-			if err != nil && errors.Is(err, client.ErrCannotUseGuest) {
-				runLogin(cmd, args)
+			if err != nil {
+				if errors.Is(err, client.ErrCannotUseGuest) {
+					loginAndCreateRunbook(ctx, cl, state.runbook)
+					return
+				}
+				display.Error(err)
+				return
 			}
-			// login if required.
-			// then create Runbook
-			// display success Message
+			display.Success("Runbook created successfully!")
+			browser.Open(result.URL)
+			return
 		}
 	},
+}
+
+func loginAndCreateRunbook(ctx context.Context, cl client.Client, runbook *client.Runbook) {
+	runLogin()
+	// then create Runbook
+	cl, err := client.New()
+	if err != nil {
+		display.Error(err)
+		os.Exit(1)
+	}
+
+	result, err := cl.SaveRunbook(ctx, runbook)
+	if err != nil {
+		display.Error(err)
+		os.Exit(1)
+	}
+
+	display.Success("Runbook created successfully!")
+
+	browser.Open(result.URL)
 }
 
 type AskParams struct {
