@@ -18,7 +18,7 @@ var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Login to savvy",
 	Long:  `Login allows users to use Google SSO to login to savvy.`,
-	Run:   runLogin,
+	Run:   runLoginCmd,
 }
 
 var savvyLoginURL string = config.DashboardHost() + "/cli_login"
@@ -68,7 +68,7 @@ func (lm loginModel) View() string {
 	)
 }
 
-func runLogin(cmd *cobra.Command, args []string) {
+func runLoginCmd(cmd *cobra.Command, args []string) {
 	force, err := cmd.Flags().GetBool(forceLoginFlag)
 	if err != nil {
 		display.ErrorWithSupportCTA(fmt.Errorf("error parsing flags: %w", err))
@@ -81,6 +81,10 @@ func runLogin(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	runLogin()
+}
+
+func runLogin() {
 	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", savvyLoginURL)
 	display.Info(fmt.Sprintf("Opening your default browser to %s", savvyLoginURL))
 	browserCmd := browser.Open(savvyLoginURL)
