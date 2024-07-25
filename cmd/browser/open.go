@@ -22,6 +22,7 @@ func OpenCmd(url string) *exec.Cmd {
 }
 
 func Open(url string) {
+	display.Info("Opening your default browser to " + url)
 	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", url)
 
 	cmd := OpenCmd(url)
