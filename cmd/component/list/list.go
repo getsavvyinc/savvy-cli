@@ -126,7 +126,7 @@ type NopMsg struct{}
 
 type RefinePromptMsg struct{}
 type SaveAsRunbookMsg struct{}
-type ExecuteCommandsMsg struct{}
+type SaveAsRunbookAndExecuteMsg struct{}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -148,8 +148,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return SaveAsRunbookMsg{} }
 		}
 
-		if msg.String() == "x" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "x") {
-			return m, func() tea.Msg { return ExecuteCommandsMsg{} }
+		if msg.String() == "r" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "r") {
+			return m, func() tea.Msg { return SaveAsRunbookAndExecuteMsg{} }
 		}
 
 	case tea.WindowSizeMsg:
