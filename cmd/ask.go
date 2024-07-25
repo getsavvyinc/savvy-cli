@@ -96,40 +96,50 @@ var askCmd = &cobra.Command{
 		}
 
 		if state.createRunbook {
-			result, err := cl.SaveRunbook(ctx, state.runbook)
+			result, err := createRunbook(ctx, cl, state.runbook)
 			if err != nil {
-				if errors.Is(err, client.ErrCannotUseGuest) {
-					loginAndCreateRunbook(ctx, cl, state.runbook)
-					return
-				}
-				display.Error(err)
-				return
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
+			}
+			display.Success(fmt.Sprintf("Runbook %s created successfully!", result.Runbook.Title))
+			browser.Open(result.URL)
+		}
+
+		if state.createRunbookAndExecute {
+			result, err := createRunbook(ctx, cl, state.runbook)
+			if err != nil {
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
 			}
 			display.Success("Runbook created successfully!")
-			browser.Open(result.URL)
-			return
+			if err := runRunbook(ctx, &result.Runbook); err != nil {
+				display.ErrorWithSupportCTA(
+					fmt.Errorf("failed to run runbook %s: %w", result.Runbook.Title, err),
+				)
+				return
+			}
 		}
 	},
 }
 
-func loginAndCreateRunbook(ctx context.Context, cl client.Client, runbook *client.Runbook) {
+func createRunbook(ctx context.Context, cl client.Client, runbook *client.Runbook) (*client.GeneratedRunbook, error) {
+	result, err := cl.SaveRunbook(ctx, runbook)
+	if err == nil {
+		return result, nil
+	} else if errors.Is(err, client.ErrCannotUseGuest) {
+		return loginAndCreateRunbook(ctx, runbook)
+	}
+	return result, err
+}
+
+func loginAndCreateRunbook(ctx context.Context, runbook *client.Runbook) (*client.GeneratedRunbook, error) {
 	runLogin()
 	// then create Runbook
 	cl, err := client.New()
 	if err != nil {
-		display.Error(err)
-		os.Exit(1)
+		return nil, err
 	}
-
-	result, err := cl.SaveRunbook(ctx, runbook)
-	if err != nil {
-		display.Error(err)
-		os.Exit(1)
-	}
-
-	display.Success("Runbook created successfully!")
-
-	browser.Open(result.URL)
+	return cl.SaveRunbook(ctx, runbook)
 }
 
 type AskParams struct {
@@ -141,11 +151,11 @@ type AskParams struct {
 }
 
 type runAskTerminalState struct {
-	selectedCommand string
-	refinePrompt    bool
-	createRunbook   bool
-	execute         bool
-	runbook         *client.Runbook
+	selectedCommand         string
+	refinePrompt            bool
+	createRunbook           bool
+	createRunbookAndExecute bool
+	runbook                 *client.Runbook
 }
 
 func runAsk(ctx context.Context, cl client.Client, question string, askParams *AskParams) *runAskTerminalState {
@@ -221,26 +231,26 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 
 	if m, ok := result.(*askCommands); ok {
 		return &runAskTerminalState{
-			selectedCommand: m.l.SelectedCommand(),
-			refinePrompt:    m.refinePrompt,
-			createRunbook:   m.saveAsRunbook,
-			execute:         m.executeCommands,
-			runbook:         runbook,
+			selectedCommand:         m.l.SelectedCommand(),
+			refinePrompt:            m.refinePrompt,
+			createRunbook:           m.saveAsRunbook,
+			createRunbookAndExecute: m.createRunbookAndExecute,
+			runbook:                 runbook,
 		}
 	}
 	return nil
 }
 
 type askCommands struct {
-	l               list.Model
-	refinePrompt    bool
-	saveAsRunbook   bool
-	executeCommands bool
+	l                       list.Model
+	refinePrompt            bool
+	saveAsRunbook           bool
+	createRunbookAndExecute bool
 }
 
 var RefinePromptHelpBinding = list.NewHelpBinding("p", "refine prompt")
 var SaveAsRunbookHelpBinding = list.NewHelpBinding("s", "save as runbook")
-var ExecuteCommandsHelpBinding = list.NewHelpBinding("x", "execute commands")
+var ExecuteCommandsHelpBinding = list.NewHelpBinding("r", "save and run commands")
 
 func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	if runbook == nil {
@@ -266,8 +276,8 @@ func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case list.SaveAsRunbookMsg:
 		dc.saveAsRunbook = true
 		return dc, tea.Quit
-	case list.ExecuteCommandsMsg:
-		dc.executeCommands = true
+	case list.SaveAsRunbookAndExecuteMsg:
+		dc.createRunbookAndExecute = true
 		return dc, tea.Quit
 	}
 
