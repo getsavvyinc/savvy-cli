@@ -105,19 +105,36 @@ var askCmd = &cobra.Command{
 			browser.Open(result.URL)
 		}
 
-		if state.createRunbookAndExecute {
+		if state.runSteps {
+			if err := runRunbook(ctx, state.runbook); err != nil {
+				display.ErrorWithSupportCTA(
+					fmt.Errorf("failed to run runbook %s: %w", state.runbook.Title, err),
+				)
+				return
+			}
+
+			var confirmation bool
+			confirmCleanup := huh.NewConfirm().
+				Title(fmt.Sprintf("Save %q", state.runbook.Title)).
+				Affirmative("Save").
+				Negative("Cancel").
+				Value(&confirmation)
+			if err := huh.NewForm(huh.NewGroup(confirmCleanup)).Run(); err != nil {
+				display.ErrorWithSupportCTA(err)
+				return
+			}
+
+			// exit early if user doesn't want to save
+			if !confirmation {
+				return
+			}
+
 			result, err := createRunbook(ctx, cl, state.runbook)
 			if err != nil {
 				display.ErrorWithSupportCTA(err)
 				os.Exit(1)
 			}
-			display.Success("Runbook created successfully!")
-			if err := runRunbook(ctx, &result.Runbook); err != nil {
-				display.ErrorWithSupportCTA(
-					fmt.Errorf("failed to run runbook %s: %w", result.Runbook.Title, err),
-				)
-				return
-			}
+			display.Successf("Created %q successfully! You can check it out here: %s", result.Runbook.Title, result.URL)
 		}
 	},
 }
@@ -151,11 +168,11 @@ type AskParams struct {
 }
 
 type runAskTerminalState struct {
-	selectedCommand         string
-	refinePrompt            bool
-	createRunbook           bool
-	createRunbookAndExecute bool
-	runbook                 *client.Runbook
+	selectedCommand string
+	refinePrompt    bool
+	createRunbook   bool
+	runSteps        bool
+	runbook         *client.Runbook
 }
 
 func runAsk(ctx context.Context, cl client.Client, question string, askParams *AskParams) *runAskTerminalState {
@@ -231,26 +248,26 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 
 	if m, ok := result.(*askCommands); ok {
 		return &runAskTerminalState{
-			selectedCommand:         m.l.SelectedCommand(),
-			refinePrompt:            m.refinePrompt,
-			createRunbook:           m.saveAsRunbook,
-			createRunbookAndExecute: m.createRunbookAndExecute,
-			runbook:                 runbook,
+			selectedCommand: m.l.SelectedCommand(),
+			refinePrompt:    m.refinePrompt,
+			createRunbook:   m.saveAsRunbook,
+			runSteps:        m.runSteps,
+			runbook:         runbook,
 		}
 	}
 	return nil
 }
 
 type askCommands struct {
-	l                       list.Model
-	refinePrompt            bool
-	saveAsRunbook           bool
-	createRunbookAndExecute bool
+	l             list.Model
+	refinePrompt  bool
+	saveAsRunbook bool
+	runSteps      bool
 }
 
 var RefinePromptHelpBinding = list.NewHelpBinding("p", "refine prompt")
 var SaveAsRunbookHelpBinding = list.NewHelpBinding("s", "save as runbook")
-var ExecuteCommandsHelpBinding = list.NewHelpBinding("r", "save and run commands")
+var ExecuteCommandsHelpBinding = list.NewHelpBinding("r", "run all commands")
 
 func newAskCommandsModel(runbook *component.Runbook) (*askCommands, error) {
 	if runbook == nil {
@@ -277,7 +294,7 @@ func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dc.saveAsRunbook = true
 		return dc, tea.Quit
 	case list.SaveAsRunbookAndExecuteMsg:
-		dc.createRunbookAndExecute = true
+		dc.runSteps = true
 		return dc, tea.Quit
 	}
 

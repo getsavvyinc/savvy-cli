@@ -14,3 +14,8 @@ var successStyle = lipgloss.NewStyle().
 func Success(text string) {
 	fmt.Println(successStyle.Render(text))
 }
+
+func Successf(format string, args ...any) {
+	text := fmt.Sprintf(format, args...)
+	fmt.Println(successStyle.Render(text))
+}
