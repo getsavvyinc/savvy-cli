@@ -108,7 +108,7 @@ func runRunbook(ctx context.Context, runbook *client.Runbook) error {
 		rsrv.ListenAndServe()
 		// kill b/g shell if we exit early
 		cancelCtx()
-		os.Exit(1)
+		// os.Exit(1)
 	}()
 
 	sh := shell.New(rsrv.SocketPath())
