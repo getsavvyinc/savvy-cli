@@ -356,5 +356,5 @@ var useHistory bool
 func init() {
 	rootCmd.AddCommand(askCmd)
 	askCmd.Flags().StringVarP(&filePath, "file", "f", "", "File path for ask to read and use while generating an answer")
-	askCmd.Flags().BoolVarP(&useHistory, "history", "h", false, "Provide historical context to Savvy's AI model")
+	askCmd.Flags().BoolVarP(&useHistory, "history", "", false, "Provide historical context to Savvy's AI model")
 }
