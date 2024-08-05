@@ -34,6 +34,7 @@ var askCmd = &cobra.Command{
   savvy ask "how do I find the process id listening on a port?"
   savvy ask "how do I quit vim?"
   savvy ask "extract filenames from the name key in each line of li_ids.txt" --file /path/to/li_ids.txt
+  savvy ask "what's the next command after this?" --history # pass in historical context
   `,
 	Long: `
   Ask Savvy a question and it will generate a command for you.
