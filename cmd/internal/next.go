@@ -29,17 +29,16 @@ var nextCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if state.CommandWithSetParams() != executedCommand {
-			fmt.Printf("%d", state.Index)
+		if forceNext || state.CommandWithSetParams() == executedCommand {
+			updated, err := nextCommand(ctx, cl)
+			if err != nil {
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
+			}
+			fmt.Printf("%d", updated.Index)
 			return
 		}
-
-		updated, err := nextCommand(ctx, cl)
-		if err != nil {
-			display.ErrorWithSupportCTA(err)
-			os.Exit(1)
-		}
-		fmt.Printf("%d", updated.Index)
+		fmt.Printf("%d", state.Index)
 	},
 }
 
@@ -56,9 +55,12 @@ func nextCommand(ctx context.Context, cl run.Client) (*run.State, error) {
 }
 
 var executedCommand string
+var forceNext bool
 
 func init() {
 	InternalCmd.AddCommand(nextCmd)
 
 	nextCmd.Flags().StringVarP(&executedCommand, "cmd", "c", "", "previously executed command")
+	nextCmd.Flags().BoolVarP(&forceNext, "force", "f", false, "force next command regardless of current state")
+
 }
