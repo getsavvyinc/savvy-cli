@@ -100,20 +100,39 @@ savvy_run_pre_cmd() {
   fi
 }
 
+add_unique_to_preexec_functions() {
+  local item=$1
+  if [[ ! " ${preexec_functions[*]} " =~ " ${item} " ]]; then
+        preexec_functions+=("${item}")
+    fi
+}
 
-if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-  mapfile -t SAVVY_COMMANDS < <(awk -F'COMMA' '{ for(i=1;i<=NF;i++) print $i }' <<< $SAVVY_RUNBOOK_COMMANDS)
-  SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
+add_item_to_precmd_functions() {
+  local item=$1
+    # NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
+    # TODO: use templates to avoid the need to manually change shell checks
+    if [[ ! " ${precmd_functions[*]} " =~ " ${item} " ]]; then
+        precmd_functions+=("${item}")
+    fi
+}
 
-  # Set up a keybinding to trigger the function
-  bind 'set keyseq-timeout 0'
-  bind -x '"\C-n":savvy_runbook_runner'
+add_savvy_hooks() {
+  if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
+    mapfile -t SAVVY_COMMANDS < <(awk -F'COMMA' '{ for(i=1;i<=NF;i++) print $i }' <<< $SAVVY_RUNBOOK_COMMANDS)
+    SAVVY_RUN_CURR="${SAVVY_RUNBOOK_ALIAS}"
 
-  precmd_functions+=(savvy_run_pre_cmd)
-  preexec_functions+=(savvy_run_pre_exec)
-fi;
+    # Set up a keybinding to trigger the function
+    bind 'set keyseq-timeout 0'
+    bind -x '"\C-n":savvy_runbook_runner'
 
-preexec_functions+=(savvy_cmd_pre_exec)
-# NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
-# TODO: use templates to avoid the need to manually change shell checks
-precmd_functions+=(savvy_cmd_pre_cmd)
+    add_unique_to_preexec_functions savvy_run_pre_exec
+    add_item_to_precmd_functions savvy_run_pre_cmd
+  fi;
+
+  # NOTE: If you change this function name, you must also change the corresponding check in shell/check_setup.go
+  # TODO: use templates to avoid the need to manually change shell checks
+  add_unique_to_preexec_functions savvy_cmd_pre_exec
+  add_item_to_precmd_functions savvy_cmd_pre_cmd
+}
+
+add_savvy_hooks
