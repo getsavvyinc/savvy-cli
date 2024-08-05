@@ -48,71 +48,18 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	commandProcessedChan := make(chan bool, 1)
-	defer close(commandProcessedChan)
-
-	hook := func(cmd string) {
-		logger.Debug("command recorded", "command", cmd)
-		commandProcessedChan <- true
-	}
-
-	ctx, cancelCtx := context.WithCancel(ctx)
-	defer cancelCtx()
-
-	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
-	if errors.Is(err, server.ErrAbortRecording) {
-		display.Info("Recording aborted")
-		return
-	}
-
+	historyCmds, err := selectAndExpandHistory(ctx, logger)
 	if err != nil {
 		display.FatalErrWithSupportCTA(err)
 		return
 	}
-	defer ss.Close()
 
-	go func() {
-		ss.ListenAndServe()
-		// kill b/g shell if we exit early
-		cancelCtx()
-		os.Exit(1)
-	}()
-
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-	}
-
-	sh := shell.New("/tmp/savvy-socket")
-	lines, err := sh.TailHistory(ctx)
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-	}
-
-	selectedHistory := allowUserToSelectCommands(lines)
-	if len(selectedHistory) == 0 {
-		display.Error(errors.New("No commands were selected"))
+	if len(historyCmds) == 0 {
 		return
-	}
-
-	var commands []*server.RecordedCommand
-	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
-		var err error
-
-		commands, err = expandHistory(ctx, logger, ss, sh, selectedHistory, commandProcessedChan)
-		if err != nil {
-			display.FatalErrWithSupportCTA(err)
-		}
-
-		if len(commands) == 0 {
-			display.Error(errors.New("No commands were recorded"))
-			return
-		}
-	}).Run(); err != nil {
-		logger.Debug("failed to run spinner", "error", err.Error())
 	}
 
 	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(commands, cl)
+	gm := component.NewGenerateRunbookModel(historyCmds, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
 		err = fmt.Errorf("failed to generate runbook: %w", err)
@@ -248,4 +195,70 @@ func expandHistory(ctx context.Context,
 	c.Wait()
 	logger.Debug("c.Wait() finished")
 	return srv.Commands(), nil
+}
+
+func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server.RecordedCommand, error) {
+	commandProcessedChan := make(chan bool, 1)
+	defer close(commandProcessedChan)
+
+	hook := func(cmd string) {
+		logger.Debug("command recorded", "command", cmd)
+		commandProcessedChan <- true
+	}
+
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
+	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
+	if errors.Is(err, server.ErrAbortRecording) {
+		display.Info("Recording aborted")
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer ss.Close()
+
+	go func() {
+		ss.ListenAndServe()
+		// kill b/g shell if we exit early
+		cancelCtx()
+		os.Exit(1)
+	}()
+
+	if err != nil {
+		display.FatalErrWithSupportCTA(err)
+		return nil, nil
+	}
+
+	sh := shell.New("/tmp/savvy-socket")
+	lines, err := sh.TailHistory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	selectedHistory := allowUserToSelectCommands(lines)
+	if len(selectedHistory) == 0 {
+		return nil, nil
+	}
+
+	var commands []*server.RecordedCommand
+	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
+		var err error
+
+		commands, err = expandHistory(ctx, logger, ss, sh, selectedHistory, commandProcessedChan)
+		if err != nil {
+			display.FatalErrWithSupportCTA(err)
+			return
+		}
+
+		if len(commands) == 0 {
+			display.Error(errors.New("No commands were recorded"))
+			return
+		}
+	}).Run(); err != nil {
+		logger.Debug("failed to run spinner", "error", err.Error())
+	}
+	return commands, nil
 }
