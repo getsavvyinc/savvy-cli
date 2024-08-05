@@ -309,6 +309,7 @@ type QuestionInfo struct {
 	FileData          []byte            `json:"file_data,omitempty"`
 	FileName          string            `json:"file_name,omitempty"`
 	PreviousQuestions []string          `json:"previous_questions,omitempty"`
+	PreviousCommands  []string          `json:"previous_commands,omitempty"`
 }
 
 func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {

@@ -19,6 +19,8 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/server"
+	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/spf13/cobra"
 )
 
@@ -63,6 +65,15 @@ var askCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var historyCmds []*server.RecordedCommand
+		if useHistory {
+			historyCmds, err = selectAndExpandHistory(ctx, logger)
+			if err != nil {
+				display.FatalErrWithSupportCTA(err)
+				return
+			}
+		}
+
 		var question string
 		if len(args) > 0 {
 			// be defensive: users can pass questions as one string or multiple strings
@@ -70,10 +81,11 @@ var askCmd = &cobra.Command{
 		}
 
 		params := &AskParams{
-			goos:     goos,
-			fileData: fileData,
-			filePath: filePath,
-			refine:   false,
+			goos:             goos,
+			fileData:         fileData,
+			filePath:         filePath,
+			refine:           false,
+			previousCommands: historyCmds,
 		}
 
 		var state *runAskTerminalState
@@ -165,6 +177,7 @@ type AskParams struct {
 	filePath          string
 	refine            bool
 	previousQuestions []string
+	previousCommands  []*server.RecordedCommand
 }
 
 type runAskTerminalState struct {
@@ -204,6 +217,7 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 		FileData:          askParams.fileData,
 		FileName:          path.Base(askParams.filePath),
 		PreviousQuestions: askParams.previousQuestions[:],
+		PreviousCommands:  slice.Map(askParams.previousCommands, func(c *server.RecordedCommand) string { return c.Command }),
 	}
 	askParams.previousQuestions = append(askParams.previousQuestions, question)
 
@@ -337,8 +351,10 @@ func fileData(filePath string) ([]byte, error) {
 }
 
 var filePath string
+var useHistory bool
 
 func init() {
 	rootCmd.AddCommand(askCmd)
 	askCmd.Flags().StringVarP(&filePath, "file", "f", "", "File path for ask to read and use while generating an answer")
+	askCmd.Flags().BoolVarP(&useHistory, "history", "h", false, "Provide historical context to Savvy's AI model")
 }
