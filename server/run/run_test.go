@@ -63,6 +63,14 @@ func TestRunServer(t *testing.T) {
 		assert.NotNil(t, st)
 		assert.Equal(t, 1, st.Index)
 		assert.Equal(t, "idx_1", st.CommandWithSetParams())
+		t.Run("TestPreviousCommand", func(t *testing.T) {
+			assert.NoError(t, cl.PreviousCommand())
+			st, err := cl.CurrentState()
+			assert.NoError(t, err)
+			assert.NotNil(t, st)
+			assert.Equal(t, 0, st.Index)
+			assert.Equal(t, "idx_0", st.CommandWithSetParams())
+		})
 	})
 	t.Run("TestParam", func(t *testing.T) {
 		_, cl, cleanup := newTestServerWithClient(t, rb)

@@ -182,6 +182,11 @@ func (rs *RunServer) handleCommand(runCommand RunCommand, c net.Conn) {
 		if rs.currIndex > len(rs.commands) {
 			rs.currIndex = len(rs.commands)
 		}
+	case previousCommand:
+		rs.currIndex -= 1
+		if rs.currIndex < 0 {
+			rs.currIndex = 0
+		}
 	case currentCommand:
 		response := State{
 			Index:  rs.currIndex,
