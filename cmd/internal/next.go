@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -33,18 +34,25 @@ var nextCmd = &cobra.Command{
 			return
 		}
 
-		if err := cl.NextCommand(); err != nil {
-			display.ErrorWithSupportCTA(err)
-			os.Exit(1)
-		}
-
-		updated, err := cl.CurrentState()
+		updated, err := nextCommand(ctx, cl)
 		if err != nil {
 			display.ErrorWithSupportCTA(err)
 			os.Exit(1)
 		}
 		fmt.Printf("%d", updated.Index)
 	},
+}
+
+func nextCommand(ctx context.Context, cl run.Client) (*run.State, error) {
+	if err := cl.NextCommand(); err != nil {
+		return nil, err
+	}
+
+	updatedState, err := cl.CurrentState()
+	if err != nil {
+		return nil, err
+	}
+	return updatedState, nil
 }
 
 var executedCommand string
