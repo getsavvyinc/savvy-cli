@@ -224,7 +224,6 @@ func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server
 		ss.ListenAndServe()
 		// kill b/g shell if we exit early
 		cancelCtx()
-		os.Exit(1)
 	}()
 
 	if err != nil {
