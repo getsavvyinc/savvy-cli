@@ -46,9 +46,12 @@ var recordCmd = &cobra.Command{
 var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
 func runRecordCmd(cmd *cobra.Command, _ []string) {
-	cl, err := client.New()
+	cl, err := client.GetLoggedInClient()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
 		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
+		os.Exit(1)
+	} else if err != nil {
+		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
 	ctx := cmd.Context()
