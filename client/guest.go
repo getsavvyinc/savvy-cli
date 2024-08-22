@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -60,14 +59,20 @@ func (g *guest) WhoAmI(ctx context.Context) (string, error) {
 	return "Savvy Guest", nil
 }
 
-var ErrCannotUseGuest = errors.New("cannot use guest client for this operation")
-
 func (g *guest) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
-	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "generate runbook")
+	cl, err := getLoggedInClient()
+	if err != nil {
+		return nil, err
+	}
+	return cl.GenerateRunbookV2(ctx, commands)
 }
 
 func (g *guest) GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error) {
-	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "generate runbook")
+	cl, err := getLoggedInClient()
+	if err != nil {
+		return nil, err
+	}
+	return cl.GenerateRunbook(ctx, commands)
 }
 
 func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
@@ -87,6 +92,15 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		cl, err := getLoggedInClient()
+		if err != nil {
+			return nil, fmt.Errorf("not authorized to view this runbook: %w", err)
+		}
+
+		return cl.RunbookByID(ctx, id)
+	}
+
 	if resp.StatusCode >= 400 {
 		var errResp ErrorResponse
 		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
@@ -103,8 +117,7 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 }
 
 func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
-	login.Run(VerifyLogin)
-	cl, err := New()
+	cl, err := getLoggedInClient()
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +133,7 @@ func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, erro
 }
 
 func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
-	login.Run(VerifyLogin)
-	cl, err := New()
+	cl, err := getLoggedInClient()
 	if err != nil {
 		return nil, err
 	}
@@ -129,10 +141,23 @@ func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepCo
 }
 
 func (g *guest) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
-	login.Run(VerifyLogin)
-	cl, err := New()
+	cl, err := getLoggedInClient()
 	if err != nil {
 		return nil, err
 	}
 	return cl.SaveRunbook(ctx, runbook)
+}
+
+func getLoggedInClient() (Client, error) {
+	cl, err := New()
+	if err == nil {
+		return cl, nil
+	}
+
+	login.Run(VerifyLogin)
+	cl, err = New()
+	if err != nil {
+		return nil, err
+	}
+	return cl, nil
 }
