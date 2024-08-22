@@ -148,6 +148,10 @@ func (g *guest) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRu
 	return cl.SaveRunbook(ctx, runbook)
 }
 
+func GetLoggedInClient() (Client, error) {
+	return getLoggedInClient()
+}
+
 func getLoggedInClient() (Client, error) {
 	cl, err := New()
 	if err == nil {
