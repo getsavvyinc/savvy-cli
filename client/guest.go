@@ -92,7 +92,7 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusUnauthorized {
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 		cl, err := getLoggedInClient()
 		if err != nil {
 			return nil, fmt.Errorf("not authorized to view this runbook: %w", err)
