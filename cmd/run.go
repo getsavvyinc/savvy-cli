@@ -185,12 +185,14 @@ func runRunbook(ctx context.Context, runbook *client.Runbook) error {
 }
 
 func fetchRunbook(ctx context.Context, cl client.Client, runbookID string) (*client.Runbook, error) {
+	logger := loggerFromCtx(ctx).With("command", "run", "method", "fetchRunbook")
 	var rb *client.Runbook
 	var err error
 	if serr := huhSpinner.New().Title("Fetching runbook").Action(func() {
 		rb, err = cl.RunbookByID(ctx, runbookID)
 		if err != nil {
 			err = fmt.Errorf("failed to fetch runbook %s: %w", runbookID, err)
+			logger.Debug("failed to fetch runbook", "error", err)
 			return
 		}
 	}).Run(); serr != nil {
