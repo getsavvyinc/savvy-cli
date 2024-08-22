@@ -7,7 +7,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/display"
@@ -60,7 +59,9 @@ func (lm loginModel) View() string {
 
 var savvyLoginURL string = config.DashboardHost() + "/cli_login"
 
-func Run() {
+// Run starts the login process
+// Run exits if login is not successful
+func Run(verifierFunc func() error) {
 	browser.Open(savvyLoginURL)
 
 	p := tea.NewProgram(initialModel())
@@ -81,7 +82,7 @@ func Run() {
 		tok = strings.Trim(tok, "\"{} ")
 
 		defer func() {
-			if err := Verify(); err != nil {
+			if err := verifierFunc(); err != nil {
 				display.ErrorWithSupportCTA(fmt.Errorf("login failed: %w", err))
 				os.Exit(1)
 			}
@@ -95,9 +96,4 @@ func Run() {
 			os.Exit(1)
 		}
 	}
-}
-
-func Verify() error {
-	_, err := client.New()
-	return err
 }

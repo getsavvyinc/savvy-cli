@@ -148,27 +148,12 @@ var askCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			display.Successf("Created %q successfully! You can check it out here: %s", result.Runbook.Title, result.URL)
+			browser.Open(result.URL)
 		}
 	},
 }
 
 func createRunbook(ctx context.Context, cl client.Client, runbook *client.Runbook) (*client.GeneratedRunbook, error) {
-	result, err := cl.SaveRunbook(ctx, runbook)
-	if err == nil {
-		return result, nil
-	} else if errors.Is(err, client.ErrCannotUseGuest) {
-		return loginAndCreateRunbook(ctx, runbook)
-	}
-	return result, err
-}
-
-func loginAndCreateRunbook(ctx context.Context, runbook *client.Runbook) (*client.GeneratedRunbook, error) {
-	runLogin()
-	// then create Runbook
-	cl, err := client.New()
-	if err != nil {
-		return nil, err
-	}
 	return cl.SaveRunbook(ctx, runbook)
 }
 

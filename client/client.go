@@ -427,3 +427,8 @@ func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo)
 type streamData struct {
 	Data string `json:"data"`
 }
+
+func VerifyLogin() error {
+	_, err := New()
+	return err
+}
