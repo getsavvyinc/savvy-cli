@@ -207,7 +207,14 @@ type selectableRunbook struct {
 func allowUserToSelectRunbook(ctx context.Context, logger *slog.Logger, cl client.Client) (string, error) {
 	l := logger.With("func", "allowsUserToSelectRunbook")
 	runbooks, err := cl.Runbooks(ctx)
-	if err != nil {
+	if errors.Is(err, client.ErrCannotUseGuest) {
+		runLogin()
+		cl, err = client.New()
+		if err != nil {
+			return "", err
+		}
+		runbooks, err = cl.Runbooks(ctx)
+	} else if err != nil {
 		l.Debug("failed to fetch runbooks", "error", err)
 		return "", err
 	}
