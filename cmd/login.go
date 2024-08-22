@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/login"
 	"github.com/spf13/cobra"
@@ -23,13 +24,13 @@ func runLoginCmd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if err := login.Verify(); err == nil && !force {
+	if err := client.VerifyLogin(); err == nil && !force {
 		display.Info("You are already logged in!")
 		display.Info("Run `savvy login --force` to get a new token")
 		return
 	}
 
-	login.Run()
+	login.Run(client.VerifyLogin)
 }
 
 const forceLoginFlag = "force"

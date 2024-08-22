@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/login"
 )
 
 var _ Client = (*guest)(nil)
@@ -102,7 +103,12 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 }
 
 func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
-	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "list runbooks")
+	login.Run(VerifyLogin)
+	cl, err := New()
+	if err != nil {
+		return nil, err
+	}
+	return cl.Runbooks(ctx)
 }
 
 func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
@@ -114,9 +120,19 @@ func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, erro
 }
 
 func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
-	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "get step content")
+	login.Run(VerifyLogin)
+	cl, err := New()
+	if err != nil {
+		return nil, err
+	}
+	return cl.StepContentByStepID(ctx, stepID)
 }
 
 func (g *guest) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
-	return nil, fmt.Errorf("%w: %v", ErrCannotUseGuest, "save runbook")
+	login.Run(VerifyLogin)
+	cl, err := New()
+	if err != nil {
+		return nil, err
+	}
+	return cl.SaveRunbook(ctx, runbook)
 }
