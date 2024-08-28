@@ -44,7 +44,7 @@ function __savvy_run_pre_exec__() {
 
 function __savvy_run_pre_cmd__() {
   if [[ "${SAVVY_CONTEXT}" == "run" ]] ; then
-    PS1="${orignal_ps1}"$'(%F{red}savvy run %f'" ${SAVVY_RUN_CURR})"" "
+    PS1="${orignal_ps1}"$'(%F{green}savvy run %f'" ${SAVVY_RUN_CURR})"" "
   fi
 
   if [[ "${SAVVY_CONTEXT}" == "run" && "${SAVVY_NEXT_STEP}" -ge "${#SAVVY_COMMANDS}" ]] ; then
