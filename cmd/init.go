@@ -26,4 +26,5 @@ func init() {
 	initCmd.AddCommand(setup.ZshCmd)
 	initCmd.AddCommand(setup.BashCmd)
 	initCmd.AddCommand(setup.DashCmd)
+	initCmd.AddCommand(setup.FishCmd)
 }
