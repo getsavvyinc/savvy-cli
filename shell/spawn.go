@@ -33,6 +33,12 @@ func New(logTarget string) Shell {
 			shellCmd:   "bash",
 			SocketPath: logTarget,
 		}
+
+	case kind.Fish:
+		return &fish{
+			shellCmd:   "fish",
+			SocketPath: logTarget,
+		}
 	default:
 		return &todo{}
 	}
