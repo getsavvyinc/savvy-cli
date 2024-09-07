@@ -1,4 +1,4 @@
-SAVVY_INPUT_FILE=/tmp/savvy-socket
+set SAVVY_INPUT_FILE /tmp/savvy-socket
 
 
 # Fish automatically loads completions, so no need for 'autoload' or 'compinit'
@@ -6,7 +6,7 @@ SAVVY_INPUT_FILE=/tmp/savvy-socket
 # Load savvy completions
 savvy completion fish | source
 
-step_id=""
+set step_id ""
 
 
 function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
@@ -27,14 +27,14 @@ function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
         else
           echo -n $original_prompt
         end
-    end
 
     if test "$SAVVY_CONTEXT" = "record" 
-        and test "$exit_code" -ne 0
-        
+      and test "$exit_code" -ne 0
+
         set -x SAVVY_SOCKET_PATH $SAVVY_INPUT_FILE
         savvy send --step-id="$step_id" --exit-code="$exit_code"
     end
+  end
 end
 
 
@@ -58,7 +58,7 @@ function __savvy_record_pre_exec__ --on-event fish_preexec
         set -l prompt (fish_prompt)
         
         # Remove color codes and other formatting from the prompt
-        set -l clean_prompt (string replace -ra '\e\[[^m]*m' '' $prompt)
+        set -l clean_prompt (string replace -ra '\e\[[^m]*m' "" -- $prompt)
         
         # Send command to savvy and get step_id
         set -g step_id (
