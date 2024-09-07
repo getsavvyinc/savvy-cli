@@ -2,8 +2,11 @@ package shell
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
@@ -77,7 +80,11 @@ func init() {
 func (f *fish) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	// Create a temporary file to store the script
 	tmpDir := os.TempDir()
-	fishrc, err := os.CreateTemp(tmpDir, "savvy-fishrc-*.fish")
+	fishVendorConfDir := filepath.Join(tmpDir, "fish", "vendor_conf.d")
+	if err := os.MkdirAll(fishVendorConfDir, 0755); err != nil {
+		return nil, err
+	}
+	fishrc, err := os.CreateTemp(fishVendorConfDir, "savvy-fishrc-*.fish")
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +94,14 @@ func (f *fish) Spawn(ctx context.Context) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, f.shellCmd, "-C", fishrc.Name())
-	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=record")
+	dataDirs := os.Getenv("XDG_DATA_DIRS")
+	if dataDirs == "" {
+		dataDirs = fishVendorConfDir
+	} else {
+		dataDirs = strings.Join([]string{dataDirs, fishVendorConfDir}, ":")
+	}
+	cmd := exec.CommandContext(ctx, f.shellCmd)
+	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=record", fmt.Sprintf("XDG_DATA_DIRS=%s", dataDirs))
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
