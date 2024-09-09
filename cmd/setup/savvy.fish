@@ -18,8 +18,9 @@ function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
     # Define new fish_prompt function
     function fish_prompt
         # Call the original prompt function
-        set -l original_prompt (__original_fish_prompt)
         set -l exit_code $status
+        set -l original_prompt (__original_fish_prompt)
+
         if test "$SAVVY_CONTEXT" = "record" 
           and not string match -q '*recording*' "$fish_prompt"
           echo -n $original_prompt
@@ -65,7 +66,7 @@ function __savvy_record_pre_exec__ --on-event fish_postexec
         #set -l clean_prompt (string replace -ra '\e\[[^m]*m' "" -- $prompt)
         
         # Send command to savvy and get step_id
-              #savvy send --prompt="$clean_prompt" $cmd
+        #savvy send --prompt="$clean_prompt" $cmd
         set -g step_id (
             env SAVVY_SOCKET_PATH=$SAVVY_INPUT_FILE \
             savvy send $cmd
