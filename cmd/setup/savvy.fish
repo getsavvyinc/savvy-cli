@@ -28,14 +28,7 @@ function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
         else
           echo -n $original_prompt
         end
-
-    if test "$SAVVY_CONTEXT" = "record" 
-      and test "$exit_code" -ne 0
-
-        set -x SAVVY_SOCKET_PATH $SAVVY_INPUT_FILE
-        savvy send --step-id="$step_id" --exit-code="$exit_code"
     end
-  end
 end
 
 
@@ -44,6 +37,22 @@ end
 # Call the function to set up the modified prompt
 __savvy_modify_prompt
 
+
+
+function __savvy_record_post_exec --on-event fish_postexec
+    set -l exit_code $status
+
+    if not test "$SAVVY_CONTEXT" = "record"
+        return
+    end
+
+    # Send the return code to the server if it's not 0
+    if test "$SAVVY_CONTEXT" = "record"
+      and test "$exit_code" -ne 0
+        set -x SAVVY_SOCKET_PATH $SAVVY_INPUT_FILE
+        savvy send --step-id="$step_id" --exit-code="$status"
+    end
+end
 
 
 
