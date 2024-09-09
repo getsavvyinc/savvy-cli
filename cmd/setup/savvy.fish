@@ -24,7 +24,7 @@ function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
         if test "$SAVVY_CONTEXT" = "record" 
           and not string match -q '*recording*' "$fish_prompt"
           echo -n $original_prompt
-          echo -n (set_color red)"recording"(set_color normal)" 😎 "
+          echo -n (set_color green)"recording"(set_color normal)" 😎 "
         else
           echo -n $original_prompt
         end
