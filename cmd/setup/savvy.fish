@@ -47,7 +47,7 @@ __savvy_modify_prompt
 
 
 
-function __savvy_record_pre_exec__ --on-event fish_postexec
+function __savvy_record_pre_exec__ --on-event fish_preexec
     if not test "$SAVVY_CONTEXT" = "record"
         return
     end
