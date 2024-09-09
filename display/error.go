@@ -46,7 +46,7 @@ func FatalErrWithSupportCTA(err error) {
 	os.Exit(1)
 }
 
-const supportCTA = `Stuck? We're here to make things easiser for you. Just email us at support@getsavvy.so or join our friendly Discord community (https://getsavvy.so/discord) for a chat.`
+const supportCTA = `Stuck? We're here to make things easier for you. Just email us at support@getsavvy.so or join our friendly Discord community (https://getsavvy.so/discord) for a chat.`
 
 func ErrorWithSupportCTA(err error) {
 	Error(err, supportCTA)
