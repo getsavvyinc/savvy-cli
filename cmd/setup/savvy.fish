@@ -6,7 +6,7 @@ set SAVVY_INPUT_FILE /tmp/savvy-socket
 # Load savvy completions
 savvy completion fish | source
 
-set step_id ""
+set -g step_id ""
 
 
 function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
