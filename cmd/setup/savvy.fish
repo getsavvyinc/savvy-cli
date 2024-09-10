@@ -61,6 +61,13 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
         functions -c fish_prompt __pre_savvy_run_prompt
     end
 
+    if not functions -q fish_right_prompt
+    # If fish_right_prompt doesn't exist, create an empty one
+      function fish_right_prompt
+        # Empty function
+      end
+    end
+
     if not functions -q __pre_savvy_run_right_prompt
       functions -c fish_right_prompt __pre_savvy_run_right_prompt
     end
