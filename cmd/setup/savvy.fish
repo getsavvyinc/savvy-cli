@@ -39,16 +39,6 @@ __savvy_record_prompt
 
 
 
-function __savvy_runbook_runner__ --on-event fish_prompt
-    if test "$SAVVY_CONTEXT" = "run"
-        set -l run_cmd (savvy internal current)
-        echo "run_cmd = $run_cmd"
-        fish_commandline_append "$run_cmd"
-        commandline -f repaint
-    end
-end
-
-
 # Initialize variables
 set -g SAVVY_COMMANDS ()
 set -g SAVVY_RUN_CURR ""
@@ -152,3 +142,23 @@ function __savvy_record_pre_exec__ --on-event fish_preexec
         )
     end
 end
+
+
+# Trigger completion on empty command line
+# Refer to shell/fish.go for triggering completion
+function __savvy_run_completion__ --description "Complete the current command in a runbook"
+    if not test "$SAVVY_CONTEXT" = "run"
+        return
+    end
+
+    set -l run_cmd (savvy internal current)
+    echo $cmd
+    set -l cmd (commandline -o)
+
+    if test -z "$cmd"
+        # Completions for empty command line
+        echo $run_cmd
+        return
+    end
+end
+

@@ -114,6 +114,7 @@ func (f *fish) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 
 const fishRunRunbookScript = `
 if not functions -q __savvy_run_pre_exec__
+   or not functions -q __savvy_run_completion__
     set_color red
     echo " Your shell is not configured to use Savvy. Please run the following commands: "
     set_color normal
@@ -124,6 +125,8 @@ if not functions -q __savvy_run_pre_exec__
     set_color normal
     exit 1
 end
+
+complete -c '' -f -a "(__savvy_run_completion__)"
 
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop running."
