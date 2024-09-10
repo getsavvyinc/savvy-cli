@@ -9,17 +9,20 @@ savvy completion fish | source
 set -g step_id ""
 
 
-function __savvy_modify_prompt --description "Modify prompt for Savvy recording"
+# NOTE: If you change any function names, you must also change the corresponding check in shell/check_setup.go, shell/fish.go
+#
+# TODO: use templates to avoid the need to manually change shell checks
+
+function __savvy_record_prompt --description "Modify prompt for Savvy recording"
     # Save the original prompt function if not already saved
-    if not functions -q __original_fish_prompt
-        functions -c fish_prompt __original_fish_prompt
+    if not functions -q __pre_savvy_record_prompt
+        functions -c fish_prompt __pre_savvy_record_prompt
     end
 
     # Define new fish_prompt function
     function fish_prompt
         # Call the original prompt function
-        set -l exit_code $status
-        set -l original_prompt (__original_fish_prompt)
+        set -l original_prompt (__pre_savvy_record_prompt)
 
         if test "$SAVVY_CONTEXT" = "record" 
           and not string match -q '*recording*' "$fish_prompt"
