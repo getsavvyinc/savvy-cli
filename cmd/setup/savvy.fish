@@ -42,7 +42,9 @@ __savvy_record_prompt
 function __savvy_runbook_runner__ --on-event fish_prompt
     if test "$SAVVY_CONTEXT" = "run"
         set -l run_cmd (savvy internal current)
-        commandline -r $run_cmd
+        echo "run_cmd = $run_cmd"
+        fish_commandline_append "$run_cmd"
+        commandline -f repaint
     end
 end
 
@@ -56,7 +58,7 @@ set -g SAVVY_NEXT_STEP 0
 function __savvy_run_prompt --description "Modify prompt for Savvy run"
     # Save the original prompt function if not already saved
     if not functions -q __pre_savvy_run_prompt
-        set -g SAVVY_COMMANDS (string split ":COMMA:" $SAVVY_RUNBOOK_COMMANDS)
+        set -g SAVVY_COMMANDS (string split "COMMA" $SAVVY_RUNBOOK_COMMANDS)
         functions -c fish_prompt __pre_savvy_run_prompt
     end
 
