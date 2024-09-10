@@ -22,9 +22,6 @@ type fish struct {
 }
 
 const fishBaseScript = `
-set RED (tput setaf 1)
-set RESET (tput sgr0)
-
 switch "$OSTYPE"
     case 'solaris*'
     case 'darwin*'
@@ -38,7 +35,7 @@ switch "$OSTYPE"
         echo "unknown: $OSTYPE"
 end
 
-set SAVVY_INPUT_FILE {{.SocketPath}}
+set -g SAVVY_INPUT_FILE {{.SocketPath}}
 
 # Fish doesn't use the same startup files as Bash, but we can approximate the behavior
 if status is-login
@@ -57,11 +54,11 @@ else
     end
 end
 
-if not functions -q savvy_cmd_pre_exec
-    echo "$RED Your shell is not configured to use Savvy. Please run the following commands: $RESET"
+if not functions -q __savvy_record_pre_exec__
+    echo (set_color red) "Your shell is not configured to use Savvy. Please run the following commands: " (set_color normal)
     echo
-    echo "$RED> echo 'eval (savvy init fish)' >> ~/.config/fish/config.fish$RESET"
-    echo "$RED> source ~/.config/fish/config.fish$RESET"
+    echo (set_color red)"> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"(set_color normal)
+    echo (set_color red)"> source ~/.config/fish/config.fish"(set_color normal)
     exit 1
 end
 `
