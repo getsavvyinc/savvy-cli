@@ -43,7 +43,6 @@ function __savvy_runbook_runner__ --on-event fish_prompt
     if test "$SAVVY_CONTEXT" = "run"
         set -l run_cmd (savvy internal current)
         commandline -r $run_cmd
-        commandline -f end-of-line
     end
 end
 
@@ -80,7 +79,8 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
 
         echo -n $original_prompt
         if test "$SAVVY_CONTEXT" = "run"
-          echo -n (set_color green)"savvy run $SAVVY_RUN_CURR"(set_color normal)
+          echo -n (set_color green)"savvy run" (set_color normal)
+          echo -n "$SAVVY_RUN_CURR"
         end
 
         if test "$SAVVY_CONTEXT" = "run"
@@ -97,7 +97,8 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
           and test (count $SAVVY_COMMANDS) -gt 0
           and test "$SAVVY_NEXT_STEP" -lt (count $SAVVY_COMMANDS)
             set -l num (math $SAVVY_NEXT_STEP + 1)
-            echo -n (set_color green)"($num/(count $SAVVY_COMMANDS))"(set_color normal)
+            set -l count (count $SAVVY_COMMANDS)
+            echo -n (set_color green)"($num/$count)" (set_color normal)
         end
         echo -n $original_right_prompt
     end
