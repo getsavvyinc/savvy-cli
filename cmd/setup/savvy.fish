@@ -97,7 +97,6 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
           and test (count $SAVVY_COMMANDS) -gt 0
           and test "$SAVVY_NEXT_STEP" -lt (count $SAVVY_COMMANDS)
             set -l num (math $SAVVY_NEXT_STEP + 1)
-            echo -n $original_right_prompt
             echo -n (set_color green)"($num/(count $SAVVY_COMMANDS))"(set_color normal)
         end
         echo -n $original_right_prompt
