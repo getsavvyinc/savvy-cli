@@ -53,16 +53,17 @@ else
         source "$HOME/.config/fish/conf.d/login.fish"
     end
 end
-
-if not functions -q __savvy_record_pre_exec__
-    echo (set_color red) "Your shell is not configured to use Savvy. Please run the following commands: " (set_color normal)
-    echo
-    echo (set_color red)"> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"(set_color normal)
-    echo (set_color red)"> source ~/.config/fish/config.fish"(set_color normal)
-    exit 1
-end
 `
 const fishRecordSetup = `
+if not functions -q __savvy_record_pre_exec__
+    set_color red
+    echo -n "Your recording shell is not configured to use Savvy. Please run the following commands: "
+    set_color normal
+    echo
+    set_color red echo "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish" set_color normal
+     set_color red echo "> source ~/.config/fish/config.fish" set_color normal
+    exit 1
+end
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop recording."
 `
@@ -77,7 +78,10 @@ func init() {
 // Spawn starts a fish shell.
 func (f *fish) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	// Create a temporary file to store the script
-	tmpDir := os.TempDir()
+	tmpDir, err := os.MkdirTemp("", "savvy-fish-*")
+	if err != nil {
+		return nil, err
+	}
 	fishVendorConfDir := filepath.Join(tmpDir, "fish", "vendor_conf.d")
 	if err := os.MkdirAll(fishVendorConfDir, 0755); err != nil {
 		return nil, err
@@ -94,7 +98,7 @@ func (f *fish) Spawn(ctx context.Context) (*exec.Cmd, error) {
 
 	dataDirs := os.Getenv("XDG_DATA_DIRS")
 	if dataDirs == "" {
-		dataDirs = fishVendorConfDir
+		dataDirs = tmpDir
 	} else {
 		dataDirs = strings.Join([]string{dataDirs, fishVendorConfDir}, ":")
 	}
@@ -116,15 +120,17 @@ const fishRunRunbookScript = `
 if not functions -q __savvy_run_pre_exec__
    or not functions -q __savvy_run_completion__
     set_color red
-    echo " Your shell is not configured to use Savvy. Please run the following commands: "
+    echo -n " Your shell is not configured to use Savvy. Please run the following commands: "
     set_color normal
-    echo
     set_color red
-    echo "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"
-    echo "> source ~/.config/fish/config.fish"
+    echo
+    echo -n "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"
+    echo -n "> source ~/.config/fish/config.fish"
     set_color normal
     exit 1
 end
+
+echo "HERE!!!"
 
 bind \cn '__savvy_run_completion__ "__savvy_run_completion__"'
 
@@ -134,7 +140,10 @@ echo
 `
 
 func (f *fish) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
-	tmpDir := os.TempDir()
+	tmpDir, err := os.MkdirTemp("", "savvy-fish-*")
+	if err != nil {
+		return nil, err
+	}
 	fishVendorConfDir := filepath.Join(tmpDir, "fish", "vendor_conf.d")
 	if err := os.MkdirAll(fishVendorConfDir, 0755); err != nil {
 		return nil, err
@@ -151,9 +160,9 @@ func (f *fish) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) 
 
 	dataDirs := os.Getenv("XDG_DATA_DIRS")
 	if dataDirs == "" {
-		dataDirs = fishVendorConfDir
+		dataDirs = tmpDir
 	} else {
-		dataDirs = strings.Join([]string{dataDirs, fishVendorConfDir}, ":")
+		dataDirs = strings.Join([]string{dataDirs, tmpDir}, ":")
 	}
 	cmd := exec.CommandContext(ctx, f.shellCmd)
 	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=run", fmt.Sprintf("XDG_DATA_DIRS=%s", dataDirs))
