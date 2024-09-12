@@ -44,7 +44,7 @@ set -g SAVVY_COMMANDS ()
 set -g SAVVY_RUN_CURR ""
 set -g SAVVY_NEXT_STEP 0
 
-function __savvy_run_pre_exec --on-event fish_preexec
+function __savvy_run_pre_exec__ --on-event fish_preexec
     if not test "$SAVVY_CONTEXT" = "run"
         return
     end
