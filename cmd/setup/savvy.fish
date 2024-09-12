@@ -44,6 +44,17 @@ set -g SAVVY_COMMANDS ()
 set -g SAVVY_RUN_CURR ""
 set -g SAVVY_NEXT_STEP 0
 
+function __savvy_run_pre_exec --on-event fish_preexec
+    if not test "$SAVVY_CONTEXT" = "run"
+        return
+    end
+
+    set -l cmd $argv[1]
+
+    if test "$SAVVY_CONTEXT" = "run"
+        set -g SAVVY_NEXT_STEP (savvy internal next --cmd="$cmd")
+    end
+end
 
 function __savvy_run_prompt --description "Modify prompt for Savvy run"
     # Save the original prompt function if not already saved
@@ -144,20 +155,36 @@ function __savvy_record_pre_exec__ --on-event fish_preexec
 end
 
 
-# Trigger completion on empty command line
-# Refer to shell/fish.go for triggering completion
-function __savvy_run_completion__ --description "Complete the current command in a runbook"
+function __savvy_run_completion__ --on-event fish_prompt
     if not test "$SAVVY_CONTEXT" = "run"
         return
     end
 
     set -l run_cmd (savvy internal current)
-    echo $cmd
     set -l cmd (commandline -o)
 
     if test -z "$cmd"
         # Completions for empty command line
-        echo $run_cmd
+        commandline -i $run_cmd
+        return
+    end
+end
+
+
+
+# Trigger completion on empty command line
+# Refer to shell/fish.go for triggering completion
+function __savvy_run_completion_old__ --description "Complete the current command in a runbook"
+    if not test "$SAVVY_CONTEXT" = "run"
+        return
+    end
+
+    set -l run_cmd (savvy internal current)
+    set -l cmd (commandline -o)
+
+    if test -z "$cmd"
+        # Completions for empty command line
+        commandline -i $run_cmd
         return
     end
 end

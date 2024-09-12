@@ -126,7 +126,7 @@ if not functions -q __savvy_run_pre_exec__
     exit 1
 end
 
-complete -c '' -f -a "(__savvy_run_completion__)"
+bind \cn '__savvy_run_completion__ "__savvy_run_completion__"'
 
 echo
 echo "Type 'exit' or press 'ctrl+d' to stop running."
