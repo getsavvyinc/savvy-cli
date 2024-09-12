@@ -37,22 +37,22 @@ end
 
 set -g SAVVY_INPUT_FILE {{.SocketPath}}
 
-# Fish doesn't use the same startup files as Bash, but we can approximate the behavior
-if status is-login
-    if test -f "/etc/fish/config.fish"
-        source "/etc/fish/config.fish"
-    end
-    if test -f "$HOME/.config/fish/config.fish"
-        source "$HOME/.config/fish/config.fish"
-    end
-else
-    if test -f "/etc/fish/conf.d/login.fish"
-        source "/etc/fish/conf.d/login.fish"
-    end
-    if test -f "$HOME/.config/fish/conf.d/login.fish"
-        source "$HOME/.config/fish/conf.d/login.fish"
-    end
-end
+## Fish doesn't use the same startup files as Bash, but we can approximate the behavior
+#if status is-login
+#    if test -f "/etc/fish/config.fish"
+#        source "/etc/fish/config.fish"
+#    end
+#    if test -f "$HOME/.config/fish/config.fish"
+#        source "$HOME/.config/fish/config.fish"
+#    end
+#else
+#    if test -f "/etc/fish/conf.d/login.fish"
+#        source "/etc/fish/conf.d/login.fish"
+#    end
+#    if test -f "$HOME/.config/fish/conf.d/login.fish"
+#        source "$HOME/.config/fish/conf.d/login.fish"
+#    end
+#end
 `
 const fishRecordSetup = `
 if not functions -q __savvy_record_pre_exec__
@@ -124,8 +124,8 @@ if not functions -q __savvy_run_pre_exec__
     set_color normal
     set_color red
     echo
-    echo -n "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"
-    echo -n "> source ~/.config/fish/config.fish"
+    echo "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish"
+    echo "> source ~/.config/fish/config.fish"
     set_color normal
     exit 1
 end
