@@ -38,7 +38,18 @@ end
 set -g SAVVY_INPUT_FILE {{.SocketPath}}
 `
 
-var fishTemplate *template.Template
+const fishRecordHistoryScript = `
+function savvy_record_history_skip_execution --on-event fish_preexec
+  set -l cmd $argv[1]
+  SAVVY_SOCKET_PATH={{.SocketPath}} savvy send "$cmd"
+  exec fish
+end
+`
+
+var (
+	fishTemplate              *template.Template
+	fishRecordHistoryTemplate *template.Template
+)
 
 func init() {
 	fishTemplate = template.Must(template.New("fish").Parse(fishBaseScript))
