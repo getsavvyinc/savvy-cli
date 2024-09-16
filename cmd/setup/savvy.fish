@@ -27,7 +27,8 @@ function __savvy_record_prompt --description "Modify prompt for Savvy recording"
         if test "$SAVVY_CONTEXT" = "record"
           and not string match -q '*recording*' "$fish_prompt"
           echo -n $original_prompt
-          echo -n (set_color green)"recording"(set_color normal)" 😎 "
+          echo -n (set_color green)"recording"(set_color normal)" 😎>"
+          echo -n "  "
         else
           echo -n $original_prompt
         end
@@ -82,8 +83,8 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
 
         echo -n $original_prompt
         if test "$SAVVY_CONTEXT" = "run"
-          echo -n (set_color green)"savvy run" (set_color normal)
-          echo -n "$SAVVY_RUN_CURR"
+          echo -n (set_color --bold)"[ctrl-n: get next step]"(set_color normal)
+          echo -n (set_color green)"(savvy run" (set_color normal) "$SAVVY_RUN_CURR) "
         end
 
         if test "$SAVVY_CONTEXT" = "run"
@@ -132,21 +133,12 @@ function __savvy_record_pre_exec__ --on-event fish_preexec
         return
     end
 
-    # $argv[2] is the full command line in Fish
     set -l cmd $argv[1]
 
     # Clear step_id
     set -g step_id ""
 
     if test "$SAVVY_CONTEXT" = "record"
-        # Get the current prompt
-        #set -l prompt (fish_prompt)
-
-        # Remove color codes and other formatting from the prompt
-        #set -l clean_prompt (string replace -ra '\e\[[^m]*m' "" -- $prompt)
-
-        # Send command to savvy and get step_id
-        #savvy send --prompt="$clean_prompt" $cmd
         set -g step_id (
             env SAVVY_SOCKET_PATH=$SAVVY_INPUT_FILE \
             savvy send $cmd
@@ -155,7 +147,27 @@ function __savvy_record_pre_exec__ --on-event fish_preexec
 end
 
 
-function __savvy_run_completion__ --on-event fish_prompt
+function check_savvy_record_setup
+    if not test "$SAVVY_CONTEXT" = "record"
+        return
+    end
+
+    if not functions -q __savvy_record_pre_exec__
+    set_color red
+    echo "Your recording shell is not configured to use Savvy. Please run the following commands: "
+    set_color normal
+    echo
+    set_color red echo "> echo 'savvy init fish | source' >> ~/.config/fish/config.fish" set_color normal
+    set_color red echo "> source ~/.config/fish/config.fish" set_color normal
+    echo
+    exit 1
+    end
+end
+
+check_savvy_record_setup
+
+
+function __savvy_run_completion__
     if not test "$SAVVY_CONTEXT" = "run"
         return
     end
@@ -165,27 +177,16 @@ function __savvy_run_completion__ --on-event fish_prompt
 
     if test -z "$cmd"
         # Completions for empty command line
-        commandline -i $run_cmd
+        commandline --replace $run_cmd
         return
     end
 end
 
-
-
-# Trigger completion on empty command line
-# Refer to shell/fish.go for triggering completion
-function __savvy_run_completion_old__ --description "Complete the current command in a runbook"
+function trigger_run_autocomplete --on-event fish_complete_command
     if not test "$SAVVY_CONTEXT" = "run"
         return
     end
-
-    set -l run_cmd (savvy internal current)
-    set -l cmd (commandline -o)
-
-    if test -z "$cmd"
-        # Completions for empty command line
-        commandline -i $run_cmd
-        return
-    end
+    bind \cn '__savvy_run_completion__'
 end
 
+trigger_run_autocomplete
