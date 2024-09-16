@@ -1,16 +1,19 @@
 package shell
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/tail"
 )
 
 var _ Shell = (*fish)(nil)
@@ -36,14 +39,17 @@ switch "$OSTYPE"
 end
 
 set -g SAVVY_INPUT_FILE {{.SocketPath}}
+
 `
 
 const fishRecordHistoryScript = `
+
 function savvy_record_history_skip_execution --on-event fish_preexec
   set -l cmd $argv[1]
   SAVVY_SOCKET_PATH={{.SocketPath}} savvy send "$cmd"
   exec fish
 end
+
 `
 
 var (
@@ -53,6 +59,7 @@ var (
 
 func init() {
 	fishTemplate = template.Must(template.New("fish").Parse(fishBaseScript))
+	fishRecordHistoryTemplate = template.Must(template.New("fishHistory").Parse(fishBaseScript + fishRecordHistoryScript))
 }
 
 // injectVendorCode injects the vendor code into the fish shell configuration.
@@ -103,12 +110,61 @@ func (f *fish) Spawn(ctx context.Context) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
+func getFishHistoryFileName() (string, error) {
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome != "" {
+		return filepath.Join(xdgDataHome, "fish", "fish_history"), nil
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("error getting user home directory: %w", err)
+	}
+
+	return filepath.Join(homeDir, ".local", "share", "fish", "fish_history"), nil
+}
+
 func (f *fish) TailHistory(ctx context.Context) ([]string, error) {
-	return nil, nil
+	fileName, err := getFishHistoryFileName()
+	if err != nil {
+		return nil, err
+	}
+
+	// fish history files record code on one line and timestamp(when) on the next line.
+	// So to read the last 100 commands, we need to read a maximum of 200 lines.
+	rc, err := tail.Tail(fileName, 200)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line != "" && strings.HasPrefix(line, "- cmd:") {
+			cmd := strings.TrimSpace(strings.TrimPrefix(line, "- cmd:"))
+			lines = append(lines, cmd)
+		}
+	}
+
+	// reverse the result
+	slices.Reverse(lines)
+	return lines, nil
 }
 
 func (f *fish) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
-	return nil, nil
+	vendorDir, err := f.injectVendorCode(fishRecordHistoryTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	dataDirs := addVendorDirToXDGDataDirPath(vendorDir)
+
+	cmd := exec.CommandContext(ctx, f.shellCmd)
+	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=history", fmt.Sprintf("XDG_DATA_DIRS=%s", dataDirs))
+	cmd.WaitDelay = 500 * time.Millisecond
+	return cmd, nil
 }
 
 func (f *fish) SpawnRunbookRunner(ctx context.Context, runbook *client.Runbook) (*exec.Cmd, error) {
