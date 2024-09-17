@@ -102,4 +102,4 @@ esac
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
-echo "${GREEN}${BOLD}Join Savvy's Discord https://getsavvy.so/discord if you have questions or feedback${RESET}"
+echo "${BOLD}Join Savvy's Discord https://getsavvy.so/discord if you have questions or feedback${RESET}"
