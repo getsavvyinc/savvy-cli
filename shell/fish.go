@@ -47,14 +47,14 @@ set -g SAVVY_INPUT_FILE {{.SocketPath}}
 
 `
 
+// fishRecordHistoryScript is a fish script that records the command history.
+// The redirect to > /dev/null is important. Without it, savvy send is not executed
 const fishRecordHistoryScript = `
-
 function savvy_record_history_skip_execution --on-event fish_preexec
   set -l cmd $argv[1]
-  SAVVY_SOCKET_PATH={{.SocketPath}} savvy send "$cmd"
+  SAVVY_SOCKET_PATH=$SAVVY_INPUT_FILE savvy send $cmd > /dev/null
   exec fish
 end
-
 `
 
 var (
@@ -167,7 +167,7 @@ func (f *fish) SpawnHistoryExpander(ctx context.Context) (*exec.Cmd, error) {
 	dataDirs := addVendorDirToXDGDataDirPath(vendorDir)
 
 	cmd := exec.CommandContext(ctx, f.shellCmd)
-	cmd.Env = append(os.Environ(), "SAVVY_CONTEXT=history", fmt.Sprintf("XDG_DATA_DIRS=%s", dataDirs))
+	cmd.Env = append(os.Environ(), fmt.Sprintf("XDG_DATA_DIRS=%s", dataDirs))
 	cmd.WaitDelay = 500 * time.Millisecond
 	return cmd, nil
 }
