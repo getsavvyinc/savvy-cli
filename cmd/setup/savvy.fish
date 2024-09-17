@@ -83,14 +83,15 @@ function __savvy_run_prompt --description "Modify prompt for Savvy run"
 
         echo -n $original_prompt
         if test "$SAVVY_CONTEXT" = "run"
-          echo -n (set_color --bold)"[ctrl-n: get next step]"(set_color normal)
-          echo -n (set_color green)"(savvy run" (set_color normal) "$SAVVY_RUN_CURR) "
+          and test "$SAVVY_NEXT_STEP" -lt (count $SAVVY_COMMANDS)
+            echo -n (set_color green)"(savvy run" (set_color normal) "$SAVVY_RUN_CURR) "(set_color normal)
+            echo -n (set_color --bold)"[ctrl-n: get next step]"(set_color normal)
         end
 
         if test "$SAVVY_CONTEXT" = "run"
           and test "$SAVVY_NEXT_STEP" -ge (count $SAVVY_COMMANDS)
             echo -n (set_color green)" done 😎"(set_color normal)
-            echo -n (set_color red)" ctrl-d/exit to exit"(set_color normal)
+            echo -n (set_color red)" type ctrl-d/exit to exit>  "(set_color normal)
         end
     end
 
