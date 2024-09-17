@@ -25,24 +25,6 @@ type fish struct {
 }
 
 const fishBaseScript = `
-# Get the operating system name
-set os (uname -s)
-
-switch $os
-    case Darwin
-        echo "macOS detected"
-    case Linux
-        echo "Linux detected"
-    case 'CYGWIN*' 'MINGW*' 'MSYS*'
-        echo "Windows OS is not supported"
-    case FreeBSD NetBSD DragonFly
-        echo "BSD detected"
-    case SunOS
-        echo "Solaris detected"
-    case '*'
-        echo "Unknown OS: $os"
-end
-
 set -g SAVVY_INPUT_FILE {{.SocketPath}}
 
 `
