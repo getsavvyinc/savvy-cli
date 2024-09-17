@@ -41,7 +41,7 @@ func init() {
 
 func recordHistory(cmd *cobra.Command, _ []string) {
 	ctx := cmd.Context()
-	logger := loggerFromCtx(ctx).With("command", "history")
+	logger := loggerFromCtx(ctx).With("cmd", "history")
 
 	cl, err := client.GetLoggedInClient()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
@@ -175,6 +175,7 @@ func expandHistory(ctx context.Context,
 
 	for i, cmd := range rawCommands {
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
+			logger.Debug("failed to write command to psuedo terminal", "error", err.Error())
 			return nil, err
 		}
 		// Wait for the command to be processed by the server.
