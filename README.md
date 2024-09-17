@@ -133,7 +133,9 @@ Run `savvy login` to start the login flow.
 
 5. What shells does Savvy support?
 
-Savvy supports `zsh` and `bash`. Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
+Savvy supports `zsh`, `bash`, and `fish`.
+
+Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
 
 6. Does Savvy work on Windows?
 
