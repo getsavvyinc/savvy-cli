@@ -66,12 +66,14 @@ case :$PATH:
      *) case :$shell:
        in *zsh*) echo "${BLUE}${BOLD} echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc${RESET}";;
           *bash*) echo "${BLUE}${BOLD} echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.bashrc${RESET}";;
+          *fish*) echo "${BLUE}${BOLD} echo 'fish_add_path -P $bin_dir' >> ~/.config/fish/config.fish${RESET}";;
      esac;;
 esac
 
 case :$shell:
   in  *zsh*) echo "${BLUE}${BOLD} echo 'eval \"\$(savvy init zsh)\"' >> ~/.zshrc${RESET}";;
       *bash*) echo "${BLUE}${BOLD} echo 'eval \"\$(savvy init bash)\"' >> ~/.bashrc${RESET}";;
+      *fish*) echo "${BLUE}${BOLD} echo 'savvy init fish | source' >> ~/.config/fish/config.fish${RESET}";;
 esac
 
 
@@ -94,10 +96,10 @@ fi
 case :$shell:
   in  *zsh*) echo "${BLUE}${BOLD} source ~/.zshrc # to pick up the new changes${RESET}";;
       *bash*) echo "${BLUE}${BOLD} source ~/.bashrc # to pick up the new changes${RESET}";;
+      *fish*) echo "${BLUE}${BOLD} source ~/.config/fish/config.fish # to pick up the new changes${RESET}";;
 esac
 
 echo
 echo "Run 'savvy help' to learn more or checkout our docs at https://github.com/getsavvyinc/savvy-cli"
 echo
-echo "${RED}${BOLD}Stuck? We'd love to help. Just join our Discord https://getsavvy.so/discord${RESET}"
-
+echo "${GREEN}${BOLD}Join Savvy's Discord https://getsavvy.so/discord if you have questions or feedback${RESET}"
