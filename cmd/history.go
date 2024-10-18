@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"os"
+	"os/signal"
 	"sort"
 	"sync"
+	"syscall"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -99,7 +100,7 @@ type selectableCommand struct {
 	Command string
 }
 
-func allowUserToSelectCommands(history []string) []string {
+func allowUserToSelectCommands(logger *slog.Logger, history []string) []string {
 	var options []huh.Option[selectableCommand]
 	var selectedOptions []selectableCommand
 	for i, cmd := range history {
@@ -118,7 +119,8 @@ func allowUserToSelectCommands(history []string) []string {
 	)
 
 	if err := form.Run(); err != nil {
-		log.Fatal(err)
+		logger.Debug("failed to run form", "error", err.Error())
+		return nil
 	}
 
 	sort.Slice(selectedOptions, func(i, j int) bool {
@@ -203,6 +205,20 @@ func expandHistory(ctx context.Context,
 }
 
 func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server.RecordedCommand, error) {
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
+	sh := shell.New("/tmp/savvy-socket")
+	lines, err := sh.TailHistory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	selectedHistory := allowUserToSelectCommands(logger, lines)
+	if len(selectedHistory) == 0 {
+		return nil, nil
+	}
+
 	commandProcessedChan := make(chan bool, 1)
 	defer close(commandProcessedChan)
 
@@ -210,9 +226,6 @@ func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server
 		logger.Debug("command recorded", "command", cmd)
 		commandProcessedChan <- true
 	}
-
-	ctx, cancelCtx := context.WithCancel(ctx)
-	defer cancelCtx()
 
 	ss, err := server.NewUnixSocketServerWithDefaultPath(server.WithCommandRecordedHook(hook))
 	if errors.Is(err, server.ErrAbortRecording) {
@@ -231,21 +244,13 @@ func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server
 		cancelCtx()
 	}()
 
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-		return nil, nil
-	}
-
-	sh := shell.New("/tmp/savvy-socket")
-	lines, err := sh.TailHistory(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedHistory := allowUserToSelectCommands(lines)
-	if len(selectedHistory) == 0 {
-		return nil, nil
-	}
+	intSigChan := make(chan os.Signal, 1)
+	signal.Notify(intSigChan, syscall.SIGINT)
+	logger.Debug("listening for interrupt signal")
+	go func() {
+		<-intSigChan
+		ss.Close()
+	}()
 
 	var commands []*server.RecordedCommand
 	if err := huhSpinner.New().Title("Processing selected commands").Action(func() {
