@@ -177,7 +177,7 @@ func expandHistory(ctx context.Context,
 
 	for i, cmd := range rawCommands {
 		if _, err := fmt.Fprintln(ptmx, cmd); err != nil {
-			logger.Debug("failed to write command to psuedo terminal", "error", err.Error())
+			logger.Debug("failed to write command to pseudo terminal", "error", err.Error())
 			return nil, err
 		}
 		// Wait for the command to be processed by the server.
@@ -196,7 +196,7 @@ func expandHistory(ctx context.Context,
 	logger.Debug("cancelReader.Cancel() returned", "ok", ok)
 	wg.Wait()
 	logger.Debug("wg.Wait() finished")
-	logger.Debug("canceling context for psuedo terminal and its associated command")
+	logger.Debug("canceling context for pseudo terminal and its associated command")
 	cancelCtx()
 	logger.Debug("waitng for c.Wait()")
 	c.Wait()
