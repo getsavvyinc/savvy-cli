@@ -17,6 +17,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/redact"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/muesli/cancelreader"
 	"github.com/muesli/termenv"
@@ -72,8 +73,14 @@ func runRecordCmd(cmd *cobra.Command, _ []string) {
 		return
 	}
 
+	redactedCommands, err := redact.Commands(recordedCommands)
+	if err != nil {
+		display.ErrorWithSupportCTA(err)
+		return
+	}
+
 	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(recordedCommands, cl)
+	gm := component.NewGenerateRunbookModel(redactedCommands, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
 		err = fmt.Errorf("failed to generate runbook: %w", err)

@@ -20,8 +20,10 @@ import (
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/redact"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
+	"github.com/getsavvyinc/savvy-cli/theme"
 	"github.com/muesli/cancelreader"
 	"github.com/spf13/cobra"
 )
@@ -29,8 +31,8 @@ import (
 // historyCmd represents the history command
 var historyCmd = &cobra.Command{
 	Use:   "history",
-	Short: "Create a runbook from your shell history",
-	Long: `Create a runbook from  a selection of the last 100 commands in your shell history.
+	Short: "Create an artifact from your shell history",
+	Long: `Create an artifact from  a selection of the last 100 commands in your shell history.
   Savvy can expand all aliases used in your shell history without running the commands.`,
 	Hidden: true,
 	Run:    recordHistory,
@@ -46,7 +48,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 
 	cl, err := client.GetLoggedInClient()
 	if err != nil && errors.Is(err, client.ErrInvalidClient) {
-		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
+		display.Error(errors.New("You must be logged in to create an artifact. Please run `savvy login`"))
 		os.Exit(1)
 	} else if err != nil {
 		display.ErrorWithSupportCTA(err)
@@ -67,16 +69,16 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	gm := component.NewGenerateRunbookModel(historyCmds, cl)
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
-		err = fmt.Errorf("failed to generate runbook: %w", err)
+		err = fmt.Errorf("failed to generate artifact: %w", err)
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
 
 	// ensure the bubble tea program is finished before we start the next one
-	logger.Debug("wait for bubbletea program", "component", "generate runbook", "status", "running")
+	logger.Debug("wait for bubbletea program", "component", "generate artifact", "status", "running")
 	cancel()
 	p.Wait()
-	logger.Debug("wait for bubbletea program", "component", "generate runbook", "status", "finished")
+	logger.Debug("wait for bubbletea program", "component", "generate artifact", "status", "finished")
 
 	runbook := <-gm.RunbookCh()
 	m, err := newDisplayCommandsModel(runbook)
@@ -86,12 +88,12 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 
 	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		logger.Debug("failed to display runbook", "error", err.Error())
-		display.Info("View and edit your runbook online at: " + runbook.URL)
+		logger.Debug("failed to display artifact", "error", err.Error())
+		display.Info("View and edit your artifact online at: " + runbook.URL)
 		os.Exit(1)
 	}
 	if runbook.URL != "" {
-		display.Success("View and edit your runbook online at: " + runbook.URL)
+		display.Success("View and edit your artifact online at: " + runbook.URL)
 	}
 }
 
@@ -110,15 +112,15 @@ func allowUserToSelectCommands(logger *slog.Logger, history []string) []string {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[selectableCommand]().
-				Title("Savvy History").
-				Description("Press x to include/exclude commands in your Runbook. Selected Commands will NOT be executed.").
+				Title("Select Commands to Create an Artifact").
+				Description("Press x to add/remove commands").
 				Value(&selectedOptions).
 				Height(33).
 				Options(options...),
 		),
 	)
 
-	if err := form.Run(); err != nil {
+	if err := form.WithTheme(theme.New()).Run(); err != nil {
 		logger.Debug("failed to run form", "error", err.Error())
 		return nil
 	}
@@ -269,5 +271,12 @@ func selectAndExpandHistory(ctx context.Context, logger *slog.Logger) ([]*server
 	}).Run(); err != nil {
 		logger.Debug("failed to run spinner", "error", err.Error())
 	}
-	return commands, nil
+
+	redacted, err := redact.Commands(commands)
+	if err != nil {
+		logger.Debug("failed to redact commands", "error", err.Error())
+		return nil, err
+	}
+
+	return redacted, nil
 }
