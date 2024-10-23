@@ -49,6 +49,8 @@ if ! source_file "$BASH_HOOKS_CONTENT"; then
     echo "Failed to source bash-hooks.sh" >&2
     return 1
 fi
+
+source <(savvy completion bash)
 `
 
 // initCmd represents the init command
