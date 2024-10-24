@@ -50,7 +50,22 @@ if ! source_file "$BASH_HOOKS_CONTENT"; then
     return 1
 fi
 
-source <(savvy completion bash)
+# Detect the operating system and source bash completion
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    if command -v brew >/dev/null 2>&1; then
+        if [[ -f "$(brew --prefix)/etc/bash_completion" ]]; then
+            source "$(brew --prefix)/etc/bash_completion"
+            source <(savvy completion bash)
+        fi
+    fi
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    if [[ -f "/etc/bash_completion" ]]; then
+        source "/etc/bash_completion"
+        source <(savvy completion bash)
+    fi
+fi
 `
 
 // initCmd represents the init command
