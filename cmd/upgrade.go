@@ -29,6 +29,7 @@ var upgradeCmd = &cobra.Command{
 
 		assetDownloader := asset.NewAssetDownloader(executablePath, asset.WithLookupArchFallback(map[string]string{
 			"amd64": "x86_64",
+			"386":   "i386",
 		}))
 		upgrader := upgrade.NewUpgrader(owner, repo, executablePath, upgrade.WithAssetDownloader(assetDownloader))
 
