@@ -34,7 +34,7 @@ var historyCmd = &cobra.Command{
 	Short: "Create an artifact from your shell history",
 	Long: `Create an artifact from  a selection of the last 100 commands in your shell history.
   Savvy can expand all aliases used in your shell history without running the commands.`,
-	Hidden: true,
+	Hidden: false,
 	Run:    recordHistory,
 }
 
