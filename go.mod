@@ -15,7 +15,7 @@ require (
 	github.com/getsavvyinc/upgrade-cli v0.5.1
 	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.15.2
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/term v0.20.0
 )
