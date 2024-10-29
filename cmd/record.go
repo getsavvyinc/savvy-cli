@@ -11,12 +11,10 @@ import (
 	"sync"
 	"syscall"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
-	"github.com/getsavvyinc/savvy-cli/cmd/component"
-	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/export"
 	"github.com/getsavvyinc/savvy-cli/redact"
 	"github.com/getsavvyinc/savvy-cli/shell"
 	"github.com/muesli/cancelreader"
@@ -79,34 +77,10 @@ func runRecordCmd(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(redactedCommands, cl)
-	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
-	if _, err := p.Run(); err != nil {
-		err = fmt.Errorf("failed to generate runbook: %w", err)
+	exporter := export.NewExporter(redactedCommands)
+	if err := exporter.ToSavvyArtifact(ctx, cl); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
-	}
-
-	// ensure the bubble tea program is finished before we start the next one
-	cancel()
-	p.Wait()
-
-	runbook := <-gm.RunbookCh()
-	m, err := newDisplayCommandsModel(runbook)
-	if err != nil {
-		display.ErrorWithSupportCTA(err)
-		os.Exit(1)
-	}
-
-	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		// TODO: fail gracefully and provide users a link to view the runbook
-		display.ErrorWithSupportCTA(fmt.Errorf("could not display runbook: %w", err))
-		os.Exit(1)
-	}
-	if runbook.URL != "" {
-		display.Success("View and edit your runbook online at: " + runbook.URL)
 	}
 }
 
@@ -200,45 +174,6 @@ func startRecording(ctx context.Context) ([]*server.RecordedCommand, error) {
 	wg.Wait()
 
 	return ss.Commands(), nil
-}
-
-type displayCommands struct {
-	l list.Model
-}
-
-func toItems(steps []component.RunbookStep) []list.Item {
-	var items []list.Item
-	for _, step := range steps {
-		items = append(items, list.Item{
-			Command:         step.Command,
-			DescriptionText: step.Description,
-		})
-	}
-	return items
-}
-
-func newDisplayCommandsModel(runbook *component.Runbook) (*displayCommands, error) {
-	if runbook == nil {
-		return nil, errors.New("runbook is empty")
-	}
-
-	listItems := toItems(runbook.Steps)
-	l := list.NewModel(listItems, runbook.Title, runbook.URL, list.EditOnlineBinding)
-	return &displayCommands{l: l}, nil
-}
-
-func (dc *displayCommands) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	dc.l.Init()
-	return nil
-}
-
-func (dc *displayCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return dc.l.Update(msg)
-}
-
-func (dc *displayCommands) View() string {
-	return dc.l.View()
 }
 
 var ignoreErrors bool
