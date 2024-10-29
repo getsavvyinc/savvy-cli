@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/creack/pty"
-	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/export"
 	"github.com/getsavvyinc/savvy-cli/redact"
@@ -45,14 +44,6 @@ var recordCmd = &cobra.Command{
 var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 
 func runRecordCmd(cmd *cobra.Command, _ []string) {
-	cl, err := client.GetLoggedInClient()
-	if err != nil && errors.Is(err, client.ErrInvalidClient) {
-		display.Error(errors.New("You must be logged in to record a runbook. Please run `savvy login`"))
-		os.Exit(1)
-	} else if err != nil {
-		display.ErrorWithSupportCTA(err)
-		os.Exit(1)
-	}
 	ctx := cmd.Context()
 
 	recordedCommands, err := startRecording(ctx)
@@ -78,7 +69,7 @@ func runRecordCmd(cmd *cobra.Command, _ []string) {
 	}
 
 	exporter := export.NewExporter(redactedCommands)
-	if err := exporter.ToSavvyArtifact(ctx, cl); err != nil {
+	if err := exporter.Export(ctx); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}

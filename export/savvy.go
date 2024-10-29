@@ -7,6 +7,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
@@ -16,8 +17,37 @@ import (
 )
 
 type Exporter interface {
-	ToMarkdownFile(ctx context.Context)
-	ToSavvyArtifact(ctx context.Context, cl client.Client) error
+	Export(ctx context.Context) error
+	toMarkdownFile(ctx context.Context) error
+	toSavvyArtifact(ctx context.Context) error
+}
+
+const (
+	MarkdownFile  = "md"
+	SavvyArtifact = "savvy"
+)
+
+func (e *exporter) Export(ctx context.Context) error {
+	var exportFormat string
+	if err := huh.NewSelect[string]().
+		Title("Export Commands").
+		Description("Select an export format").
+		Options(
+			huh.NewOption("Local Markdown File", MarkdownFile),
+			huh.NewOption("Savvy Artifact (Share with your team)", SavvyArtifact),
+		).Value(&exportFormat).Run(); err != nil {
+		return err
+	}
+
+	switch exportFormat {
+	case MarkdownFile:
+		return e.toMarkdownFile(ctx)
+	case SavvyArtifact:
+		return e.toSavvyArtifact(ctx)
+	default:
+		return errors.New("invalid export format")
+	}
+
 }
 
 func NewExporter(commands []*server.RecordedCommand) Exporter {
@@ -30,17 +60,27 @@ type exporter struct {
 	commands []*server.RecordedCommand
 }
 
-func (e *exporter) ToMarkdownFile(ctx context.Context) {
+func (e *exporter) toMarkdownFile(ctx context.Context) error {
 	panic("implement me")
 }
 
-func (e *exporter) ToSavvyArtifact(ctx context.Context, cl client.Client) error {
+func (e *exporter) toSavvyArtifact(ctx context.Context) error {
+	cl, err := client.GetLoggedInClient()
+	if err != nil && errors.Is(err, client.ErrInvalidClient) {
+		display.Error(errors.New("You must be logged in to export an Artifact to Savvy. Please run `savvy login`"))
+		os.Exit(1)
+	} else if err != nil {
+		display.ErrorWithSupportCTA(err)
+		os.Exit(1)
+	}
+
 	gctx, cancel := context.WithCancel(ctx)
 	gm := component.NewGenerateRunbookModel(e.commands, cl)
 	var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
 		err = fmt.Errorf("failed to generate runbook: %w", err)
+		cancel()
 		return err
 	}
 

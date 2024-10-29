@@ -16,7 +16,6 @@ import (
 	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
-	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/export"
 	"github.com/getsavvyinc/savvy-cli/redact"
@@ -45,15 +44,6 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	ctx := cmd.Context()
 	logger := loggerFromCtx(ctx).With("cmd", "history")
 
-	cl, err := client.GetLoggedInClient()
-	if err != nil && errors.Is(err, client.ErrInvalidClient) {
-		display.Error(errors.New("You must be logged in to create an artifact. Please run `savvy login`"))
-		os.Exit(1)
-	} else if err != nil {
-		display.ErrorWithSupportCTA(err)
-		os.Exit(1)
-	}
-
 	historyCmds, err := selectAndExpandHistory(ctx, logger)
 	if err != nil {
 		display.FatalErrWithSupportCTA(err)
@@ -65,7 +55,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	}
 
 	exporter := export.NewExporter(historyCmds)
-	if err := exporter.ToSavvyArtifact(ctx, cl); err != nil {
+	if err := exporter.Export(ctx); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
 	}
