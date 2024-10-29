@@ -67,8 +67,10 @@ func (s *svc) ToMarkdownFile(ctx context.Context, commands []string) error {
 
 	defer func() {
 		if cerr := clipboard.WriteAll(mdContent); cerr != nil {
-			display.Info("Wrote md contents to clipboard")
+			err := fmt.Errorf("failed to write md contents to clipboard: %w", cerr)
+			display.Error(err)
 		}
+		display.Info("Wrote md contents to clipboard")
 	}()
 
 	humanReadableTime := time.Now().Format("2006_01_02_15:04:05")
