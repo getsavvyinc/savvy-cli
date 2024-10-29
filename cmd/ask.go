@@ -285,6 +285,17 @@ func (dc *askCommands) Init() tea.Cmd {
 	return nil
 }
 
+func toItems(steps []component.RunbookStep) []list.Item {
+	var items []list.Item
+	for _, step := range steps {
+		items = append(items, list.Item{
+			Command:         step.Command,
+			DescriptionText: step.Description,
+		})
+	}
+	return items
+}
+
 func (dc *askCommands) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 	case list.RefinePromptMsg:
