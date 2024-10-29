@@ -13,13 +13,12 @@ import (
 	"syscall"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
-	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/export"
 	"github.com/getsavvyinc/savvy-cli/redact"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
@@ -65,35 +64,10 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(historyCmds, cl)
-	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
-	if _, err := p.Run(); err != nil {
-		err = fmt.Errorf("failed to generate artifact: %w", err)
+	exporter := export.NewExporter(historyCmds)
+	if err := exporter.ToSavvyArtifact(ctx, cl); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
-	}
-
-	// ensure the bubble tea program is finished before we start the next one
-	logger.Debug("wait for bubbletea program", "component", "generate artifact", "status", "running")
-	cancel()
-	p.Wait()
-	logger.Debug("wait for bubbletea program", "component", "generate artifact", "status", "finished")
-
-	runbook := <-gm.RunbookCh()
-	m, err := newDisplayCommandsModel(runbook)
-	if err != nil {
-		display.FatalErrWithSupportCTA(err)
-	}
-
-	p = tea.NewProgram(m, tea.WithOutput(programOutput), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		logger.Debug("failed to display artifact", "error", err.Error())
-		display.Info("View and edit your artifact online at: " + runbook.URL)
-		os.Exit(1)
-	}
-	if runbook.URL != "" {
-		display.Success("View and edit your artifact online at: " + runbook.URL)
 	}
 }
 
