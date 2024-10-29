@@ -12,7 +12,9 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/export/markdown"
 	"github.com/getsavvyinc/savvy-cli/server"
+	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/muesli/termenv"
 )
 
@@ -34,7 +36,7 @@ func (e *exporter) Export(ctx context.Context) error {
 		Description("Select an export format").
 		Options(
 			huh.NewOption("Local Markdown File", MarkdownFile),
-			huh.NewOption("Savvy Artifact (Share with your team)", SavvyArtifact),
+			huh.NewOption("Savvy Artifact (Recommended)", SavvyArtifact),
 		).Value(&exportFormat).Run(); err != nil {
 		return err
 	}
@@ -53,15 +55,20 @@ func (e *exporter) Export(ctx context.Context) error {
 func NewExporter(commands []*server.RecordedCommand) Exporter {
 	return &exporter{
 		commands: commands,
+		mdSvc:    markdown.NewService(),
 	}
 }
 
 type exporter struct {
 	commands []*server.RecordedCommand
+	mdSvc    markdown.Service
 }
 
 func (e *exporter) toMarkdownFile(ctx context.Context) error {
-	panic("implement me")
+	commands := slice.Map(e.commands, func(rc *server.RecordedCommand) string {
+		return rc.Command
+	})
+	return e.mdSvc.ToMarkdownFile(ctx, commands)
 }
 
 func (e *exporter) toSavvyArtifact(ctx context.Context) error {
