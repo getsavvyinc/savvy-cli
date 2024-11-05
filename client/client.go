@@ -15,15 +15,23 @@ import (
 	"github.com/getsavvyinc/savvy-cli/config"
 )
 
+type RunbookClient interface {
+	RunbookByID(ctx context.Context, id string) (*Runbook, error)
+	Runbooks(ctx context.Context) ([]RunbookInfo, error)
+}
+
+type RunbookSaver interface {
+	SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error)
+}
+
 type Client interface {
+	RunbookClient
+	RunbookSaver
 	WhoAmI(ctx context.Context) (string, error)
 	GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
-	RunbookByID(ctx context.Context, id string) (*Runbook, error)
-	Runbooks(ctx context.Context) ([]RunbookInfo, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
-	SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
