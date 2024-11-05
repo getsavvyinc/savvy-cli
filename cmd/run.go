@@ -56,7 +56,7 @@ func savvyRun(cmd *cobra.Command, args []string) {
 	ctx := cmd.Context()
 	logger := loggerFromCtx(ctx).With("command", "run")
 
-	var cl client.Client
+	var cl client.RunbookClient
 	cl, err := client.New()
 	if err != nil {
 		logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
@@ -184,7 +184,7 @@ func runRunbook(ctx context.Context, runbook *client.Runbook) error {
 	return nil
 }
 
-func fetchRunbook(ctx context.Context, cl client.Client, runbookID string) (*client.Runbook, error) {
+func fetchRunbook(ctx context.Context, cl client.RunbookClient, runbookID string) (*client.Runbook, error) {
 	logger := loggerFromCtx(ctx).With("command", "run", "method", "fetchRunbook")
 	var rb *client.Runbook
 	var err error
@@ -206,7 +206,7 @@ type selectableRunbook struct {
 	RunbookID string `json:"runbook_id"`
 }
 
-func allowUserToSelectRunbook(ctx context.Context, logger *slog.Logger, cl client.Client) (string, error) {
+func allowUserToSelectRunbook(ctx context.Context, logger *slog.Logger, cl client.RunbookClient) (string, error) {
 	l := logger.With("func", "allowsUserToSelectRunbook")
 	runbooks, err := cl.Runbooks(ctx)
 	if err != nil {
