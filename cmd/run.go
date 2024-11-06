@@ -16,6 +16,7 @@ import (
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/client/local"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/server/run"
 	"github.com/getsavvyinc/savvy-cli/shell"
@@ -48,7 +49,10 @@ var runCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(1),
 }
 
+var localFlag bool
+
 func init() {
+	runCmd.Flags().BoolVarP(&localFlag, "local", "l", false, "Use locally saved runbooks instead of fetching from the server")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -57,13 +61,19 @@ func savvyRun(cmd *cobra.Command, args []string) {
 	logger := loggerFromCtx(ctx).With("command", "run")
 
 	var cl client.RunbookClient
-	cl, err := client.New()
-	if err != nil {
-		logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
-		cl = client.NewGuest()
+	if localFlag {
+		cl = local.New()
+	} else {
+		var err error
+		cl, err = client.New()
+		if err != nil {
+			logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
+			cl = client.NewGuest()
+		}
 	}
 
 	var runbookID string
+	var err error
 
 	if len(args) == 0 {
 		runbookID, err = allowUserToSelectRunbook(ctx, logger, cl)
