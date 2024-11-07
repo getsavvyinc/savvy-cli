@@ -9,7 +9,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/client"
 )
 
-const defaultLocalDBDir = "savvy"
+const defaultLocalDBDir = ".savvy"
 const defaultDBFilename = "savvy.local"
 
 var defaultLocalDBPath = filepath.Join(defaultLocalDBDir, defaultDBFilename)
