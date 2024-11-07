@@ -1,8 +1,7 @@
 package storage
 
 import (
-	"encoding/binary"
-	"encoding/json"
+	"encoding/gob"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -16,12 +15,6 @@ const defaultDBFilename = "savvy.local"
 var defaultLocalDBPath = filepath.Join(defaultLocalDBDir, defaultDBFilename)
 
 func Write(store map[string]*client.Runbook) error {
-	// Write the store to disk
-	data, err := json.Marshal(store)
-	if err != nil {
-		return err
-	}
-
 	f, err := openStore()
 	if err != nil {
 		return err
@@ -32,9 +25,11 @@ func Write(store map[string]*client.Runbook) error {
 		return err
 	}
 
-	if err := binary.Write(f, binary.LittleEndian, data); err != nil {
+	encoder := gob.NewEncoder(f)
+	if err := encoder.Encode(store); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -46,19 +41,14 @@ func Read() (map[string]*client.Runbook, error) {
 	}
 	defer f.Close()
 
-	stat, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	data := make([]byte, stat.Size())
-
-	if err := binary.Read(f, binary.LittleEndian, data); err != nil {
+	if _, err := f.Stat(); err != nil {
 		return nil, err
 	}
 
 	store := make(map[string]*client.Runbook)
-	if err := json.Unmarshal(data, &store); err != nil {
+
+	decoder := gob.NewDecoder(f)
+	if err := decoder.Decode(&store); err != nil {
 		return nil, err
 	}
 	return store, nil
