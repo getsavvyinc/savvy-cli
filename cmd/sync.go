@@ -32,7 +32,9 @@ func syncRunbooks(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	runbookInfo, err := cl.Runbooks(ctx)
+	runbookInfo, err := cl.Runbooks(ctx, client.RunbooksOpt{
+		ExcludeTeamRunbooks: true,
+	})
 	if err != nil {
 		logger.Error("failed to fetch runbooks", "error", err)
 		return

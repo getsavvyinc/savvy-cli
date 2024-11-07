@@ -116,12 +116,12 @@ func (g *guest) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 	return &runbook, nil
 }
 
-func (g *guest) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
+func (g *guest) Runbooks(ctx context.Context, opt RunbooksOpt) ([]RunbookInfo, error) {
 	cl, err := getLoggedInClient()
 	if err != nil {
 		return nil, err
 	}
-	return cl.Runbooks(ctx)
+	return cl.Runbooks(ctx, opt)
 }
 
 func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
