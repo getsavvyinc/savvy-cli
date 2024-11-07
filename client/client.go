@@ -17,7 +17,7 @@ import (
 
 type RunbookClient interface {
 	RunbookByID(ctx context.Context, id string) (*Runbook, error)
-	Runbooks(ctx context.Context) ([]RunbookInfo, error)
+	Runbooks(ctx context.Context, opts RunbooksOpt) ([]RunbookInfo, error)
 }
 
 type RunbookSaver interface {
@@ -292,9 +292,16 @@ func (c *client) RunbookByID(ctx context.Context, id string) (*Runbook, error) {
 	return &runbook, nil
 }
 
-func (c *client) Runbooks(ctx context.Context) ([]RunbookInfo, error) {
+type RunbooksOpt struct {
+	ExcludeTeamRunbooks bool
+}
+
+func (c *client) Runbooks(ctx context.Context, opts RunbooksOpt) ([]RunbookInfo, error) {
 	cl := c.cl
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/list_runbooks/all"), nil)
+	if opts.ExcludeTeamRunbooks {
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, c.apiURL("/api/v1/list_runbooks"), nil)
+	}
 	if err != nil {
 		return nil, err
 	}

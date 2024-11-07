@@ -31,7 +31,8 @@ func (l *local) RunbookByID(ctx context.Context, id string) (*client.Runbook, er
 	return rb, nil
 }
 
-func (l *local) Runbooks(ctx context.Context) ([]client.RunbookInfo, error) {
+// Runbooks returns all runbooks stored in the local  storage
+func (l *local) Runbooks(ctx context.Context, _ client.RunbooksOpt) ([]client.RunbookInfo, error) {
 
 	rbs, err := storage.Read()
 	if err != nil {
