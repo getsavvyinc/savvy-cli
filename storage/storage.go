@@ -3,16 +3,15 @@ package storage
 import (
 	"encoding/gob"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/getsavvyinc/savvy-cli/client"
+	"github.com/getsavvyinc/savvy-cli/config"
 )
 
-const defaultLocalDBDir = ".savvy"
 const defaultDBFilename = "savvy.local"
 
-var defaultLocalDBPath = filepath.Join(defaultLocalDBDir, defaultDBFilename)
+var defaultLocalDBPath = filepath.Join(config.DefaultConfigDir, defaultDBFilename)
 
 func Write(store map[string]*client.Runbook) error {
 	f, err := openStore()
@@ -55,13 +54,5 @@ func Read() (map[string]*client.Runbook, error) {
 }
 
 func openStore() (*os.File, error) {
-	u, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-	homeDir := u.HomeDir
-
-	storageFile := filepath.Join(homeDir, defaultLocalDBDir, defaultDBFilename)
-
-	return os.OpenFile(storageFile, os.O_RDWR|os.O_CREATE, 0666)
+	return os.OpenFile(defaultLocalDBPath, os.O_RDWR|os.O_CREATE, 0666)
 }
