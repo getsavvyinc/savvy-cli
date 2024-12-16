@@ -7,77 +7,57 @@
   <a href="https://docs.getsavvy.so">Docs</a> |
 </h3>
 
-Savvy is the easiest way to create, share and run runbooks from your terminal.
+Savvy is the easiest way to create, share and run workflows from your terminal.
 
 
-Savvy's CLI generates runbooks with AI or from commands you provide.
+Savvy's CLI generates workflows with AI or from commands you provide.
 
 ## Install Savvy's CLI
 
 ```sh
 curl -fsSL https://install.getsavvy.so | sh
 ```
+## Generate Workflows using your commands
 
-## Generate Runbooks with AI
+Use `savvy record` or `savvy record history` to create a workflow using commands you provide.
 
-Use `savvy ask` to generate entire runbooks or a single command using natural language.
+You don't have to change anything about your shell or aliases, savvy auto expands all aliases to make sure your workflow runs reliably on any machine.
 
-Just run `savvy ask` and provide a prompt.
+### Create Workflows from your Shell History
 
-Any one can use it, there's no need to signup for an account or provide a credit card.
-
-### Examples
-
-1. Ask Savvy to create a runbook for publishing a new go module.
-
-![Ask Savvy to create a runbook for publishing a new go module.](demos/ask-runbook.gif)
-
-2. Ask Savvy to help you with a tricky sequence of shell commands.
-
-![Ask Savvy to help you with a tricky shell command](demos/ask-command.gif)
-
-
-## Generate Runbooks using your commands
-
-Use `savvy record` or `savvy record history` to create a runbook using commands you provide.
-
-You don't have to change anything about your shell or aliases, savvy auto expands all aliases to make sure your runbook runs reliably on any machine.
-
-### Create Runbooks from your Shell History
-
-Use `savvy record history` to go back in time and create a runbooks by selecting just the commands you want.
+Use `savvy record history` to go back in time and create a workflows by selecting just the commands you want.
 
 Savvy will never execute any command you select.
 
 
 ![savvy record history](demos/savvy-history.gif)
 
-### Sharing Runbooks
+### Sharing Workflows
 
-Runbooks are private by default, but you can share them using a public or unlisted link from Savvy's dashboard.
+Workflows are private by default, but you can share them using a public or unlisted link from Savvy's dashboard.
 
-You can also export runbooks to markdown and paste them in your existing docs.
+You can also export workflows to markdown and paste them in your existing docs.
 
-### Create Runbooks with Savvy Record
+### Create Workflows with Savvy Record
 
-`savvy record` starts a new shell and all commands in this shell are recorded and sent to an LLM to generate a runbook.
+`savvy record` starts a new shell and all commands in this shell are recorded and sent to an LLM to generate a workflow.
 
-![Savvy Runbook](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
+![Savvy Workflow](https://vhs.charm.sh/vhs-1UmW0o6uSztF6b76y92K2K.gif)
 
 > [!NOTE]
-> Creating a runbook with savvy record requires you to signup for a free account.
+> Creating a workflow with savvy record requires you to signup for a free account.
 
-## Automatically Run Runbooks
+## Automatically Run Workflows
 
-Use `savvy run` to search and run runbooks right from your terminal.
+Use `savvy run` to search and run workflows right from your terminal.
 
 Savvy automatically fills in the next command to execute. Just press enter to run it.
 
 ![savvy run](demos/savvy-run.gif)
 
-## Runbook Parameterization
+## Workflow Placeholders
 
-Parameterizing runbooks is very easy with Savvy.
+Parameterizing workflows is very easy with Savvy.
 
 Replace hardcoded values with `<parameters>` from the dashboard for any step. Savvy takes care of the rest.
 
@@ -87,7 +67,31 @@ Replace hardcoded values with `<parameters>` from the dashboard for any step. Sa
 ![set param runtime](demos/savvy-param-run.jpeg)
 
 
-Check our [docs for more details on runbook parameterization](https://docs.getsavvy.so/guides/parameterize_runbooks/)
+Check our [docs for more details on workflow placeholders](https://docs.getsavvy.so/guides/placeholders/)
+
+## Sync Workflows
+
+Use `savvy sync` to keep a local copy of your workflows. If you're ever offline or in bad network conditions, you can still run your workflows with `savvy run --local`
+
+![Savvy Sync](demos/savvy-sync.gif)
+
+## Generate Workflows with AI
+
+Use `savvy ask` to generate entire workflows or a single command using natural language.
+
+Just run `savvy ask` and provide a prompt.
+
+Any one can use it, there's no need to signup for an account or provide a credit card.
+
+### Examples
+
+1. Ask Savvy to create a workflow for publishing a new go module.
+
+![Ask Savvy to create a workflow for publishing a new go module.](demos/ask-workflow.gif)
+
+2. Ask Savvy to help you with a tricky sequence of shell commands.
+
+![Ask Savvy to help you with a tricky shell command](demos/ask-command.gif)
 
 ## Savvy Explain
 
