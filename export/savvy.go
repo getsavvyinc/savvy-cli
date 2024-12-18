@@ -26,7 +26,7 @@ type Exporter interface {
 
 const (
 	MarkdownFile  = "md"
-	SavvyArtifact = "savvy"
+	SavvyWorkflow = "savvy"
 )
 
 func (e *exporter) Export(ctx context.Context) error {
@@ -36,7 +36,7 @@ func (e *exporter) Export(ctx context.Context) error {
 		Description("Select an export format").
 		Options(
 			huh.NewOption("Local Markdown File", MarkdownFile),
-			huh.NewOption("Savvy Artifact (Recommended)", SavvyArtifact),
+			huh.NewOption("Savvy Workflow (Recommended)", SavvyWorkflow),
 		).Value(&exportFormat).Run(); err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (e *exporter) Export(ctx context.Context) error {
 	switch exportFormat {
 	case MarkdownFile:
 		return e.toMarkdownFile(ctx)
-	case SavvyArtifact:
+	case SavvyWorkflow:
 		return e.toSavvyArtifact(ctx)
 	default:
 		return errors.New("invalid export format")
