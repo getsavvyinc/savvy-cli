@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsavvyinc/savvy-cli/authz"
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/llm/service"
 )
 
 type RunbookClient interface {
@@ -76,9 +78,9 @@ type FileInfo struct {
 }
 
 type client struct {
-	cl        *http.Client
-	llmClient LLMClient
-	apiHost   string
+	cl      *http.Client
+	llmSvc  service.Service
+	apiHost string
 }
 
 var _ Client = (*client)(nil)
@@ -93,13 +95,10 @@ func New() (Client, error) {
 
 	c := &client{
 		cl: &http.Client{
-			Transport: &AuthorizedRoundTripper{
-				token:        cfg.Token,
-				savvyVersion: config.Version(),
-			},
+			Transport: authz.NewRoundTripper(cfg.Token, config.Version()),
 		},
-		llmClient: NewLLMClient(cfg),
-		apiHost:   config.APIHost(),
+		llmSvc:  service.New(cfg),
+		apiHost: config.APIHost(),
 	}
 
 	// validate token as early as possible
@@ -107,32 +106,6 @@ func New() (Client, error) {
 		return nil, err
 	}
 	return c, nil
-}
-
-type AuthorizedRoundTripper struct {
-	token        string
-	savvyVersion string
-}
-
-func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone the request to ensure thread safety
-	clonedReq := req.Clone(req.Context())
-	clonedReq.Header.Set("Authorization", "Bearer "+a.token)
-	clonedReq.Header.Set("X-Savvy-Version", a.savvyVersion)
-
-	// Use the embedded Transport to perform the actual request
-	res, err := http.DefaultTransport.RoundTrip(clonedReq)
-	if err != nil {
-		err = fmt.Errorf("%w: %v", ErrInvalidClient, err)
-		return nil, err
-	}
-
-	// If we get a 401 Unauthorized, then the token is expired
-	// and we need to refresh it
-	if res.StatusCode == http.StatusUnauthorized {
-		return nil, fmt.Errorf("%w: invalid token", ErrInvalidClient)
-	}
-	return res, err
 }
 
 // apiURL returns the full url to the api endpoint
