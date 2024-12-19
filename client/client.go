@@ -76,8 +76,9 @@ type FileInfo struct {
 }
 
 type client struct {
-	cl      *http.Client
-	apiHost string
+	cl        *http.Client
+	llmClient LLMClient
+	apiHost   string
 }
 
 var _ Client = (*client)(nil)
@@ -97,7 +98,8 @@ func New() (Client, error) {
 				savvyVersion: config.Version(),
 			},
 		},
-		apiHost: config.APIHost(),
+		llmClient: NewLLMClient(cfg),
+		apiHost:   config.APIHost(),
 	}
 
 	// validate token as early as possible
@@ -137,10 +139,14 @@ func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 // path must start with a slash. e.g. /api/v1/whoami
 // apiURL will add a slash if it's missing
 func (c *client) apiURL(path string) string {
+	return genAPIURL(c.apiHost, path)
+}
+
+func genAPIURL(host, path string) string {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	return c.apiHost + path
+	return host + path
 }
 
 func (c *client) WhoAmI(ctx context.Context) (string, error) {
@@ -200,26 +206,16 @@ func (rb *Runbook) Commands() []string {
 }
 
 func (c *client) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
-	cl := c.cl
-	bs, err := json.Marshal(struct{ Commands []RecordedCommand }{Commands: commands})
+	generatedRunbook, err := c.llmClient.GenerateRunbook(ctx, commands)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiURL("/api/v1/generate_runbookv2"), bytes.NewReader(bs))
-	if err != nil {
-		return nil, err
-	}
-	resp, err := cl.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 
-	var generatedRunbook GeneratedRunbook
-	if err := json.NewDecoder(resp.Body).Decode(&generatedRunbook); err != nil {
+	savedRunbook, err := c.SaveRunbook(ctx, generatedRunbook)
+	if err != nil {
 		return nil, err
 	}
-	return &generatedRunbook, nil
+	return savedRunbook, nil
 }
 
 func (c *client) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
