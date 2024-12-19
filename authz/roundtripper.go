@@ -8,11 +8,11 @@ import (
 
 var ErrInvalidClient = errors.New("invalid client")
 
-
 type AuthorizedRoundTripper struct {
 	token        string
 	savvyVersion string
 }
+
 func NewRoundTripper(token, savvyVersion string) *AuthorizedRoundTripper {
 	return &AuthorizedRoundTripper{token: token, savvyVersion: savvyVersion}
 }
@@ -36,4 +36,4 @@ func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 		return nil, fmt.Errorf("%w: invalid token", ErrInvalidClient)
 	}
 	return res, err
-
+}

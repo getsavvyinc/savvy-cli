@@ -1,17 +1,19 @@
 package llm
 
-import (
-	"io/fs"
-)
-
-type RecordedCommand struct {
-	Command  string    `json:"command"`
-	Prompt   string    `json:"prompt,omitempty"`
-	FileInfo *FileInfo `json:"file_info,omitempty"`
+type Runbook struct {
+	Title string
+	Steps []Step
 }
 
-type FileInfo struct {
-	Mode    fs.FileMode `json:"mode,omitempty"`
-	Content []byte      `json:"content,omitempty"`
-	Path    string      `json:"path,omitempty"`
+type StepTypeEnum string
+
+const (
+	StepTypeCode StepTypeEnum = "code"
+	StepTypeFile StepTypeEnum = "file"
+)
+
+type Step struct {
+	Type        StepTypeEnum `json:"type"`
+	Description string       `json:"description"`
+	Command     string       `json:"command"`
 }
