@@ -10,21 +10,11 @@ import (
 	"github.com/getsavvyinc/savvy-cli/authz"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/llm"
+	"github.com/getsavvyinc/savvy-cli/model"
 )
 
 type Service interface {
-	GenerateRunbook(ctx context.Context, commands []llm.RecordedCommand) (*Runbook, error)
-}
-
-type Runbook struct {
-	Title string
-	Steps []RunbookStep
-}
-
-type RunbookStep struct {
-	Code        string `json:"code,omitempty"`
-	Description string `json:"description,omitempty"`
-	CodeID      string `json:"code_id,omitempty"`
+	GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error)
 }
 
 func New(cfg *config.Config) Service {
@@ -48,9 +38,9 @@ func newDefaultService(cfg *config.Config) Service {
 	}
 }
 
-func (d *defaultLLM) GenerateRunbook(ctx context.Context, commands []llm.RecordedCommand) (*Runbook, error) {
+func (d *defaultLLM) GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error) {
 	cl := d.cl
-	bs, err := json.Marshal(struct{ Commands []llm.RecordedCommand }{Commands: commands})
+	bs, err := json.Marshal(struct{ Commands []model.RecordedCommand }{Commands: commands})
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +55,7 @@ func (d *defaultLLM) GenerateRunbook(ctx context.Context, commands []llm.Recorde
 	}
 	defer resp.Body.Close()
 
-	var generatedRunbook Runbook
+	var generatedRunbook llm.Runbook
 	if err := json.NewDecoder(resp.Body).Decode(&generatedRunbook); err != nil {
 		return nil, err
 	}
@@ -81,6 +71,6 @@ func genAPIURL(host, path string) string {
 
 type service struct{}
 
-func (s *service) GenerateRunbook(ctx context.Context, commands []llm.RecordedCommand) (*Runbook, error) {
+func (s *service) GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error) {
 	return nil, nil
 }

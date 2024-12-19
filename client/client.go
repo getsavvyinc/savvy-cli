@@ -14,7 +14,9 @@ import (
 
 	"github.com/getsavvyinc/savvy-cli/authz"
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/llm"
 	"github.com/getsavvyinc/savvy-cli/llm/service"
+	"github.com/getsavvyinc/savvy-cli/model"
 )
 
 type RunbookClient interface {
@@ -30,18 +32,12 @@ type Client interface {
 	RunbookClient
 	RunbookSaver
 	WhoAmI(ctx context.Context) (string, error)
-	GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error)
+	GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
-}
-
-type RecordedCommand struct {
-	Command  string    `json:"command"`
-	Prompt   string    `json:"prompt,omitempty"`
-	FileInfo *FileInfo `json:"file_info,omitempty"`
 }
 
 type StepContent struct {
@@ -178,17 +174,32 @@ func (rb *Runbook) Commands() []string {
 	return commands
 }
 
-func (c *client) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
-	generatedRunbook, err := c.llmClient.GenerateRunbook(ctx, commands)
+func (c *client) GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error) {
+	generatedRunbook, err := c.llmSvc.GenerateRunbook(ctx, commands)
 	if err != nil {
 		return nil, err
 	}
 
-	savedRunbook, err := c.SaveRunbook(ctx, generatedRunbook)
+	savedRunbook, err := c.SaveRunbook(ctx, toClientRunbook(generatedRunbook))
 	if err != nil {
 		return nil, err
 	}
 	return savedRunbook, nil
+}
+
+func toClientRunbook(rb *llm.Runbook) *Runbook {
+	clientSteps := make([]Step, len(rb.Steps))
+	for i, step := range rb.Steps {
+		clientSteps[i] = Step{
+			Type:        StepTypeCode,
+			Description: step.Description,
+			Command:     step.Command,
+		}
+	}
+	return &Runbook{
+		Title: rb.Title,
+		Steps: clientSteps,
+	}
 }
 
 func (c *client) SaveRunbook(ctx context.Context, runbook *Runbook) (*GeneratedRunbook, error) {
