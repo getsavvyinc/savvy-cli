@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/fetch"
+	"github.com/getsavvyinc/savvy-cli/model"
 	"github.com/getsavvyinc/savvy-cli/server"
 )
 
@@ -45,15 +46,15 @@ func (m *GenerateRunbookModel) IsDone() bool {
 }
 
 func (m *GenerateRunbookModel) Generate() tea.Msg {
-	var commands []client.RecordedCommand
+	var commands []model.RecordedCommand
 	for _, cmd := range m.commands {
-		clientCmd := client.RecordedCommand{
+		clientCmd := model.RecordedCommand{
 			Command: cmd.Command,
 			Prompt:  cmd.Prompt,
 		}
 
 		if cmd.FileInfo != nil {
-			clientCmd.FileInfo = &client.FileInfo{
+			clientCmd.FileInfo = &model.FileInfo{
 				Path:    cmd.FileInfo.Path,
 				Mode:    cmd.FileInfo.Mode,
 				Content: cmd.FileInfo.Content,

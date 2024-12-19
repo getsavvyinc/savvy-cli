@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/login"
+	"github.com/getsavvyinc/savvy-cli/model"
 )
 
 var _ Client = (*guest)(nil)
@@ -59,7 +60,7 @@ func (g *guest) WhoAmI(ctx context.Context) (string, error) {
 	return "Savvy Guest", nil
 }
 
-func (g *guest) GenerateRunbookV2(ctx context.Context, commands []RecordedCommand) (*GeneratedRunbook, error) {
+func (g *guest) GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error) {
 	cl, err := getLoggedInClient()
 	if err != nil {
 		return nil, err
@@ -153,7 +154,7 @@ func GetLoggedInClient() (Client, error) {
 }
 
 func getLoggedInClient() (Client, error) {
-  cl, err := New()
+	cl, err := New()
 	if err == nil {
 		return cl, nil
 	}
