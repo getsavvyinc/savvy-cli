@@ -153,7 +153,7 @@ func GetLoggedInClient() (Client, error) {
 }
 
 func getLoggedInClient() (Client, error) {
-	cl, err := New()
+  cl, err := New()
 	if err == nil {
 		return cl, nil
 	}
