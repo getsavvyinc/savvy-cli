@@ -14,7 +14,7 @@ import (
 
 type Service interface {
 	GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error)
-	Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error)
+	Ask(ctx context.Context, question *model.QuestionInfo) (*llm.Runbook, error)
 }
 
 func New(cfg *config.Config, savvyClient *http.Client) Service {
@@ -67,12 +67,12 @@ func genAPIURL(host, path string) string {
 	return host + path
 }
 
-func (d *defaultLLM) Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error) {
+func (d *defaultLLM) Ask(ctx context.Context, question *model.QuestionInfo) (*llm.Runbook, error) {
 	apiURL := genAPIURL(d.apiHost, "/api/v1/public/ask")
 	return ask(ctx, d.cl, apiURL, question)
 }
 
-func ask(ctx context.Context, cl *http.Client, apiURL string, question model.QuestionInfo) (*llm.Runbook, error) {
+func ask(ctx context.Context, cl *http.Client, apiURL string, question *model.QuestionInfo) (*llm.Runbook, error) {
 	bs, err := json.Marshal(question)
 	if err != nil {
 		return nil, err

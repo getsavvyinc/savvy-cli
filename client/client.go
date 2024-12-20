@@ -35,7 +35,7 @@ type Client interface {
 	GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
-	Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error)
+	Ask(ctx context.Context, question *model.QuestionInfo) (*Runbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
@@ -300,7 +300,7 @@ func (c *client) Runbooks(ctx context.Context, opts RunbooksOpt) ([]RunbookInfo,
 	return runbooks, nil
 }
 
-func (c *client) Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error) {
+func (c *client) Ask(ctx context.Context, question *model.QuestionInfo) (*Runbook, error) {
 	answer, err := c.llmSvc.Ask(ctx, question)
 	if err != nil {
 		return nil, err
