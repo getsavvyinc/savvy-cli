@@ -2,7 +2,7 @@ package llm
 
 type Runbook struct {
 	Title string
-	Steps []Step
+	Steps []RunbookStep
 }
 
 type StepTypeEnum string
@@ -12,8 +12,9 @@ const (
 	StepTypeFile StepTypeEnum = "file"
 )
 
-type Step struct {
+type RunbookStep struct {
 	Type        StepTypeEnum `json:"type"`
 	Description string       `json:"description"`
 	Command     string       `json:"command"`
+	CommandID   string       `json:"command_id"`
 }

@@ -17,6 +17,7 @@ var (
 type Config struct {
 	Token         string `json:"token"`
 	OpenAIBaseURL string `json:"openai_base_url"`
+	OpenAIKey     string `json:"openai_key"`
 }
 
 func (c *Config) Save() error {
