@@ -18,11 +18,13 @@ import (
 	"github.com/getsavvyinc/savvy-cli/model"
 	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai/jsonschema"
 	"github.com/sethvargo/go-retry"
 )
 
 type customSvc struct {
-	cl *openai.Client
+	cl        *openai.Client
+	modelName string
 }
 
 func newCustomService(cfg *config.Config) Service {
@@ -35,7 +37,8 @@ func newCustomService(cfg *config.Config) Service {
 	openaiClient := openai.NewClientWithConfig(clientConfig)
 
 	return &customSvc{
-		cl: openaiClient,
+		cl:        openaiClient,
+		modelName: "llama3.2:latest",
 	}
 }
 
@@ -105,21 +108,20 @@ You will generate the Title for the runbook and a meaningful description for eac
 
 The Title must be a short single sentences tha begins with the phrase: "How To". The title must be short and concise and must describe the purpose of the runbook. Do not make the title overly general.
 
-When calling functions that use the command/command_id pairs, ensure that the command_id is passed as the code_id and the command is passed as the code.
-
 The Description for each command must be short and concise. Use simple words. Limit the description to 1-2 sentences.
 
 Do not include filler words like: "This command is used to" in the description. Get straight to the point.
 
 Take a deep breath, do not rush, and take your time to generate the Title and Descriptions for each command. Do not hallucinate or make things up. Be as accurate as possible.
 
-The output should be a runbook in json format. The runbook has a title and a list of steps according to the json schema below:
+
+Generate json output that adheres to the following schema:
 {
   title: "describe the purpose and theme of the runbook",
   steps: [
   {
-    code: "command,  unchanged from the input prompt",
-    code_id: "command_id, unchanged from the input prompt",
+    command: "command,  unchanged from the input prompt",
+    command_id: "command_id, unchanged from the input prompt",
     description: "short, conscise, and helpful description of the command."
   }
 }
@@ -129,6 +131,51 @@ The output should be a runbook in json format. The runbook has a title and a lis
 )
 
 var generateRunbookTitleAndDescriptionsPromptTemplate = template.Must(template.New(genRunbookTemplateName).Parse(generateTitleAndDescriptionPrompt))
+
+var (
+	GenerateRunbookSchema = jsonschema.Definition{
+		Type: jsonschema.Object,
+		Properties: map[string]jsonschema.Definition{
+			"title": jsonschema.Definition{
+				Type:        jsonschema.String,
+				Description: "Title of the runbook",
+			},
+			"steps": jsonschema.Definition{
+				Type:        jsonschema.Array,
+				Description: "Steps in the runbook",
+				Items: &jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"command": jsonschema.Definition{
+							Type:        jsonschema.String,
+							Description: "command passed in to the prompt. This should be unchanged from the input prompt.",
+						},
+						"command_id": jsonschema.Definition{
+							Type:        jsonschema.String,
+							Description: "ID of the command. This should be unchanged from the input prompt.",
+						},
+						"description": jsonschema.Definition{
+							Type:        jsonschema.String,
+							Description: "Short, conscise, and helpful description of the command",
+						},
+					},
+				},
+			},
+		},
+		Required: []string{"title", "steps"},
+	}
+
+	GenerateRunbookFunc = &openai.FunctionDefinition{
+		Name:        "generate_runbook_title_and_descriptions",
+		Description: "Generate a runbook title and descriptions for each command in the runbook",
+		Parameters:  GenerateRunbookSchema,
+	}
+
+	GenerateRunbookFuncTool = openai.Tool{
+		Type:     openai.ToolTypeFunction,
+		Function: GenerateRunbookFunc,
+	}
+)
 
 // CommandAndID is a struct that holds a command and its corresponding command_id
 // CommandID is useful in the prompt to ensure that the llm doesn't change the order or omit/hallucinate any command.
@@ -155,25 +202,31 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 	b := retry.NewFibonacci(1 * time.Second)
 	b = retry.WithMaxRetries(3, b)
 
-	var groqResponse openai.ChatCompletionResponse
+	var chatResponse openai.ChatCompletionResponse
 	var gerr error
 
 	// retry on bad request errors
 	if err := retry.Do(ctx, b, func(ctx context.Context) error {
-		groqResponse, gerr = c.cl.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+		chatResponse, gerr = c.cl.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 			Messages:    []openai.ChatCompletionMessage{prompt},
-			Model:       "llama-3.1-70b-versatile",
+			Model:       c.modelName,
 			MaxTokens:   2500,
 			Temperature: 0.3,
 			ResponseFormat: &openai.ChatCompletionResponseFormat{
-				Type: openai.ChatCompletionResponseFormatTypeJSONObject,
+				Type: openai.ChatCompletionResponseFormatTypeJSONSchema,
+				JSONSchema: &openai.ChatCompletionResponseFormatJSONSchema{
+					Name:        "generate_runbook_title_and_descriptions",
+					Description: "Generate a runbook title and descriptions for each command in the runbook",
+					Schema:      &GenerateRunbookSchema,
+					Strict:      true,
+				},
 			},
 		})
 
 		var oaiErr *openai.APIError
-		// Sometimes, groq returns a 400 error, as it can't force a json response.
+		// Sometimes, the api returns a 400 error, as it can't force a json response.
 		if errors.As(gerr, &oaiErr) && oaiErr.HTTPStatusCode == http.StatusBadRequest {
-			log.Printf("retry: bad request to groq: %v\n", oaiErr)
+			log.Printf("retry: bad request to custom llm: %v\n", oaiErr)
 			return retry.RetryableError(oaiErr)
 		}
 		return gerr
@@ -182,12 +235,12 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 		return nil, err
 	}
 
-	if gerr != nil || len(groqResponse.Choices) != 1 {
+	if gerr != nil || len(chatResponse.Choices) != 1 {
 		return nil, fmt.Errorf("Completion error: err:%v len(choices):%v\n", gerr,
-			len(groqResponse.Choices))
+			len(chatResponse.Choices))
 	}
 
-	msg := groqResponse.Choices[0].Message.Content
+	msg := chatResponse.Choices[0].Message.Content
 	if len(msg) == 0 {
 		return nil, fmt.Errorf("Completion error: len(msg): %v\n", len(msg))
 	}
