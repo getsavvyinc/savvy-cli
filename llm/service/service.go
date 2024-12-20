@@ -18,7 +18,7 @@ type Service interface {
 }
 
 func New(cfg *config.Config) Service {
-	if cfg.OpenAIBaseURL == "" {
+	if cfg.LLMBaseURL == "" {
 		return newDefaultService(cfg)
 	}
 	return newCustomService(cfg)

@@ -15,9 +15,10 @@ var (
 )
 
 type Config struct {
-	Token         string `json:"token"`
-	OpenAIBaseURL string `json:"openai_base_url"`
-	OpenAIKey     string `json:"openai_key"`
+	Token        string `json:"token"`
+	LLMBaseURL   string `json:"llm_base_url"`
+	LLMModelName string `json:"llm_model_name"`
+	LLMAPIKey    string `json:"llm_api_key"`
 }
 
 func (c *Config) Save() error {
@@ -62,6 +63,10 @@ var ErrMissingToken = errors.New("missing or empty token")
 func (c *Config) validate() error {
 	if c.Token == "" {
 		return ErrMissingToken
+	}
+
+	if c.LLMBaseURL != "" && c.LLMModelName == "" {
+		return errors.New("missing or empty llm_model_name")
 	}
 	return nil
 }

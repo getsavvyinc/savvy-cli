@@ -28,8 +28,8 @@ type customSvc struct {
 }
 
 func newCustomService(cfg *config.Config) Service {
-	baseURL := cfg.OpenAIBaseURL
-	apiKey := cfg.OpenAIKey
+	baseURL := cfg.LLMBaseURL
+	apiKey := cfg.LLMAPIKey
 
 	clientConfig := openai.DefaultConfig(apiKey)
 	clientConfig.BaseURL = baseURL
@@ -38,7 +38,7 @@ func newCustomService(cfg *config.Config) Service {
 
 	return &customSvc{
 		cl:        openaiClient,
-		modelName: "llama3.2:latest",
+		modelName: cfg.LLMModelName,
 	}
 }
 
