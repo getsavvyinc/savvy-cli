@@ -201,7 +201,7 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 		return nil
 	}
 
-	qi := model.QuestionInfo{
+	qi := &model.QuestionInfo{
 		Question: question,
 		Tags: map[string]string{
 			"os": askParams.goos,

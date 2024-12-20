@@ -9,6 +9,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"strings"
 	"text/template"
 	"time"
 
@@ -128,6 +129,70 @@ Generate json output that adheres to the following schema:
 `
 
 	genRunbookTemplateName = "genRunbook"
+
+	generateCommandFromAskPrompt = `Your name is Savvy. You are an expert software engineer with deep knowledge of all shell commands.
+
+You are talking with a software engineer who needs your help generating shell commands for their query.
+
+Query: {{.Query}}
+
+{{if .OS}}
+You are generating commands for the following operating system: {{.OS}}
+{{end}}
+
+{{if .QueryData }}
+
+{{ if .QueryData.PreviousQuestions }}
+Answer the users Query in light of these previous questions they've asked you:
+{{range $_, $element := .QueryData.PreviousQuestions}}
+ - {{$element}}
+{{end}}
+{{end}}
+
+{{ if .QueryData.PreviousCommands }}
+The user has run these commands before asking you the above Query.
+{{range .QueryData.PreviousCommands}}
+ - {{.}}
+{{end}}
+
+Keep these commands in mind when answering the users query.
+{{end}}
+
+
+{{ if .QueryData.FileData }}
+File Data:
+
+{{.QueryData.FileData}}
+
+File Name: {{.QueryData.FileName}}
+{{end}}
+
+{{end}}
+
+Generate shell commands to answer the users query.
+
+Follow these guidelines when generating the commands:
+- Pay attention to the users query. The commands should be relevant to the query.
+{{if .QueryData}}
+{{ if .QueryData.FileData }}
+- Use the file data and file name to generate semantically relevant commands.
+{{end}}
+{{ if .QueryData.PreviousQuestions }}
+- Use the previous questions to generate semantically relevant commands.
+{{end}}
+{{end}}
+- It is okay to generate just 1 or two commands if that completely answers the users query.
+- Decide which shell command or combinations of commands are required to answer the query.
+- Read the manual and help pages for each selected command.
+- Read relevant stackoverlfow posts, blog posts, and linux mailing lists to understand the command and query.
+- Do not include commands that start with "tldr" in the generated commands unless the user's query specifically mentions "tldr".
+- Include explanations for each command. The explanation should be short and concise. Use simple words. Limit the explanation to one sentence.
+- If you need to add placeholder values to the command, use <placeholder> to indicate where the placeholder should be. Replace placeholder with a user friendly value
+- Get straight to the point. Do not use filler words like: "This command is used to" in the explanation.
+- Take a deep breath and relax. You got this!
+`
+
+	genCommandForQueryTemplateName = "genCommand"
 )
 
 var generateRunbookTitleAndDescriptionsPromptTemplate = template.Must(template.New(genRunbookTemplateName).Parse(generateTitleAndDescriptionPrompt))
@@ -165,15 +230,32 @@ var (
 		Required: []string{"title", "steps"},
 	}
 
-	GenerateRunbookFunc = &openai.FunctionDefinition{
-		Name:        "generate_runbook_title_and_descriptions",
-		Description: "Generate a runbook title and descriptions for each command in the runbook",
-		Parameters:  GenerateRunbookSchema,
-	}
-
-	GenerateRunbookFuncTool = openai.Tool{
-		Type:     openai.ToolTypeFunction,
-		Function: GenerateRunbookFunc,
+	GenerateRunbookFromQuerySchema = jsonschema.Definition{
+		Type: jsonschema.Object,
+		Properties: map[string]jsonschema.Definition{
+			"title": jsonschema.Definition{
+				Type:        jsonschema.String,
+				Description: "Title of the runbook from the users query",
+			},
+			"steps": jsonschema.Definition{
+				Type:        jsonschema.Array,
+				Description: "Commands that answer the users query",
+				Items: &jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"code": jsonschema.Definition{
+							Type:        jsonschema.String,
+							Description: "shell command that answers the users query",
+						},
+						"description": jsonschema.Definition{
+							Type:        jsonschema.String,
+							Description: "Short, conscise, and helpful description of the command",
+						},
+					},
+				},
+			},
+		},
+		Required: []string{"title", "steps"},
 	}
 )
 
@@ -211,7 +293,7 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 			Messages:    []openai.ChatCompletionMessage{prompt},
 			Model:       c.modelName,
 			MaxTokens:   2500,
-			Temperature: 0.3,
+			Temperature: 0.1,
 			ResponseFormat: &openai.ChatCompletionResponseFormat{
 				Type: openai.ChatCompletionResponseFormatTypeJSONSchema,
 				JSONSchema: &openai.ChatCompletionResponseFormatJSONSchema{
@@ -252,6 +334,111 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 	return &runbook, nil
 }
 
-func (c *customSvc) Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error) {
-	return nil, nil
+func queryHasOS(query string) (string, bool) {
+	if strings.Contains(query, "linux") {
+		return "linux", true
+	}
+	if strings.Contains(query, "ubuntu") {
+		return "ubuntu", true
+	}
+	if strings.Contains(query, "centos") {
+		return "centos", true
+	}
+	if strings.Contains(query, "rhel") {
+		return "rhel", true
+	}
+	if strings.Contains(query, "debian") {
+		return "debian", true
+	}
+	if strings.Contains(query, "macos") {
+		return "macos", true
+	}
+	if strings.Contains(query, "mac") {
+		return "macos", true
+	}
+	if strings.Contains(query, "mac os") {
+		return "macos", true
+	}
+
+	if strings.Contains(query, "os x") {
+		return "macos", true
+	}
+
+	if strings.Contains(query, "darwin") {
+		return "macos", true
+	}
+
+	if strings.Contains(query, "windows") {
+		return "windows", true
+	}
+
+	return "", false
+}
+
+func (c *customSvc) Ask(ctx context.Context, question *model.QuestionInfo) (*llm.Runbook, error) {
+	buf := new(bytes.Buffer)
+	var osName string
+	if question != nil && len(question.Tags) > 0 {
+		osName = question.Tags["os"]
+	}
+
+	if qos, ok := queryHasOS(question.Question); ok {
+		osName = qos
+	}
+
+	if err := template.Must(template.New(genCommandForQueryTemplateName).Parse(generateCommandFromAskPrompt)).Execute(buf, struct {
+		Query     string
+		QueryData *model.QuestionInfo
+		OS        string
+	}{
+		Query:     question.Question,
+		QueryData: question,
+		OS:        osName,
+	}); err != nil {
+		return nil, err
+	}
+
+	prompt := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleAssistant,
+		Content: buf.String(),
+	}
+
+	resp, err := c.cl.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+		Messages:    []openai.ChatCompletionMessage{prompt},
+		Model:       c.modelName,
+		MaxTokens:   2500,
+		Temperature: 0.1,
+		ResponseFormat: &openai.ChatCompletionResponseFormat{
+			Type: openai.ChatCompletionResponseFormatTypeJSONSchema,
+			JSONSchema: &openai.ChatCompletionResponseFormatJSONSchema{
+				Name:        "generate_runbook_title_and_descriptions_from_query",
+				Description: "Answer the users query with shell commands",
+				Schema:      &GenerateRunbookFromQuerySchema,
+				Strict:      true,
+			},
+		},
+	})
+
+	if err != nil {
+		err = fmt.Errorf("ask: error making request to openai: %w", err)
+		return nil, err
+	}
+
+	if err != nil || len(resp.Choices) != 1 {
+		err = fmt.Errorf("ask: Completion error:%w len(choices):%v", err, len(resp.Choices))
+		return nil, err
+	}
+
+	msg := resp.Choices[0].Message.Content
+
+	if len(msg) == 0 {
+		return nil, fmt.Errorf("Completion error: len(msg): %v\n", len(msg))
+	}
+
+	var runbook llm.Runbook
+	if err := json.Unmarshal([]byte(msg), &runbook); err != nil {
+		return nil, err
+	}
+
+	return &runbook, nil
 }
