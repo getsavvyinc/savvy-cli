@@ -251,3 +251,7 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 	}
 	return &runbook, nil
 }
+
+func (c *customSvc) Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error) {
+	return nil, nil
+}

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsavvyinc/savvy-cli/authz"
 	"github.com/getsavvyinc/savvy-cli/config"
 	"github.com/getsavvyinc/savvy-cli/llm"
 	"github.com/getsavvyinc/savvy-cli/model"
@@ -15,11 +14,12 @@ import (
 
 type Service interface {
 	GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error)
+	Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error)
 }
 
-func New(cfg *config.Config) Service {
+func New(cfg *config.Config, savvyClient *http.Client) Service {
 	if cfg.LLMBaseURL == "" {
-		return newDefaultService(cfg)
+		return newDefaultService(cfg, savvyClient)
 	}
 	return newCustomService(cfg)
 }
@@ -29,11 +29,9 @@ type defaultLLM struct {
 	apiHost string
 }
 
-func newDefaultService(cfg *config.Config) Service {
+func newDefaultService(cfg *config.Config, savvyClient *http.Client) Service {
 	return &defaultLLM{
-		cl: &http.Client{
-			Transport: authz.NewRoundTripper(cfg.Token, config.Version()),
-		},
+		cl:      savvyClient,
 		apiHost: config.APIHost(),
 	}
 }
@@ -69,8 +67,31 @@ func genAPIURL(host, path string) string {
 	return host + path
 }
 
-type service struct{}
+func (d *defaultLLM) Ask(ctx context.Context, question model.QuestionInfo) (*llm.Runbook, error) {
+	apiURL := genAPIURL(d.apiHost, "/api/v1/public/ask")
+	return ask(ctx, d.cl, apiURL, question)
+}
 
-func (s *service) GenerateRunbook(ctx context.Context, commands []model.RecordedCommand) (*llm.Runbook, error) {
-	return nil, nil
+func ask(ctx context.Context, cl *http.Client, apiURL string, question model.QuestionInfo) (*llm.Runbook, error) {
+	bs, err := json.Marshal(question)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var runbook llm.Runbook
+	if err := json.NewDecoder(resp.Body).Decode(&runbook); err != nil {
+		return nil, err
+	}
+	return &runbook, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/model"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/spf13/cobra"
@@ -51,7 +52,12 @@ var askCmd = &cobra.Command{
 		cl, err = client.New()
 		if err != nil {
 			logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
-			cl = client.NewGuest()
+			cl, err = client.NewGuest()
+			if err != nil {
+				err = fmt.Errorf("error creating guest client: %w", err)
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
+			}
 		}
 
 		// get info about the os from os pkg: mac/darwin, linux, windows
@@ -195,7 +201,7 @@ func runAsk(ctx context.Context, cl client.Client, question string, askParams *A
 		return nil
 	}
 
-	qi := client.QuestionInfo{
+	qi := model.QuestionInfo{
 		Question: question,
 		Tags: map[string]string{
 			"os": askParams.goos,

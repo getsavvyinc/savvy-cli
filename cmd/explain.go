@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -37,7 +38,12 @@ var explainCmd = &cobra.Command{
 		cl, err = client.New()
 		if err != nil {
 			logger.Debug("error creating client", "error", err, "message", "falling back to guest client")
-			cl = client.NewGuest()
+			cl, err = client.NewGuest()
+			if err != nil {
+				err = fmt.Errorf("error creating guest client: %w", err)
+				display.ErrorWithSupportCTA(err)
+				os.Exit(1)
+			}
 		}
 
 		var code string

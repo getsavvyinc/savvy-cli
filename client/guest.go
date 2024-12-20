@@ -8,19 +8,28 @@ import (
 	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/llm/service"
 	"github.com/getsavvyinc/savvy-cli/login"
 	"github.com/getsavvyinc/savvy-cli/model"
 )
 
 var _ Client = (*guest)(nil)
 
-func NewGuest() Client {
-	return &guest{
-		cl: &http.Client{
-			Transport: &GuestRoundTripper{savvyVersion: config.Version()},
-		},
-		apiHost: config.APIHost(),
+func NewGuest() (Client, error) {
+	cfg, err := config.LoadFromFile()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidClient, err)
 	}
+
+	cl := &http.Client{
+		Transport: &GuestRoundTripper{savvyVersion: config.Version()},
+	}
+
+	return &guest{
+		cl:      cl,
+		llmSvc:  service.New(cfg, cl),
+		apiHost: config.APIHost(),
+	}, nil
 }
 
 type GuestRoundTripper struct {
@@ -43,6 +52,7 @@ func (g *GuestRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 
 type guest struct {
 	cl      *http.Client
+	llmSvc  service.Service
 	apiHost string
 }
 
@@ -125,8 +135,12 @@ func (g *guest) Runbooks(ctx context.Context, opt RunbooksOpt) ([]RunbookInfo, e
 	return cl.Runbooks(ctx, opt)
 }
 
-func (g *guest) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
-	return ask(ctx, g.cl, g.apiURL("/api/v1/public/ask"), question)
+func (g *guest) Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error) {
+	answer, err := g.llmSvc.Ask(ctx, question)
+	if err != nil {
+		return nil, err
+	}
+	return toClientRunbook(answer), nil
 }
 
 func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {

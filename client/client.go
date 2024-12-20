@@ -35,7 +35,7 @@ type Client interface {
 	GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
-	Ask(ctx context.Context, question QuestionInfo) (*Runbook, error)
+	Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error)
 	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
@@ -89,11 +89,13 @@ func New() (Client, error) {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidClient, err)
 	}
 
+	cl := &http.Client{
+		Transport: authz.NewRoundTripper(cfg.Token, config.Version()),
+	}
+
 	c := &client{
-		cl: &http.Client{
-			Transport: authz.NewRoundTripper(cfg.Token, config.Version()),
-		},
-		llmSvc:  service.New(cfg),
+		cl:      cl,
+		llmSvc:  service.New(cfg, cl),
 		apiHost: config.APIHost(),
 	}
 
@@ -298,41 +300,12 @@ func (c *client) Runbooks(ctx context.Context, opts RunbooksOpt) ([]RunbookInfo,
 	return runbooks, nil
 }
 
-type QuestionInfo struct {
-	Question          string            `json:"question"`
-	Tags              map[string]string `json:"tags,omitempty"`
-	FileData          []byte            `json:"file_data,omitempty"`
-	FileName          string            `json:"file_name,omitempty"`
-	PreviousQuestions []string          `json:"previous_questions,omitempty"`
-	PreviousCommands  []string          `json:"previous_commands,omitempty"`
-}
-
-func (c *client) Ask(ctx context.Context, question QuestionInfo) (*Runbook, error) {
-	return ask(ctx, c.cl, c.apiURL("/api/v1/public/ask"), question)
-}
-
-func ask(ctx context.Context, cl *http.Client, apiURL string, question QuestionInfo) (*Runbook, error) {
-	bs, err := json.Marshal(question)
+func (c *client) Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error) {
+	answer, err := c.llmSvc.Ask(ctx, question)
 	if err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := cl.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var runbook Runbook
-	if err := json.NewDecoder(resp.Body).Decode(&runbook); err != nil {
-		return nil, err
-	}
-	return &runbook, nil
+	return toClientRunbook(answer), nil
 }
 
 type CodeInfo struct {
