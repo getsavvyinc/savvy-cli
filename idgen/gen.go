@@ -5,8 +5,11 @@ import (
 	"encoding/hex"
 )
 
-const CommandPrefix = "cmd-"
-const FilePrefix = "f-"
+const (
+	CommandPrefix = "cmd-"
+	FilePrefix    = "f-"
+	LLMTagPrefix  = "llm-"
+)
 
 func New(prefix string) string {
 	bytes := make([]byte, 8)

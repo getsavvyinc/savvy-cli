@@ -21,7 +21,7 @@ func New(cfg *config.Config) Service {
 	if cfg.OpenAIBaseURL == "" {
 		return newDefaultService(cfg)
 	}
-	return &service{}
+	return newCustomService(cfg)
 }
 
 type defaultLLM struct {
