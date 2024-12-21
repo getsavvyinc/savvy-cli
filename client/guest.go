@@ -135,7 +135,7 @@ func (g *guest) Runbooks(ctx context.Context, opt RunbooksOpt) ([]RunbookInfo, e
 	return cl.Runbooks(ctx, opt)
 }
 
-func (g *guest) Ask(ctx context.Context, question model.QuestionInfo) (*Runbook, error) {
+func (g *guest) Ask(ctx context.Context, question *model.QuestionInfo) (*Runbook, error) {
 	answer, err := g.llmSvc.Ask(ctx, question)
 	if err != nil {
 		return nil, err
@@ -143,8 +143,8 @@ func (g *guest) Ask(ctx context.Context, question model.QuestionInfo) (*Runbook,
 	return toClientRunbook(answer), nil
 }
 
-func (g *guest) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {
-	return explain(ctx, g.cl, g.apiURL("/api/v1/public/explain"), code)
+func (g *guest) Explain(ctx context.Context, code *model.CodeInfo) (<-chan string, error) {
+	return g.llmSvc.Explain(ctx, code)
 }
 
 func (g *guest) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
