@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -102,12 +103,17 @@ const (
 
 command_id:command
 {{range .Commands}}
-  {{.CommandID}}:{{.Command}}
+{{.CommandID}}:{{.Command}}
 {{end}}
 
 You will generate the Title for the runbook and a meaningful description for each command in the runbook.
 
 The Title must be a short single sentences tha begins with the phrase: "How To". The title must be short and concise and must describe the purpose of the runbook. Do not make the title overly general.
+
+You will also generate Steps that correspond to each command,command_id pair. Each step s has the following fields:
+- command: The command that corresponds to the command_id. This should be unchanged from the input prompt.
+- command_id: The command_id that corresponds to the command. This should be unchanged from the input prompt.
+- description: A short, concise, and helpful description of the command.
 
 The Description for each command must be short and concise. Use simple words. Limit the description to 1-2 sentences.
 
@@ -116,15 +122,16 @@ Do not include filler words like: "This command is used to" in the description. 
 Take a deep breath, do not rush, and take your time to generate the Title and Descriptions for each command. Do not hallucinate or make things up. Be as accurate as possible.
 
 
-Generate json output that adheres to the following schema:
+Output json that adheres to the following schema:
 {
-  title: "describe the purpose and theme of the runbook",
-  steps: [
+  "title": "describe the purpose and theme of the runbook",
+  "steps": [
   {
-    command: "command,  unchanged from the input prompt",
-    command_id: "command_id, unchanged from the input prompt",
-    description: "short, conscise, and helpful description of the command."
-  }
+    "command": "command,  unchanged from the input prompt",
+    "command_id": "command_id, unchanged from the input prompt",
+    "description": "short, conscise, and helpful description of the command."
+  },
+  ]
 }
 `
 
@@ -193,6 +200,35 @@ Follow these guidelines when generating the commands:
 `
 
 	genCommandForQueryTemplateName = "genCommand"
+
+	generateExplanationForCommandTemplate = "genExplanation"
+	generateExplanationForCommandPrompt   = `You are an expert software engineer with deep knowledge of all shell commands.
+
+  You are talking with a software engineer who needs your help understanding a shell command or error message.
+
+  Command_OR_Err_Msg: {{.Command}}
+
+  Generate an explanation for the command/error_message.
+
+  Follow these guidelines when generating the explanation:
+  - Write the command or function or error message that you are explaining as the first line of the explanation.
+  - Pay attention to the command/error message. The explanation should be relevant to the command.
+  - Break the command  or error message down into its parts and explain each part.
+  - Read the manual and help pages for the command.
+  - Read relevant stackoverlfow posts, blog posts, and mailing lists and support forums to understand the command or error message.
+  - The explanation should be short and concise. Use simple words. Limit the explanation to one sentence.
+
+  Follow these guidelines when formatting the output:
+  - Your output must be in valid markdown format. There is no need to wrap the whole output in a code block.
+  - The first heading should be Command or Error Message as appropriate.
+  - Explanation should be the second heading and should be the explanation of the command. Break the command down into its parts and explain each part.
+  - When explaining a command: Include a Summary section at the end.
+  - When explaining an error message, include a Troubleshooting/ Possible Fix section.
+  - Format the output to be pretty.
+  - Explain one concept per paragraph.
+  - Use unordered lists to break down complex concepts.
+  - Take a deep breath and relax. You got this!
+  `
 )
 
 var generateRunbookTitleAndDescriptionsPromptTemplate = template.Must(template.New(genRunbookTemplateName).Parse(generateTitleAndDescriptionPrompt))
@@ -224,6 +260,7 @@ var (
 							Description: "Short, conscise, and helpful description of the command",
 						},
 					},
+					Required: []string{"command", "command_id", "description"},
 				},
 			},
 		},
@@ -243,7 +280,7 @@ var (
 				Items: &jsonschema.Definition{
 					Type: jsonschema.Object,
 					Properties: map[string]jsonschema.Definition{
-						"code": jsonschema.Definition{
+						"command": jsonschema.Definition{
 							Type:        jsonschema.String,
 							Description: "shell command that answers the users query",
 						},
@@ -253,6 +290,7 @@ var (
 						},
 					},
 				},
+				Required: []string{"command", "description"},
 			},
 		},
 		Required: []string{"title", "steps"},
@@ -276,8 +314,10 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 		return nil, err
 	}
 
+	fmt.Println(buf.String())
+
 	prompt := openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
+		Role:    openai.ChatMessageRoleSystem,
 		Content: buf.String(),
 	}
 
@@ -325,6 +365,11 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 	msg := chatResponse.Choices[0].Message.Content
 	if len(msg) == 0 {
 		return nil, fmt.Errorf("Completion error: len(msg): %v\n", len(msg))
+	}
+	fmt.Println(string(msg))
+
+	if refusal := chatResponse.Choices[0].Message.Refusal; refusal != "" {
+		fmt.Println("Refusal:", refusal)
 	}
 
 	var runbook llm.Runbook
@@ -399,7 +444,7 @@ func (c *customSvc) Ask(ctx context.Context, question *model.QuestionInfo) (*llm
 	}
 
 	prompt := openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleAssistant,
+		Role:    openai.ChatMessageRoleSystem,
 		Content: buf.String(),
 	}
 
@@ -441,4 +486,69 @@ func (c *customSvc) Ask(ctx context.Context, question *model.QuestionInfo) (*llm
 	}
 
 	return &runbook, nil
+}
+
+func (c *customSvc) Explain(ctx context.Context, code *model.CodeInfo) (<-chan string, error) {
+	buf := new(bytes.Buffer)
+	if err := template.Must(template.New(generateExplanationForCommandTemplate).Parse(generateExplanationForCommandPrompt)).Execute(buf, struct {
+		Command string
+	}{
+		Command: code.Code,
+	}); err != nil {
+		return nil, err
+	}
+
+	prompt := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: buf.String(),
+	}
+
+	req := openai.ChatCompletionRequest{
+		Model:    c.modelName, // or any other model like "gpt-3.5-turbo"
+		Messages: []openai.ChatCompletionMessage{prompt},
+		Stream:   true,
+	}
+
+	stream, err := c.cl.CreateChatCompletionStream(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	streamer := llm.NewStreamer(stream)
+
+	responseChan := make(chan string, 1024)
+
+	// Stream the responses to the client
+	go func() {
+		for {
+			response, err := streamer.Recv()
+			if err != nil {
+				defer streamer.Close()
+				if errors.Is(err, io.EOF) {
+					break
+				}
+
+				if errors.Is(err, context.Canceled) {
+					slog.Info("context canceled")
+					return
+				}
+
+				slog.Error("error receiving stream response", "error", err)
+				return
+			}
+			if len(response) > 0 {
+				responseChan <- string(response)
+			}
+		}
+	}()
+
+	// So we replace newlines with <br> to maintain the formatting
+	// The client has to interpret the <br> as a newline
+	//if strings.HasSuffix(response.Data, "\n") {
+	//	data = strings.ReplaceAll(response.Data, "\n", "<br>")
+	//}
+
+	// Write the response content to the client as SSE
+
+	return responseChan, nil
 }

@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -36,7 +35,7 @@ type Client interface {
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	Ask(ctx context.Context, question *model.QuestionInfo) (*Runbook, error)
-	Explain(ctx context.Context, code CodeInfo) (<-chan string, error)
+	Explain(ctx context.Context, code *model.CodeInfo) (<-chan string, error)
 	StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error)
 }
 
@@ -308,13 +307,6 @@ func (c *client) Ask(ctx context.Context, question *model.QuestionInfo) (*Runboo
 	return toClientRunbook(answer), nil
 }
 
-type CodeInfo struct {
-	Code     string            `json:"code"`
-	Tags     map[string]string `json:"tags,omitempty"`
-	FileData []byte            `json:"file_data,omitempty"`
-	FileName string            `json:"file_name,omitempty"`
-}
-
 func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepContent, error) {
 	cl := c.cl
 	apiPath := fmt.Sprintf("/api/v1/step/content/%s", stepID)
@@ -336,64 +328,8 @@ func (c *client) StepContentByStepID(ctx context.Context, stepID string) (*StepC
 	return &stepContent, nil
 }
 
-func (c *client) Explain(ctx context.Context, code CodeInfo) (<-chan string, error) {
-	return explain(ctx, c.cl, c.apiURL("/api/v1/public/explain"), code)
-}
-
-func explain(ctx context.Context, cl *http.Client, apiURL string, code CodeInfo) (<-chan string, error) {
-	bs, err := json.Marshal(code)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bs))
-	if err != nil {
-		return nil, err
-	}
-
-	// explain streams the response body.
-	stream, err := cl.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if stream.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to explain code: %s", stream.Status)
-	}
-
-	resultChan := make(chan string, 1024)
-	// Read and print the streamed responses
-	scanner := bufio.NewScanner(stream.Body)
-
-	go func(scanner *bufio.Scanner) {
-		defer stream.Body.Close()
-		defer close(resultChan)
-
-		for scanner.Scan() {
-			var data streamData
-			line := scanner.Text()
-			if len(line) > 6 && line[:6] == "data: " {
-				if err := json.Unmarshal([]byte(line[6:]), &data); err != nil {
-					// TODO: add debug log stmt here.
-					continue
-				}
-				resultChan <- data.Data
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			err = fmt.Errorf("error reading stream: %w", err)
-			// display the error message to the user
-			resultChan <- err.Error()
-			return
-		}
-	}(scanner)
-
-	return resultChan, nil
-}
-
-type streamData struct {
-	Data string `json:"data"`
+func (c *client) Explain(ctx context.Context, code *model.CodeInfo) (<-chan string, error) {
+	return c.llmSvc.Explain(ctx, code)
 }
 
 func VerifyLogin() error {

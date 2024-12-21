@@ -11,6 +11,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/viewport"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/model"
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +69,7 @@ var explainCmd = &cobra.Command{
 			goos = "macos, darwin, osx"
 		}
 
-		ci := client.CodeInfo{
+		ci := &model.CodeInfo{
 			Code: code,
 			Tags: map[string]string{
 				"os": goos,
