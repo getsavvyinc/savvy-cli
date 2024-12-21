@@ -314,8 +314,6 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 		return nil, err
 	}
 
-	fmt.Println(buf.String())
-
 	prompt := openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
 		Content: buf.String(),
@@ -365,11 +363,6 @@ func (c *customSvc) generateRunbookTitleAndDescriptions(ctx context.Context, com
 	msg := chatResponse.Choices[0].Message.Content
 	if len(msg) == 0 {
 		return nil, fmt.Errorf("Completion error: len(msg): %v\n", len(msg))
-	}
-	fmt.Println(string(msg))
-
-	if refusal := chatResponse.Choices[0].Message.Refusal; refusal != "" {
-		fmt.Println("Refusal:", refusal)
 	}
 
 	var runbook llm.Runbook
