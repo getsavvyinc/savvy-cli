@@ -6,15 +6,20 @@ import (
 	"net/http"
 )
 
-var ErrInvalidClient = errors.New("invalid client")
+var ErrInvalidAuthzClient = errors.New("invalid authz client")
 
 type AuthorizedRoundTripper struct {
 	token        string
 	savvyVersion string
+	// wrap error returned by RoundTrip
+	wrapErr error
 }
 
-func NewRoundTripper(token, savvyVersion string) *AuthorizedRoundTripper {
-	return &AuthorizedRoundTripper{token: token, savvyVersion: savvyVersion}
+// NewRoundTripper returns a new AuthorizedRoundTripper
+//
+// Caller must provide non nil err to wrap the error returned by RoundTrip
+func NewRoundTripper(token, savvyVersion string, err error) *AuthorizedRoundTripper {
+	return &AuthorizedRoundTripper{token: token, savvyVersion: savvyVersion, wrapErr: err}
 }
 
 func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -26,14 +31,14 @@ func (a *AuthorizedRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 	// Use the embedded Transport to perform the actual request
 	res, err := http.DefaultTransport.RoundTrip(clonedReq)
 	if err != nil {
-		err = fmt.Errorf("%w: %v", ErrInvalidClient, err)
+		err = fmt.Errorf("%w: %v", a.wrapErr, err)
 		return nil, err
 	}
 
 	// If we get a 401 Unauthorized, then the token is expired
 	// and we need to refresh it
 	if res.StatusCode == http.StatusUnauthorized {
-		return nil, fmt.Errorf("%w: invalid token", ErrInvalidClient)
+		return nil, fmt.Errorf("%w: invalid token", a.wrapErr)
 	}
 	return res, err
 }
