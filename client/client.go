@@ -89,7 +89,7 @@ func New() (Client, error) {
 	}
 
 	cl := &http.Client{
-		Transport: authz.NewRoundTripper(cfg.Token, config.Version()),
+		Transport: authz.NewRoundTripper(cfg.Token, config.Version(), ErrInvalidClient),
 	}
 
 	c := &client{
