@@ -102,8 +102,8 @@ func getLinks(ctx context.Context) ([]extension.HistoryItem, error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title("Share important links from your browser history").
-				Description("Select the links you want to share with the team").
+				Title("Attach links from your browser history").
+				Description("Share links to logs, dashboards, metrics and more with your team").
 				Options(
 					huh.NewOption("Open Chrome Extension", "open"),
 					huh.NewOption("Skip", "skip"),
