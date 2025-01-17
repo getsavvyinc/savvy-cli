@@ -4,11 +4,22 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/getsavvyinc/savvy-cli/display"
 )
 
 func OpenCmd(url string) *exec.Cmd {
+	if strings.HasPrefix(url, "chrome-extension://") {
+		switch runtime.GOOS {
+		case "linux":
+			return exec.Command("google-chrome", url)
+		case "darwin":
+			return exec.Command("open", "-a", "Google Chrome", url)
+		default:
+			return nil
+		}
+	}
 	switch runtime.GOOS {
 	case "linux":
 		return exec.Command("xdg-open", url)
@@ -29,7 +40,7 @@ func Open(url string) {
 }
 
 func runOpenCmd(cmd *exec.Cmd, target string) {
-	var browserOpenError = fmt.Errorf("couldn't open your default browser. Please visit %s in your browser", target)
+	var browserOpenError = fmt.Errorf("Please visit %s in your browser", target)
 	if cmd == nil {
 		display.Error(browserOpenError)
 		return
@@ -44,6 +55,6 @@ func runOpenCmd(cmd *exec.Cmd, target string) {
 func OpenExtensionSidePanel() {
 	extensionURL := "chrome-extension://jocphfjphhfbdccjfjjnbcnejmbojjlh/side-panel/index.html"
 	display.Info("Opening Savvy's extension on Chrome...")
-	cmd := exec.Command("chrome", extensionURL)
+	cmd := OpenCmd(extensionURL)
 	runOpenCmd(cmd, extensionURL)
 }
