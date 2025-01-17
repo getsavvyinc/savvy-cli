@@ -133,11 +133,15 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) Wait() {
+	s.wg.Wait()
+}
+
 // Close gracefully shuts down the server
 func (s *Server) Close() error {
 	if err := s.server.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("error shutting down server: %w", err)
 	}
-	s.wg.Wait()
+	s.Wait()
 	return nil
 }

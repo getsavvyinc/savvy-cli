@@ -16,8 +16,10 @@ import (
 	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
+	"github.com/getsavvyinc/savvy-cli/browser"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/export"
+	"github.com/getsavvyinc/savvy-cli/extension"
 	"github.com/getsavvyinc/savvy-cli/redact"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/shell"
@@ -50,9 +52,14 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	if len(historyCmds) == 0 {
+	links, err := gettLinks(ctx, logger)
+
+	if len(historyCmds) == 0 && len(links) == 0 {
 		return
 	}
+
+	display.Info("Creating artifact...")
+	fmt.Println(links)
 
 	exporter := export.NewExporter(historyCmds)
 	if err := exporter.Export(ctx); err != nil {
@@ -64,6 +71,68 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 type selectableCommand struct {
 	Key     int
 	Command string
+}
+
+func gettLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem, error) {
+	var collectedLinks []extension.HistoryItem
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Create a processor function that collects links
+	processor := func(items []extension.HistoryItem) error {
+		for _, item := range items {
+			collectedLinks = append(collectedLinks, item)
+		}
+		// cancel the context to stop the extension server and exit the spinner
+		cancel()
+		return nil
+	}
+
+	// Create and start the extension server
+	server := extension.New(processor)
+	if err := server.Start(ctx); err != nil {
+		return nil, fmt.Errorf("failed to start extension server: %w", err)
+	}
+	defer server.Close()
+
+	// Present user with form to choose between extension and skip
+	var choice string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Share important links from your browser history").
+				Description("Select the links you want to share with the team").
+				Options(
+					huh.NewOption("Open Chrome Extension", "open"),
+					huh.NewOption("Skip", "skip"),
+				).
+				Value(&choice),
+		),
+	)
+
+	if err := form.WithTheme(theme.New()).Run(); err != nil {
+		logger.Debug("failed to run form", "error", err.Error())
+		return nil, err
+	}
+
+	if choice == "open" {
+		// Open the chrome extension using the browser package
+		browser.OpenExtensionSidePanel()
+
+		// Wait for a short duration to collect links
+		spinner := huhSpinner.New().
+			Title("Waiting for browser history...").
+			Action(func() {
+				server.Wait()
+			})
+
+		if err := spinner.Run(); err != nil {
+			logger.Debug("failed to run spinner", "error", err.Error())
+		}
+	}
+
+	return collectedLinks, nil
 }
 
 func allowUserToSelectCommands(logger *slog.Logger, history []string) []string {
