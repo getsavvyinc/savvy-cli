@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/getsavvyinc/savvy-cli/client"
 	"github.com/getsavvyinc/savvy-cli/cmd/component/fetch"
+	"github.com/getsavvyinc/savvy-cli/extension"
 	"github.com/getsavvyinc/savvy-cli/model"
 	"github.com/getsavvyinc/savvy-cli/server"
 )
@@ -15,6 +16,7 @@ type GenerateRunbookModel struct {
 	cl client.Client
 
 	commands  []*server.RecordedCommand
+	links     []extension.HistoryItem
 	runbookCh chan *Runbook
 	done      bool
 }
@@ -25,12 +27,14 @@ func (m GenerateRunbookModel) RunbookCh() chan *Runbook {
 
 func NewGenerateRunbookModel(
 	commands []*server.RecordedCommand,
+	links []extension.HistoryItem,
 	cl client.Client,
 ) GenerateRunbookModel {
 	m := GenerateRunbookModel{
 		Model:     fetch.New("Generating runbook..."),
 		cl:        cl,
 		commands:  commands,
+		links:     links,
 		runbookCh: make(chan *Runbook, 1),
 	}
 	return m
@@ -64,7 +68,7 @@ func (m *GenerateRunbookModel) Generate() tea.Msg {
 		commands = append(commands, clientCmd)
 	}
 
-	generatedRunbook, err := m.cl.GenerateRunbookV2(context.Background(), commands)
+	generatedRunbook, err := m.cl.GenerateRunbookV2(context.Background(), commands, m.links)
 	return GenerateRunbookDoneMsg{
 		GeneratedRunbook: generatedRunbook,
 		Err:              err,

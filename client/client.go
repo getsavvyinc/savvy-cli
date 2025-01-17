@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsavvyinc/savvy-cli/authz"
 	"github.com/getsavvyinc/savvy-cli/config"
+	"github.com/getsavvyinc/savvy-cli/extension"
 	"github.com/getsavvyinc/savvy-cli/llm"
 	"github.com/getsavvyinc/savvy-cli/llm/service"
 	"github.com/getsavvyinc/savvy-cli/model"
@@ -31,7 +32,7 @@ type Client interface {
 	RunbookClient
 	RunbookSaver
 	WhoAmI(ctx context.Context) (string, error)
-	GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error)
+	GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand, links []extension.HistoryItem) (*GeneratedRunbook, error)
 	// Deprecated. Use GenerateRunbookV2 instead
 	GenerateRunbook(ctx context.Context, commands []string) (*GeneratedRunbook, error)
 	Ask(ctx context.Context, question *model.QuestionInfo) (*Runbook, error)
@@ -144,9 +145,10 @@ type GeneratedRunbook struct {
 }
 
 type Runbook struct {
-	RunbookID string `json:"runbook_id"`
-	Title     string `json:"title"`
-	Steps     []Step `json:"steps"`
+	RunbookID string                  `json:"runbook_id"`
+	Title     string                  `json:"title"`
+	Steps     []Step                  `json:"steps"`
+	Links     []extension.HistoryItem `json:"links"`
 }
 
 type RunbookInfo struct {
@@ -175,13 +177,19 @@ func (rb *Runbook) Commands() []string {
 	return commands
 }
 
-func (c *client) GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand) (*GeneratedRunbook, error) {
+func (c *client) GenerateRunbookV2(ctx context.Context, commands []model.RecordedCommand, links []extension.HistoryItem) (*GeneratedRunbook, error) {
 	generatedRunbook, err := c.llmSvc.GenerateRunbook(ctx, commands)
 	if err != nil {
 		return nil, err
 	}
 
-	savedRunbook, err := c.SaveRunbook(ctx, toClientRunbook(generatedRunbook))
+	// Save the generated Runbook
+	clientRunbook := toClientRunbook(generatedRunbook)
+	if len(links) > 0 {
+		clientRunbook.Links = links
+	}
+
+	savedRunbook, err := c.SaveRunbook(ctx, clientRunbook)
 	if err != nil {
 		return nil, err
 	}
