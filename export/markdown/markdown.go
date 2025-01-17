@@ -19,12 +19,14 @@ const MdTemplate = `I used [Savvy's CLI]({{ .URL }}) to record these{{ if gt (le
 {{- printf "\n" -}}
 {{- if gt (len .Links) 0 }}
 
-## Relevant Links
+### Relevant Links
 {{- range .Links }}
 * [{{ .Title }}]({{ .URL }})
 {{- end }}
 {{- end -}}
+----
 
+### Relevant Links
 {{- range $i, $command := .Commands }}
 
  ~~~sh
