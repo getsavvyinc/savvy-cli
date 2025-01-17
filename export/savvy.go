@@ -13,6 +13,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/cmd/component/list"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/export/markdown"
+	"github.com/getsavvyinc/savvy-cli/extension"
 	"github.com/getsavvyinc/savvy-cli/server"
 	"github.com/getsavvyinc/savvy-cli/slice"
 	"github.com/muesli/termenv"
@@ -52,15 +53,17 @@ func (e *exporter) Export(ctx context.Context) error {
 
 }
 
-func NewExporter(commands []*server.RecordedCommand) Exporter {
+func NewExporter(commands []*server.RecordedCommand, links []extension.HistoryItem) Exporter {
 	return &exporter{
 		commands: commands,
+		links:    links,
 		mdSvc:    markdown.NewService(),
 	}
 }
 
 type exporter struct {
 	commands []*server.RecordedCommand
+	links    []extension.HistoryItem
 	mdSvc    markdown.Service
 }
 
@@ -68,7 +71,8 @@ func (e *exporter) toMarkdownFile(ctx context.Context) error {
 	commands := slice.Map(e.commands, func(rc *server.RecordedCommand) string {
 		return rc.Command
 	})
-	return e.mdSvc.ToMarkdownFile(ctx, commands)
+
+	return e.mdSvc.ToMarkdownFile(ctx, commands, e.links)
 }
 
 func (e *exporter) toSavvyArtifact(ctx context.Context) error {

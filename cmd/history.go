@@ -52,7 +52,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	links, err := gettLinks(ctx, logger)
+	links, err := getLinks(ctx, logger)
 
 	if len(historyCmds) == 0 && len(links) == 0 {
 		return
@@ -60,7 +60,7 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 
 	display.Info("Creating artifact...")
 
-	exporter := export.NewExporter(historyCmds)
+	exporter := export.NewExporter(historyCmds, links)
 	if err := exporter.Export(ctx); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
@@ -72,7 +72,7 @@ type selectableCommand struct {
 	Command string
 }
 
-func gettLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem, error) {
+func getLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem, error) {
 	var collectedLinks []extension.HistoryItem
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -80,9 +80,7 @@ func gettLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryIte
 
 	// Create a processor function that collects links
 	processor := func(items []extension.HistoryItem) error {
-		for _, item := range items {
-			collectedLinks = append(collectedLinks, item)
-		}
+		collectedLinks = append(collectedLinks, items...)
 		// cancel the context to stop the extension server and exit the spinner
 		cancel()
 		return nil
