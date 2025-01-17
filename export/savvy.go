@@ -33,7 +33,7 @@ const (
 func (e *exporter) Export(ctx context.Context) error {
 	var exportFormat string
 	if err := huh.NewSelect[string]().
-		Title("Export Commands").
+		Title("Export Your Workflow").
 		Description("Select an export format").
 		Options(
 			huh.NewOption("Local Markdown File", MarkdownFile),
