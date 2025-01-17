@@ -14,7 +14,7 @@ import (
 	"github.com/getsavvyinc/savvy-cli/slice"
 )
 
-const MdTemplate = `I used [Savvy's CLI]({{ .URL }}) to record these{{ if gt (len .Links) 0 }} commands and links{{ else }} commands{{ end }}:
+const MdTemplate = `I used [Savvy]({{ .URL }}) to record these{{ if gt (len .Links) 0 }} commands and links{{ else }} commands{{ end }}:
 
 {{- printf "\n" -}}
 {{- if gt (len .Links) 0 }}
