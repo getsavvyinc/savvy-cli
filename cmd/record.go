@@ -68,7 +68,7 @@ func runRecordCmd(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	exporter := export.NewExporter(redactedCommands)
+	exporter := export.NewExporter(redactedCommands, nil)
 	if err := exporter.Export(ctx); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)

@@ -10,11 +10,21 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/getsavvyinc/savvy-cli/display"
+	"github.com/getsavvyinc/savvy-cli/extension"
+	"github.com/getsavvyinc/savvy-cli/slice"
 )
 
-const MdTemplate = `I used [Savvy's CLI]({{ .URL }}) to record these commands:
+const MdTemplate = `I used [Savvy's CLI]({{ .URL }}) to record these{{ if gt (len .Links) 0 }} commands and links{{ else }} commands{{ end }}:
 
 {{- printf "\n" -}}
+{{- if gt (len .Links) 0 }}
+
+## Relevant Links
+{{- range .Links }}
+* [{{ .Title }}]({{ .URL }})
+{{- end }}
+{{- end -}}
+
 {{- range $i, $command := .Commands }}
 
  ~~~sh
@@ -26,7 +36,7 @@ const MdTemplate = `I used [Savvy's CLI]({{ .URL }}) to record these commands:
 `
 
 type Service interface {
-	ToMarkdownFile(ctx context.Context, commands []string) error
+	ToMarkdownFile(ctx context.Context, commands []string, links []extension.HistoryItem) error
 }
 
 var mdTemplate *template.Template
@@ -48,13 +58,22 @@ func NewService() Service {
 	}
 }
 
-func (s *svc) ToMarkdownFile(ctx context.Context, commands []string) error {
+type TitleURL struct {
+	Title string
+	URL   string
+}
+
+func (s *svc) ToMarkdownFile(ctx context.Context, commands []string, links []extension.HistoryItem) error {
 	data := struct {
 		Commands []string
 		URL      string
+		Links    []TitleURL
 	}{
 		URL:      s.url,
 		Commands: commands,
+		Links: slice.Map(links, func(item extension.HistoryItem) TitleURL {
+			return TitleURL{Title: item.Title, URL: item.URL}
+		}),
 	}
 
 	var buf bytes.Buffer
