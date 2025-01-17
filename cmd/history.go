@@ -52,7 +52,11 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	links, err := getLinks(ctx, logger)
+	links, err := getLinks(ctx)
+	if err != nil {
+		fmt.Errorf("failed to get links from Savvy's Chrome Extension: %w", err)
+		display.ErrorWithSupportCTA(err)
+	}
 
 	if len(historyCmds) == 0 && len(links) == 0 {
 		return
@@ -72,7 +76,7 @@ type selectableCommand struct {
 	Command string
 }
 
-func getLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem, error) {
+func getLinks(ctx context.Context) ([]extension.HistoryItem, error) {
 	var collectedLinks []extension.HistoryItem
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -109,7 +113,6 @@ func getLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem
 	)
 
 	if err := form.WithTheme(theme.New()).Run(); err != nil {
-		logger.Debug("failed to run form", "error", err.Error())
 		return nil, err
 	}
 
@@ -125,7 +128,7 @@ func getLinks(ctx context.Context, logger *slog.Logger) ([]extension.HistoryItem
 			})
 
 		if err := spinner.Run(); err != nil {
-			logger.Debug("failed to run spinner", "error", err.Error())
+			return nil, err
 		}
 	}
 

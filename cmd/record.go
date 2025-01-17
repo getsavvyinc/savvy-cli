@@ -68,7 +68,13 @@ func runRecordCmd(cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	exporter := export.NewExporter(redactedCommands, nil)
+	links, err := getLinks(ctx)
+	if err != nil {
+		fmt.Errorf("failed to get links from Savvy's Chrome Extension: %w", err)
+		display.ErrorWithSupportCTA(err)
+	}
+
+	exporter := export.NewExporter(redactedCommands, links)
 	if err := exporter.Export(ctx); err != nil {
 		display.ErrorWithSupportCTA(err)
 		os.Exit(1)
