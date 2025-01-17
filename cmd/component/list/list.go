@@ -88,6 +88,10 @@ var EditOnlineBinding = HelpBinding{
 	Binding: key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit online")),
 }
 
+var ViewAttachedLinksBinding = HelpBinding{
+	Binding: key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "view attached links")),
+}
+
 func NewHelpBinding(k, description string) HelpBinding {
 	return HelpBinding{
 		Binding: key.NewBinding(key.WithKeys(k), key.WithHelp(k, description)),
@@ -137,6 +141,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle the "e" key binding
 		if msg.String() == "e" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "e") {
+			return m, OpenBrowser(m.url, NopMsg{}, NopMsg{})
+		}
+
+		// Handle the "v" key Binding
+		if msg.String() == "v" && m.list.FilterState() == list.Unfiltered && slice.Has(m.helpKeys, "v") {
 			return m, OpenBrowser(m.url, NopMsg{}, NopMsg{})
 		}
 

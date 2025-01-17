@@ -128,7 +128,7 @@ func newDisplayCommandsModel(runbook *component.Runbook) (*displayCommands, erro
 	}
 
 	listItems := toItems(runbook.Steps)
-	l := list.NewModel(listItems, runbook.Title, runbook.URL, list.EditOnlineBinding)
+	l := list.NewModel(listItems, runbook.Title, runbook.URL, list.EditOnlineBinding, list.ViewAttachedLinksBinding)
 	return &displayCommands{l: l}, nil
 }
 
