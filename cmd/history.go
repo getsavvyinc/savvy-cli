@@ -102,11 +102,12 @@ func getLinks(ctx context.Context) ([]extension.HistoryItem, error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title("Attach links from your browser history").
+				Title("Add links from your browser history with Savvy's Chrome Extension").
 				Description("Share links to logs, dashboards, metrics and more with your team").
 				Options(
 					huh.NewOption("Open Chrome Extension", "open"),
 					huh.NewOption("Skip", "skip"),
+					// TODO: Add CTA to install chrome extension here.
 				).
 				Value(&choice),
 		),
