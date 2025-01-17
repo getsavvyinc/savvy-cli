@@ -86,7 +86,7 @@ func (e *exporter) toSavvyArtifact(ctx context.Context) error {
 	}
 
 	gctx, cancel := context.WithCancel(ctx)
-	gm := component.NewGenerateRunbookModel(e.commands, cl)
+	gm := component.NewGenerateRunbookModel(e.commands, e.links, cl)
 	var programOutput = termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
 	p := tea.NewProgram(gm, tea.WithOutput(programOutput), tea.WithContext(gctx))
 	if _, err := p.Run(); err != nil {
