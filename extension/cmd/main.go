@@ -7,10 +7,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/extension"
 )
 
 func main() {
+
+	browser.OpenExtensionSidePanel()
 	// Create a context that we'll cancel on signal
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
