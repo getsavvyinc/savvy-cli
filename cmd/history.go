@@ -59,7 +59,6 @@ func recordHistory(cmd *cobra.Command, _ []string) {
 	}
 
 	display.Info("Creating artifact...")
-	fmt.Println(links)
 
 	exporter := export.NewExporter(historyCmds)
 	if err := exporter.Export(ctx); err != nil {
