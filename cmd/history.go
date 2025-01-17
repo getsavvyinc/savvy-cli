@@ -16,7 +16,7 @@ import (
 	"github.com/charmbracelet/huh"
 	huhSpinner "github.com/charmbracelet/huh/spinner"
 	"github.com/creack/pty"
-	"github.com/getsavvyinc/savvy-cli/browser"
+	"github.com/getsavvyinc/savvy-cli/cmd/browser"
 	"github.com/getsavvyinc/savvy-cli/display"
 	"github.com/getsavvyinc/savvy-cli/export"
 	"github.com/getsavvyinc/savvy-cli/extension"
