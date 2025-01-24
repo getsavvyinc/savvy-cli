@@ -16,6 +16,8 @@ interface CopyURLsProps {
   selectedItems: HistoryItem[]
 }
 
+const extensionURL = 'https://chromewebstore.google.com/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh'
+
 export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
   const [includeTimestamp, setIncludeTimestamp] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -24,17 +26,30 @@ export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
 
 
   const getRawText = () => {
-    return selectedItems.map((item) => item.url).join("\n")
+    const prependSavvy = "Here's the list of URLs (generated using Savvy):\n\n"
+    const prependSavvySingular = "Here's the URL (generated using Savvy):\n\n"
+    const text =  selectedItems.map((item) => "- " + item.url).join("\n")
+    if (selectedItems.length === 1) {
+      return prependSavvySingular + text
+    }
+    return prependSavvy + text
   }
 
   const getMarkdownText = () => {
-    return selectedItems
+    const prependSavvy = `Here's the list of URLs (generated using [Savvy](${extensionURL}))`
+    const prependSavvySingular = `Here's the URL (generated using [Savvy](${extensionURL}))`
+    const mdText =  selectedItems
       .map((item) => {
         const title = item.title || new URL(item.url || "").hostname
-        const timestamp = includeTimestamp ? `${new Date(item.lastVisitTime!).toLocaleString()} ` : " "
+        const timestamp = includeTimestamp ? `${new Date(item.lastVisitTime!).toLocaleString()} ` : `` 
         return `- ${timestamp}[${title}](${item.url})`
       })
       .join("\n")
+
+      if (selectedItems.length === 1) {
+        return `${prependSavvySingular}\n\n${mdText}`
+      }
+      return `${prependSavvy}\n\n${mdText}`
   }
 
   const copyMdToClipboard = (text: string) => {
@@ -120,7 +135,9 @@ export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
             <TabsContent value="markdown">
               <div className="mb-4 flex items-center space-x-2">
                 <Switch id="timestamp-mode" checked={includeTimestamp} onCheckedChange={setIncludeTimestamp} />
-                <Label htmlFor="timestamp-mode">Include Timestamp</Label>
+                <Label htmlFor="timestamp-mode">
+                  {selectedItems.length > 1 ? "Include Timestamps" : "Include Timestamp"}
+                </Label>
               </div>
               <div className="w-full overflow-scroll rounded-md border p-4">
                 <pre className="font-monospace max-h-[66vh] min-h-[33vh] font-thin">{getMarkdownText()}</pre>
