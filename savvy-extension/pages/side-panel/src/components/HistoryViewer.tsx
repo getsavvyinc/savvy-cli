@@ -54,6 +54,7 @@ const ALLOWED_DOMAINS = [
   'stackoverflow',
   'gitlab',
   'bitbucket',
+  'localhost',
 
   // Error monitoring & logging
   'rollbar', // Matches rollbar.com, rollbar.internal etc
@@ -223,7 +224,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
                 navigator.clipboard.writeText('savvy record history');
                 toast.dismiss();
               }}>
-              <ClipboardIcon className="w-4 h-4 mr-1 inline" /> Copy Command
+              <ClipboardIcon className="mr-1 inline size-4" /> Copy Command
             </Button>
           ),
         });
@@ -239,10 +240,10 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
   };
 
   return (
-    <div className="flex flex-col max-h-scren">
-      <div className="p-4  bg-white">
+    <div className="max-h-scren flex flex-col">
+      <div className="bg-white  p-4">
         <div className="flex items-center font-light">
-          <label htmlFor="time-range" className="text-sm font-normal text-gray-700 mr-2">
+          <label htmlFor="time-range" className="mr-2 text-sm font-normal text-gray-700">
             Time Range
           </label>
           <Select value={selectedHours.toString()} onValueChange={value => setSelectedHours(Number(value))}>
@@ -266,35 +267,35 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
         ) : (
           <div className="space-y-2">
             {!loading && history.length >= 2 && (
-              <div className="flex items-center rounded bg-white p-3 shadow-sm hover:bg-primary/10 mb-2">
+              <div className="hover:bg-primary/10 mb-2 flex items-center rounded bg-white p-3 shadow-sm">
                 <Checkbox
                   id="select-all"
                   checked={history.every(item => item.isSelected)}
                   onCheckedChange={handleSelectAll}
-                  className="mr-2 data-[state=checked]:bg-primary/10"
+                  className="data-[state=checked]:bg-primary/10 mr-2"
                 />
-                <label htmlFor="select-all" className="flex-grow cursor-pointer">
+                <label htmlFor="select-all" className="grow cursor-pointer">
                   <div className="text-sm font-light text-gray-700">Select All</div>
                 </label>
               </div>
             )}
             {history.map((item, index) => (
-              <div key={index} className="flex items-center rounded p-3 shadow-sm hover:bg-primary/10">
+              <div key={index} className="hover:bg-primary/10 flex items-center rounded p-3 shadow-sm">
                 <Checkbox
                   id={`item-${index}`}
                   checked={item.isSelected}
                   onCheckedChange={() => handleItemSelect(index)}
-                  className="mr-2 data-[state=checked]:bg-primary/10"
+                  className="data-[state=checked]:bg-primary/10 mr-2"
                 />
-                <label htmlFor={`item-${index}`} className="flex-grow cursor-pointer">
-                  <div className="text-sm font-normal text-gray-700 hover:underline-offset-2 hover:text-primary hover:underline">
+                <label htmlFor={`item-${index}`} className="grow cursor-pointer">
+                  <div className="hover:text-primary text-sm font-normal text-gray-700 hover:underline hover:underline-offset-2">
                     {item.title || getHostname(item.url || '')}
                   </div>
                   <a
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-light text-xs text-gray-500 hover:underline text-ellipsis overflow-hidden">
+                    className="overflow-hidden text-ellipsis text-xs font-light text-gray-500 hover:underline">
                     {item.url ? (item.url.length > 80 ? item.url.slice(0, 80) + '...' : item.url) : ''}
                   </a>
                   <div className="text-xs font-thin text-gray-500">
@@ -307,8 +308,8 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
                   rel="noopener noreferrer"
                   className="ml-2"
                   aria-label={`Visit ${getHostname(item.url || '')}`}>
-                  <Badge className="cursor-pointer font-normal bg-primary/10 text-black hover:bg-primary hover:text-white">
-                    Visit <ExternalLink className="w-3 h-3 ml-1 inline" />
+                  <Badge className="bg-primary/10 hover:bg-primary cursor-pointer font-normal text-black hover:text-white">
+                    Visit <ExternalLink className="ml-1 inline size-3" />
                   </Badge>
                 </a>
               </div>
@@ -318,7 +319,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <div className="inline text-gray-600 text-sm font-medium text-pretty">
+                      <div className="inline text-pretty text-sm font-medium text-gray-600">
                         Savvy only shows links matching
                         <span className="font-medium underline underline-offset-2"> popular devtools.</span> Try a
                         different time range.
@@ -327,7 +328,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
                     <TooltipContent className="overflow-y-scroll">
                       <ScrollArea className="h-72 w-64 rounded-md">
                         <div className="p-4">
-                          <ul className="list-disc ml-4 font-thin">
+                          <ul className="ml-4 list-disc font-thin">
                             {[...allowedDomains].sort().map(domain => (
                               <li key={domain}>{domain}</li>
                             ))}
@@ -344,12 +345,12 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
       </div>
 
       {history.length > 0 && (
-        <div className="p-4 bg-white sticky bottom-0">
+        <div className="sticky bottom-0 bg-white p-4">
           <Button
             onClick={handleSave}
-            className="w-full bg-primary text-white"
+            className="bg-primary w-full text-white"
             disabled={!history.some(item => item.isSelected)}>
-            <ChevronRight className="w-4 h-4 mr-1 inline" />
+            <ChevronRight className="mr-1 inline size-4" />
             Save History
           </Button>
         </div>
