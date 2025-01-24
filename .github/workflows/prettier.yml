@@ -2,11 +2,18 @@ name: Formating validation
 
 on:
   pull_request:
+    paths:
+      - 'savvy-extension/**'
   push:
     branches: [main]
+    paths:
+      - 'savvy-extension/**'
 
 jobs:
   prettier:
+    defaults:
+      run:
+        working-directory: savvy-extension
     name: Prettier Check
     runs-on: ubuntu-latest
     steps:

@@ -1,12 +1,17 @@
-name: Lint Check
+name: Build And Upload Extension Zip Via Artifact
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'savvy-extension/**'
   pull_request:
 
 jobs:
-  eslint:
+  build:
+    defaults:
+      run:
+        working-directory: savvy-extension
 
     runs-on: ubuntu-latest
 
@@ -20,4 +25,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --prefer-offline
 
-      - run: pnpm lint
+      - run: pnpm build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: dist/*
