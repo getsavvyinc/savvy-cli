@@ -1,3 +1,0 @@
-[submodule "chrome-extension"]
-	path = chrome-extension
-	url = https://github.com/getsavvyinc/savvy-extension
