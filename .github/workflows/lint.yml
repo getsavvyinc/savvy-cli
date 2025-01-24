@@ -1,15 +1,23 @@
-name: Run E2E Tests
+name: Lint Check
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'savvy-extension/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'savvy-extension/**'
 
 jobs:
-  chrome:
-    name: E2E tests for Chrome
+  eslint:
+    defaults:
+      run:
+        working-directory: savvy-extension
+
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -17,5 +25,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: pnpm
+
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm e2e
+
+      - run: pnpm lint
