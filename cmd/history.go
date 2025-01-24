@@ -106,8 +106,8 @@ func getLinks(ctx context.Context) ([]extension.HistoryItem, error) {
 				Description("Share links to logs, dashboards, metrics and more with your team").
 				Options(
 					huh.NewOption("Open Chrome Extension", "open"),
+					huh.NewOption("Install Savvy's Chrome Extension", "install"),
 					huh.NewOption("Skip", "skip"),
-					// TODO: Add CTA to install chrome extension here.
 				).
 				Value(&choice),
 		),
@@ -120,10 +120,16 @@ func getLinks(ctx context.Context) ([]extension.HistoryItem, error) {
 	if choice == "open" {
 		// Open the chrome extension using the browser package
 		browser.OpenExtensionSidePanel()
+	}
 
+	if choice == "install" {
+		browser.InstallExtension()
+	}
+
+	if choice == "open" || choice == "install" {
 		// Wait for a short duration to collect links
 		spinner := huhSpinner.New().
-			Title("Waiting for browser history...").
+			Title("Open Savvy's Chrome Extension > Select Links > Click Save").
 			Action(func() {
 				server.Wait()
 			})

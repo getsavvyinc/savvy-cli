@@ -58,3 +58,10 @@ func OpenExtensionSidePanel() {
 	cmd := OpenCmd(extensionURL)
 	runOpenCmd(cmd, extensionURL)
 }
+
+func InstallExtension() {
+	extensionURL := "https://chrome.google.com/webstore/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh"
+	display.Info("Opening Chrome to install Savvy's extension...")
+	cmd := OpenCmd(extensionURL)
+	runOpenCmd(cmd, extensionURL)
+}
