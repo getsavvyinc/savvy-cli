@@ -1,0 +1,26 @@
+# dependencies
+**/node_modules
+
+# nix 
+.direnv
+
+# testing
+**/coverage
+
+# build
+**/dist
+**/build
+**/dist-zip
+
+# env
+**/.env.*
+**/.env
+
+# etc
+.DS_Store
+.idea
+**/.turbo
+
+# compiled
+chrome-extension/public/manifest.json
+**/tailwind-output.css
