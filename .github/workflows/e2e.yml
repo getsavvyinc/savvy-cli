@@ -26,5 +26,6 @@ jobs:
         with:
           node-version-file: 'savvy-extension/.nvmrc'
           cache: pnpm
+          cache-dependency-path: 'savvy-extension/pnpm-lock.yaml'
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm e2e

@@ -23,6 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: 'savvy-extension/.nvmrc'
+          cache-dependency-path: 'savvy-extension/pnpm-lock.yaml'
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile --prefer-offline
