@@ -10,6 +10,7 @@ import { useLocalClient } from '@extension/shared/lib/hooks/useAPI';
 import { isAxiosError } from 'axios';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@src/components/ui/tooltip';
 import { ScrollArea } from '@src/components/ui/scroll-area';
+import {CopyURLs} from '@src/components/Copy';
 
 interface HistoryItem extends chrome.history.HistoryItem {
   isSelected?: boolean;
@@ -240,7 +241,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
   };
 
   return (
-    <div className="max-h-scren flex flex-col">
+    <div className="flex h-screen flex-col">
       <div className="bg-white  p-4">
         <div className="flex items-center font-light">
           <label htmlFor="time-range" className="mr-2 text-sm font-normal text-gray-700">
@@ -345,7 +346,9 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
       </div>
 
       {history.length > 0 && (
-        <div className="sticky bottom-0 bg-white p-4">
+        <div className="sticky bottom-0 bg-white" >
+          <div className='flex gap-4 p-4'>
+          <CopyURLs selectedItems={history.filter(item => item.isSelected)} />
           <Button
             onClick={handleSave}
             className="bg-primary w-full text-white"
@@ -353,6 +356,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
             <ChevronRight className="mr-1 inline size-4" />
             Save History
           </Button>
+        </div>
         </div>
       )}
       <Toaster richColors position="bottom-right" expand={true} visibleToasts={2} />
