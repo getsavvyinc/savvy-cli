@@ -6,6 +6,8 @@ on:
     paths:
       - 'savvy-extension/**'
   pull_request:
+    paths:
+      - 'savvy-extension/**'
 
 jobs:
   build:
