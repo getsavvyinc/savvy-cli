@@ -51,6 +51,7 @@ const DENIED_DOMAINS = [
 const ALLOWED_DOMAINS = [
   // special case chrome
   'chromewebstore.google.com',
+  'developer.',
   // Developer tools & documentation
   'getsavvy.so',
   'github', // Matches github.com, github.internal etc
