@@ -326,7 +326,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = () => {
                         different time range.
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="overflow-y-scroll">
+                    <TooltipContent className="bg-primary/10 overflow-y-scroll">
                       <ScrollArea className="h-72 w-64 rounded-md">
                         <div className="p-4">
                           <ul className="ml-4 list-disc font-thin">
