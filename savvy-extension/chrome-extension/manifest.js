@@ -39,7 +39,7 @@ const manifest = withSidePanel({
    */
   name: 'Savvy',
   version: packageJson.version,
-  description: 'Create, Share, and Run Worfklows from your Browser & CLI',
+  description: 'Save each link from your debugging adventures',
   host_permissions: ['http://localhost:8765/*'],
   permissions: ['history'],
   background: {
