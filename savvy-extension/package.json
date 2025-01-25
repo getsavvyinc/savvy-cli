@@ -1,11 +1,11 @@
 {
-  "name": "chrome-extension-boilerplate-react-vite",
-  "version": "0.1.0",
-  "description": "chrome extension boilerplate",
+  "name": "Savvy",
+  "version": "1.0.1",
+  "description": "Save each link from your debugging adventures",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite.git"
+    "url": "https://github.com/getsavvyinc/savvy-cli"
   },
   "type": "module",
   "scripts": {
