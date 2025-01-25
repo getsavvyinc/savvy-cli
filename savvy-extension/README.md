@@ -27,6 +27,9 @@ Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.goo
 
 ### From Source
 
+Build the extension from source and load it into your browser as an unpacked extension.
+
+You can follow the steps here: [How To Install Savvy's Extension From Source](https://app.getsavvy.so/workflow/rb_3294a871bc952dc6/How-To-Install-Savvy-s-Chrome-Extension-From-Source)
 
 ### Acknolwedgement
 
