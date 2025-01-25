@@ -115,11 +115,11 @@ export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
         </DialogTrigger>
         <DialogContent className="flex w-full flex-col gap-4 overflow-scroll">
           <DialogHeader>
-            <DialogTitle>Export History</DialogTitle>
+            <DialogTitle>History</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="rawtext" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="rawtext">Text</TabsTrigger>
+              <TabsTrigger value="rawtext">Plain Text</TabsTrigger>
               <TabsTrigger value="markdown">Markdown</TabsTrigger>
             </TabsList>
             <TabsContent value="rawtext" className="flex w-full flex-col gap-8">
