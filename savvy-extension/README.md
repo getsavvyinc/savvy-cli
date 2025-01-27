@@ -1,22 +1,13 @@
-
 # Savvy
 
-Save and Share critical links from your debugging adventures.
+<h3 align="left">
+  | <a href="https://chromewebstore.google.com/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh"> Add to Chrome</a> |
+  <a href="https://www.getsavvy.so/chrome">Website</a> |
+  <a href="https://getsavvy.so/discord">Discord</a> |
+  <a href="https://twitter.com/savvyoncall">Twitter</a>
+</h3>
 
-## Features
-
-Go back in time and use your browser history to find important links.
-
-Savvy filters out the noise and only shows links for a list of relevant domains.
-
-No login required.
-
-## Export your links
-
-1. Copy links to your clipboard and share anywhere you want with a single click.
-
-2. Send and save links to Savy's CLI and attach them as context to your [recorded CLI](https://github.com/getsavvyinc/savvy-cli) commands.
-
+Track and Share links that help you resolve issues faster.
 
 ## Installation
 
@@ -31,6 +22,18 @@ Build the extension from source and load it into your browser as an unpacked ext
 
 You can follow the steps here: [How To Install Savvy's Extension From Source](https://app.getsavvy.so/workflow/rb_3294a871bc952dc6/How-To-Install-Savvy-s-Chrome-Extension-From-Source)
 
+## How It Works
+
+1. Choose a time range.
+
+2. Savvy surfaces links from developer products that you visited during that time.
+
+3. Select the links that you want to share or save.
+
+4. Either copy the links to your clipboard or
+
+5. Send them to your Savvy CLI.
+
 ### Acknolwedgement
 
-This extension is based on the boilerplate provided by Jonghakseo. The original boilerplate can be found [here](https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite)
+This extension is based on the [boilerplate provided by Jonghakseo](https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite)
