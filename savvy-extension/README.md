@@ -3,6 +3,7 @@
 <h3 align="left">
   | <a href="https://chromewebstore.google.com/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh"> Add to Chrome</a> |
   <a href="https://www.getsavvy.so/chrome">Website</a> |
+  <a href="https://github.com/getsavvyinc/savvy-cli?tab=readme-ov-file#install-savvys-cli"> Get Savvy's CLI</a> |
   <a href="https://getsavvy.so/discord">Discord</a> |
   <a href="https://twitter.com/savvyoncall">Twitter</a>
 </h3>
@@ -26,6 +27,16 @@ Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.goo
 3. **Copy selected links to your clipboard or send them to Savvy's CLI.**
 
 ![Copy or Send to CLI](assets/images/export.png)
+
+## Integration with Savvy's CLI
+
+Savvy's chrome extension works seamlessly with Savvy's CLI.
+
+You can send selected links to Savvy's CLI and attach them to commands captured by Savvy's CLI.
+
+After running `savvy record history` or `savvy record` follow the prompts and when it's tiem to attach links, savvy will openn the extension for you.
+
+![Attach Links](assets/images/cli-extension.png)
 
 ## Install from Source
 
