@@ -124,7 +124,7 @@ export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
             </TabsList>
             <TabsContent value="rawtext" className="flex w-full flex-col gap-8">
               <div className="w-full overflow-scroll rounded-md border p-4">
-                <pre className="font-monospace max-h-[66vh] min-h-[33vh] font-thin">{getRawText()}</pre>
+                <pre className="max-h-[66vh] min-h-[33vh] font-mono font-thin">{getRawText()}</pre>
               </div>
               <DialogFooter>
               <Button onClick={() => copyTextToClipboard(getRawText())} className="mt-4 w-full text-white">
@@ -140,7 +140,7 @@ export const CopyURLs: React.FC<CopyURLsProps> = ({ selectedItems }) => {
                 </Label>
               </div>
               <div className="w-full overflow-scroll rounded-md border p-4">
-                <pre className="font-monospace max-h-[66vh] min-h-[33vh] font-thin">{getMarkdownText()}</pre>
+                <pre className="max-h-[66vh] min-h-[33vh] font-mono font-thin">{getMarkdownText()}</pre>
               </div>
               <DialogFooter>
               <Button onClick={() => copyMdToClipboard(getMarkdownText())} className="mt-4 w-full text-white">
