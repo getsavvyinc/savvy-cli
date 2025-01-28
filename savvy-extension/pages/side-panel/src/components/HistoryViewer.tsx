@@ -64,6 +64,7 @@ const ALLOWED_DOMAINS = [
   'rollbar', // Matches rollbar.com, rollbar.internal etc
   'splunk',
   'datadog',
+  'datadoghq.com',
   'sentry',
   'bugsnag',
   'raygun',
@@ -71,6 +72,8 @@ const ALLOWED_DOMAINS = [
   'harness',
   'metabase',
   'mode',
+  'mezmo',
+  'signalfx',
   'posthog',
   'postman',
   'statsig',
