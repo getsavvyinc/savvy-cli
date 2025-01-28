@@ -1,7 +1,7 @@
 {
   "name": "Savvy",
   "version": "1.0.4",
-  "description": "Save each link from your debugging adventures",
+  "description": "Track and Share links used to resolve issues from your browser history",
   "license": "MIT",
   "repository": {
     "type": "git",
