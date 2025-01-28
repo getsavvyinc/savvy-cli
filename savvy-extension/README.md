@@ -15,7 +15,7 @@ Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.goo
 
 ## How It Works
 
-1. **After you choose a time range -> Savvy surfaces relevant links from your browser history.**
+1. **Savvy surfaces relevant links from your browser history.**
 
 ![Choose a time range](assets/images/time-range.png)
 
