@@ -11,34 +11,35 @@ Track and Share links that help you resolve issues faster.
 
 ## Installation
 
-### From Chrome Web Store
-
 Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.google.com/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh)
 
+## How It Works
 
-### From Source
+1. **After you choose a time range -> Savvy surfaces relevant links from your browser history.**
+
+![Choose a time range](assets/images/time-range.png)
+
+3. **Select the links that you want to share.**
+
+![Select Links](assets/images/select.png)
+
+4. **Copy selected links to your clipboard or send them to Savvy's CLI.**
+
+![Copy or Send to CLI](assets/images/export.png)
+
+### Install from Source
 
 Build the extension from source and load it into your browser as an unpacked extension.
 
 You can follow the steps here: [How To Install Savvy's Extension From Source](https://app.getsavvy.so/workflow/rb_3294a871bc952dc6/How-To-Install-Savvy-s-Chrome-Extension-From-Source)
 
-## How It Works
+### Privacy
 
-1. Choose a time range.
+Savvy's chrome extension does not store any of your browsing history. It only reads your browsing history to surface relevant links.
 
-![Choose a time range](assets/images/time-range.png)
+Selected links are copied to your clipboard or sent to Savvy's CLI.
 
-2. Savvy surfaces links from developer products that you visited during that time.
-
-![Links](assets/images/extension.png)
-
-3. Select the links that you want to share or save.
-
-![Select Links](assets/images/select.png)
-
-4. Either copy the links to your clipboard or send them to Savvy's CLI.
-
-![Copy or Send to CLI](assets/images/export.png)
+You can choose to store workflows generated from Savvy's CLI on Savvy or export data locally on your machine.
 
 
 ### Acknolwedgement
