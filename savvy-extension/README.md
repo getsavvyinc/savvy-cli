@@ -10,6 +10,11 @@
 
 Track and Share links that help you resolve issues faster.
 
+Use Cases:
+
+- Share your entire debug path or highlight links crucial to solving a bug.
+- Attach a log of your actions to any issue or postmortem in seconds.
+
 ## Installation
 
 Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.google.com/detail/savvy/jocphfjphhfbdccjfjjnbcnejmbojjlh)
