@@ -39,7 +39,7 @@ const manifest = withSidePanel({
    */
   name: 'Savvy',
   version: packageJson.version,
-  description: 'Save each link from your debugging adventures',
+  description: 'Track and Share links used to resolve issues from your browser history',
   host_permissions: ['http://localhost:8765/*'],
   permissions: ['history'],
   background: {
