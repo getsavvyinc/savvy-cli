@@ -27,13 +27,13 @@ Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.goo
 
 ![Copy or Send to CLI](assets/images/export.png)
 
-### Install from Source
+## Install from Source
 
 Build the extension from source and load it into your browser as an unpacked extension.
 
 You can follow the steps here: [How To Install Savvy's Extension From Source](https://app.getsavvy.so/workflow/rb_3294a871bc952dc6/How-To-Install-Savvy-s-Chrome-Extension-From-Source)
 
-### Privacy
+## Privacy
 
 Savvy's chrome extension does not store any of your browsing history. It only reads your browsing history to surface relevant links.
 
@@ -42,6 +42,6 @@ Selected links are copied to your clipboard or sent to Savvy's CLI.
 You can choose to store workflows generated from Savvy's CLI on Savvy or export data locally on your machine.
 
 
-### Acknolwedgement
+## Acknolwedgement
 
 This extension is based on the [boilerplate provided by Jonghakseo](https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite)
