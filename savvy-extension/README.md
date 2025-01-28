@@ -26,19 +26,19 @@ You can follow the steps here: [How To Install Savvy's Extension From Source](ht
 
 1. Choose a time range.
 
-![Choose a time range](savvy-extension/assets/images/time-range.png)
+![Choose a time range](assets/images/time-range.png)
 
 2. Savvy surfaces links from developer products that you visited during that time.
 
-![Links](savvy-extension/assets/images/extension.png)
+![Links](assets/images/extension.png)
 
 3. Select the links that you want to share or save.
 
-![Select Links](savvy-extension/assets/images/select.png)
+![Select Links](assets/images/select.png)
 
 4. Either copy the links to your clipboard or send them to Savvy's CLI.
 
-![Copy or Send to CLI](savvy-extension/assets/images/export.png)
+![Copy or Send to CLI](assets/images/export.png)
 
 
 ### Acknolwedgement
