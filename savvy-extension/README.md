@@ -46,7 +46,7 @@ You can follow the steps here: [How To Install Savvy's Extension From Source](ht
 
 ## Privacy
 
-Savvy's chrome extension does not store any of your browsing history. It only reads your browsing history to surface relevant links.
+Savvy's chrome extension does not store any of your browsing history. It only reads your browsing history to surface [relevant links.](https://github.com/getsavvyinc/savvy-cli/blob/main/savvy-extension/pages/side-panel/src/components/HistoryViewer.tsx#L51)
 
 Selected links are copied to your clipboard or sent to Savvy's CLI.
 
