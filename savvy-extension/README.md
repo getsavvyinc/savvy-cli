@@ -15,15 +15,15 @@ Add Savvy to your browser from the [Chrome Web Store](https://chromewebstore.goo
 
 ## How It Works
 
-1. **Savvy surfaces relevant links from your browser history.**
+1. **Click on the extension icon -> Savvy surfaces relevant links from your browser history.**
 
 ![Choose a time range](assets/images/time-range.png)
 
-3. **Select the links that you want to share.**
+2. **Select the links that you want to share.**
 
 ![Select Links](assets/images/select.png)
 
-4. **Copy selected links to your clipboard or send them to Savvy's CLI.**
+3. **Copy selected links to your clipboard or send them to Savvy's CLI.**
 
 ![Copy or Send to CLI](assets/images/export.png)
 
