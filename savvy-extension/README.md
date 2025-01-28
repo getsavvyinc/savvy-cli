@@ -34,7 +34,7 @@ Savvy's chrome extension works seamlessly with Savvy's CLI.
 
 You can send selected links to Savvy's CLI and attach them to commands captured by Savvy's CLI.
 
-After running `savvy record history` or `savvy record` follow the prompts and when it's tiem to attach links, savvy will openn the extension for you.
+After running `savvy record history` or `savvy record` follow the prompts and when it's time to attach links, savvy will open the extension for you.
 
 ![Attach Links](assets/images/cli-extension.png)
 
