@@ -18,6 +18,8 @@ func NewSetupChecker() SetupChecker {
 		return &zshSetupChecker{}
 	case kind.Bash:
 		return &bashSetupChecker{}
+	case kind.Nu:
+		return &nuSetupChecker{}
 	default:
 		return &nopSetupChecker{}
 	}
