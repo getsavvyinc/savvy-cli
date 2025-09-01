@@ -33,6 +33,10 @@ func TestParseCommand(t *testing.T) {
 		{rawCommandAndArgs: "sh -c 'fzf'  --border '--color=bg+:#3b4252,bg:#2e3440,spinner:#81a1c1,hl:#616e88,fg:#d8dee9,header:#616e88,info:#81a1c1,pointer:#81a1c1,marker:#81a1c1,fg+:#d8dee9,prompt:#81a1c1,hl+:#81a1c1' +m --ansi --tiebreak=begin --header-lines=1 -d\240 '--preview' '",
 			expected: "sh",
 		},
+		{
+			rawCommandAndArgs: "/usr/bin/nu --login",
+			expected:          "nu",
+		},
 	}
 
 	for _, tc := range testCases {

@@ -9,6 +9,7 @@ const (
 	Zsh     Kind = "zsh"
 	Dash    Kind = "dash"
 	Fish    Kind = "fish"
+	Nu      Kind = "nu"
 	Unknown Kind = "unknown"
 )
 
@@ -23,6 +24,8 @@ func ShellKindFromString(name string) (Kind, bool) {
 		return Dash, true
 	case "fish":
 		return Fish, true
+	case "nu":
+		return Nu, true
 	}
 	return Unknown, false
 }

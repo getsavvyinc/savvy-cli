@@ -137,7 +137,7 @@ Run `savvy login` to start the login flow.
 
 5. What shells does Savvy support?
 
-Savvy supports `zsh`, `bash`, and `fish`.
+Savvy supports `zsh`, `bash`, `fish`, and `nu` (Nushell).
 
 Please [create an issue](https://github.com/getsavvyinc/savvy-cli/issues/new) if you'd like us to support your favorite shell.
 
